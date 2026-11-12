@@ -1,0 +1,51 @@
+% The root system of G2 in the Euclidean plane, with the weights of the 28 coordinates.
+% Written by hand, not produced by generate_figures.sh.
+% The short root alpha points at 0 degrees and the long root beta at 150 degrees,
+% so consecutive roots make an angle of 30 degrees (as in the Wikipedia picture of G2).
+% Each root tip carries the coordinates of that weight. The weight of x_i carries the
+% symbol of taxon i: these are the short roots and, for the heart, the zero weight.
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\tikzset{
+  g2root arrow/.style={draw=black!55,line width=.5pt,-{Stealth[length=1.8mm,width=1.3mm]},shorten >=.6pt},
+  g2root label/.style={align=center,inner sep=1pt,font=\fontsize{10pt}{11pt}\selectfont,label distance=.8mm},
+  g2root name/.style={inner sep=2pt,font=\small},
+  g2root dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,inner sep=0pt},
+  g2root light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,inner sep=0pt},
+  g2root square/.style={rectangle,minimum size=4.14mm},
+  g2root circle/.style={circle,minimum size=4.32mm},
+  g2root triangle/.style={regular polygon,regular polygon sides=3,minimum size=6.2mm},
+}
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+\def\rs{1.9cm}   % length of the short roots
+\def\rl{3.291cm} % length of the long roots, sqrt(3) times \rs
+% the zero weight: x_7 and p_14, p_25, p_36; the arrows start on this circle
+\node[circle,minimum size=7.6mm,inner sep=0pt] (o) at (0,0) {};
+% short roots
+\node[g2root dark,g2root square,label={[g2root label]0:{$x_1$\\$p_{17},\,p_{56}$}}] (a) at (0:\rs) {};
+\node[g2root light,g2root triangle,label={[g2root label]60:{$x_5$\\$p_{13},\,p_{57}$}}] (b) at (60:\rs) {};
+\node[g2root dark,g2root circle,label={[g2root label]120:{$x_3$\\$p_{37},\,p_{45}$}}] (c) at (120:\rs) {};
+\node[g2root light,g2root square,label={[g2root label]180:{$x_4$\\$p_{23},\,p_{47}$}}] (d) at (180:\rs) {};
+\node[g2root dark,g2root triangle,label={[g2root label]240:{$x_2$\\$p_{27},\,p_{46}$}}] (e) at (240:\rs) {};
+\node[g2root light,g2root circle,label={[g2root label]300:{$x_6$\\$p_{12},\,p_{67}$}}] (f) at (300:\rs) {};
+\draw[g2root arrow] (o)--(a) node[g2root name,pos=.5,anchor=south] {$\alpha$};
+\foreach \n in {b,c,d,e,f} \draw[g2root arrow] (o)--(\n);
+% long roots
+\draw[g2root arrow] (o)--(30:\rl) node[g2root label,anchor=210] {$p_{15}$};
+\draw[g2root arrow] (o)--(90:\rl) node[g2root label,anchor=270] {$p_{35}$};
+\draw[g2root arrow] (o)--(150:\rl) node[g2root label,anchor=330] {$p_{34}$}
+  node[g2root name,pos=.5,anchor=240] {$\beta$};
+\draw[g2root arrow] (o)--(210:\rl) node[g2root label,anchor=30] {$p_{24}$};
+\draw[g2root arrow] (o)--(270:\rl) node[g2root label,anchor=90] {$p_{26}$};
+\draw[g2root arrow] (o)--(330:\rl) node[g2root label,anchor=150] {$p_{16}$};
+\begin{scope}[scale=0.9]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{tikzpicture}
+\endgroup

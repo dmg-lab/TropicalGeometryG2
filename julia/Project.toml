@@ -1,0 +1,35 @@
+name = "TropicalCensus"
+uuid = "e3a9b16e-7bd7-494b-8950-aab61602c89f"
+version = "0.1.0"
+authors = ["Mukai project contributors"]
+
+[deps]
+Cairo = "159f3aea-2a34-519c-b102-8c37f9878175"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+Fontconfig = "186bb1d3-e1f7-5a2c-a377-96d770f13627"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Oscar = "f1435218-dba5-11e9-1e4d-f1a5fab5fc13"
+Polymake = "d720cf60-89b5-51f5-aff5-213f193123e7"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[compat]
+Graphs = "1.14"
+HiGHS = "1.24"
+Polymake = "0.13.13"
+Revise = "3.17.3"
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

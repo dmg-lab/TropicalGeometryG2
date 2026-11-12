@@ -1,0 +1,60 @@
+== 1. the vertical ray -e_36
+ray 30 (orbit alpha_4) = -2 e_36 mod lineality
+== 2. cells whose span contains e_ij, for ij in 14, 25, 36
+(1, 4) 21 of 248
+(2, 5) 21 of 248
+(3, 6) 21 of 248
+cells containing e_36 in their span: 21  all contain ray 30 : True  cells containing ray 30 : 21
+== 3. classification of maximal cells by (d14, d25, d36), with toric status
+d14=d25=d36                  toric=False 5
+d36<d14=d25, not vertical    toric=False 29
+d36<d14=d25, not vertical    toric=True  31
+d36<d14=d25, vertical        toric=False 7
+d36<d14=d25, vertical        toric=True  14
+d36=max(d14,d25)             toric=False 72
+d36=max(d14,d25)             toric=True  90
+paper cell types (with multiplicity) by class:
+  d14=d25=d36 {'21': 2, '33': 3}
+  d36<d14=d25, not vertical {'1': 2, '2': 2, '3': 4, '4': 4, '5': 2, '7': 1, '8': 4, '10': 2, '12': 2, '16': 4, '17': 4, '22': 4, '23': 4, '24': 4, '26': 4, '27': 4, '28': 2, '29': 2, '30': 1, '31': 4}
+  d36<d14=d25, vertical {'6': 1, '9': 4, '11': 2, '13': 2, '14': 1, '15': 4, '25': 4, '32': 2, '34': 1}
+  d36=max(d14,d25) {'1': 4, '2': 4, '3': 8, '4': 8, '5': 4, '6': 2, '7': 2, '8': 8, '9': 8, '10': 4, '11': 4, '12': 4, '13': 4, '14': 2, '15': 8, '16': 8, '17': 8, '22': 8, '23': 8, '24': 8, '25': 8, '26': 8, '27': 8, '28': 4, '29': 4, '30': 2, '31': 8, '32': 4, '34': 2}
+== 4. images of the non-vertical cells after forgetting p_36
+non-vertical cells 227  distinct spans 209  pairs with equal span 18  groups larger than 2: []
+  cells  27, 60 (types 28,28, toric False,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells  28, 56 (types 29,12, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells  54, 58 (types 29,12, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells  80, 81 (types 13,13, toric True,True, d36=max(d14,d25)): share 2 rays, opposite sides, convex union
+  cells  83,151 (types 23,16, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells  84,152 (types 23,16, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells  92, 93 (types 13,14, toric True,True, d36=max(d14,d25)): share 2 rays, opposite sides, convex union
+  cells  96, 97 (types 14,13, toric True,True, d36=max(d14,d25)): share 2 rays, opposite sides, convex union
+  cells 142,194 (types 27,22, toric False,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 144,198 (types 27,22, toric False,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 157,211 (types 26,8, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 158,212 (types 26,8, toric False,True, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 179,223 (types 16,23, toric True,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 180,224 (types 16,23, toric True,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 193,229 (types 22,27, toric False,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 195,230 (types 22,27, toric False,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 209,233 (types 8,26, toric True,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+  cells 210,234 (types 8,26, toric True,False, d36<d14=d25, not vertical): share 2 rays, opposite sides, convex union
+pairs with convex union: 18 of 18
+pairs with both halves toric: 3  classes: ['d36=max(d14,d25)']
+== 5. the link of the vertical ray
+vertices 13, edges 21, components 1, first Betti number 9
+vertex degrees {3: 10, 4: 3}
+vertices (census ray indices) ['8', '11', '12', '14', '16', '27', '33', '34', '37', '38', '39', '48', '49']
+their ray orbits {'gamma_2': 1, 'alpha_1': 2, 'alpha_2': 3, 'delta': 1, 'alpha_3': 2, 'beta_1': 4}
+distinct images of these rays after forgetting p_36: 13
+== 6. initial ideals in the weight basis, at an interior point of each non-vertical cell
+linear forms in the weight-basis ideal (6 expected, those cutting out L): 6
+computed 227 initial ideals in 16 s
+d14=d25=d36                  toric=False weight-basis toric=False 5
+d36<d14=d25, not vertical    toric=False weight-basis toric=False 29
+d36<d14=d25, not vertical    toric=True  weight-basis toric=False 31
+d36=max(d14,d25)             toric=False weight-basis toric=False 72
+d36=max(d14,d25)             toric=True  weight-basis toric=True  90
+cells where the weight-basis toric status differs from the prediction of thm:modification: []
+toric cells in the weight basis: 90
+merged pairs whose halves have equal weight-basis initial ideals: 18 of 18
+distinct toric initial ideals in the weight basis: 87

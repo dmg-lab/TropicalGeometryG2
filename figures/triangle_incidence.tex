@@ -1,0 +1,124 @@
+% The local flag complex above the triangle of orbit 21 (type \mathfrak A_1),
+% as the incidence graph of its tetrahedra and of the triangles that are
+% common facets of several of them, each drawn as such, with its vertices. Hand-drawn; it is the tree
+% of the cell with every edge subdivided and its seven leaves deleted: a
+% triangle at every inner vertex, a tetrahedron at the middle of every inner
+% edge and at the leaf of every pendant edge. The tree is that of
+% figures/triangle_cell.tex, its centre v11 at the origin, its edges in the
+% directions they have there, the inner ones of length 2.1 and the pendant
+% ones 1.15, and its triangles and tetrahedra are those of
+% figures/triangle_incidence_5.tex, so that the two graphs have one scale.
+% Source: julia/studies/g2/atlas/flag/local_flag_cell_atlas.csv, rows 21 (QQ
+% cell 155, rays 7,12,40), with the letters of figures/triangle_cell.tex:
+%   R_7^A = A, R_7^B = B, R_12^A = C, R_12^B = D, R_40^A = F, R_40^B = E,
+% e_k = taxon k. Tetrahedra: pendant edges 1BCE, 5BCE (vertex v8), 2BDF, 6BDF
+% (v9), 3ADE, 4ADE (v10), 7BDE (v11); inner edges BCDE (v8-v11), BDEF
+% (v9-v11), ABDE (v10-v11). Triangles, the node rows: BCE (node 8), BDF (9),
+% ADE (10), BDE (11), each the common facet of the tetrahedra of the edges at
+% its vertex; no other triangle lies in two tetrahedra.
+% The letters are placed so that every triangle has its vertices at the same
+% corners as the face of each adjacent cell that they span: top, bottom left,
+% bottom right for the faces top-left-front, top-front-right and
+% top-left-right of a tetrahedron, and left to right on its bottom face
+% left-front-right.
+% A scope for figures/triangle_projection.tex, drawn inside the picture of
+% figures/triangle_cell.tex at the place that the caller shifts it to; its
+% names start with i, apart from those of the trees.
+\begin{scope}[x=1.35cm,y=1.35cm]
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\definecolor{g2RayLabel}{HTML}{000000}
+\definecolor{g2CellLabel}{HTML}{000000}
+\tikzset{
+  g2inc edge/.style={draw=g2RayLabel,line width=.7pt},
+  g2inc label/.style={text=g2RayLabel,inner sep=0pt,font={\sffamily\bfseries\fontsize{7}{7}\selectfont}},
+  g2inc solid label/.style={g2inc label,font={\sffamily\bfseries\fontsize{9.5}{9.5}\selectfont}},
+  % A triangle: an equilateral one, its vertices at its corners, the top one
+  % first, then the left one.
+  pics/g2tri/.style n args={3}{code={
+    \draw[g2CellLabel,fill=g2TaxonBlue!12,line width=.6pt,line join=round]
+      (0mm,6.3mm)--(-5.456mm,-3.15mm)--(5.456mm,-3.15mm)--cycle;
+    \node[g2inc solid label] at (0mm,2.12mm) {#1};
+    \node[g2inc solid label] at (-2.06mm,-1.47mm) {#2};
+    \node[g2inc solid label] at (2.06mm,-1.47mm) {#3};
+  }},
+  % A tetrahedron: its two front faces, lit from the left, and its vertices
+  % at its corners: the top one, the left one, the front one, the right one;
+  % a pendant one has its taxon at the top, drawn by the caller.
+  pics/g2tet faces/.style={code={
+    \path[fill=g2TaxonBlue!8] (0mm,6.27mm)--(-7.48mm,-2.86mm)--(1.1mm,-5.39mm)--cycle;
+    \path[fill=g2TaxonBlue!26] (0mm,6.27mm)--(1.1mm,-5.39mm)--(7.48mm,-1.98mm)--cycle;
+    \draw[g2CellLabel,line width=.6pt,line join=round] (0mm,6.27mm)--(-7.48mm,-2.86mm)--(1.1mm,-5.39mm)--(7.48mm,-1.98mm)--cycle;
+  }},
+  pics/g2tet/.style n args={4}{code={
+    \pic {g2tet faces};
+    \node[g2inc solid label] at (.22mm,3.3mm) {#1};
+    \pic {g2tet base={#2}{#3}{#4}};
+  }},
+  pics/g2tet base/.style n args={3}{code={
+    \node[g2inc solid label] at (-4.29mm,-1.98mm) {#1};
+    \node[g2inc solid label] at (.99mm,-3.19mm) {#2};
+    \node[g2inc solid label] at (4.51mm,-1.43mm) {#3};
+  }},
+  pics/g2pendant/.style n args={3}{code={
+    \pic {g2tet faces};
+    \pic {g2tet base={#1}{#2}{#3}};
+  }},
+  g2inc dark/.style={fill=g2TaxonBlue,draw=white,line width=.4pt,inner sep=0pt},
+  g2inc light/.style={fill=g2TaxonYellow,draw=white,line width=.4pt,inner sep=0pt},
+}
+% The vertices of the G2-tree of the cell, which is not drawn.
+\coordinate (iv1) at (2.17001,1.09585);
+\coordinate (iv2) at (0.90086,-2.81480);
+\coordinate (iv3) at (-2.65243,-1.06025);
+\coordinate (iv4) at (-2.17001,1.09585);
+\coordinate (iv5) at (2.65243,-1.06025);
+\coordinate (iv6) at (-0.90086,-2.81480);
+\coordinate (iv7) at (0.00000,1.15000);
+\coordinate (iv8) at (2.09936,-0.05197);
+\coordinate (iv9) at (0.00000,-2.10000);
+\coordinate (iv10) at (-2.09936,-0.05197);
+\coordinate (iv11) at (0.00000,0.00000);
+% The tetrahedra of the inner edges, at their middles, that of v8-v11 moved
+% 0.017 of the edge towards v8 to even its gaps to the two triangles.
+\coordinate (ie8) at (barycentric cs:iv8=.517,iv11=.483);
+\coordinate (ie9) at (barycentric cs:iv9=1,iv11=1);
+\coordinate (ie10) at (barycentric cs:iv10=1,iv11=1);
+% A tetrahedron and the triangles among its facets.
+\foreach \a/\b in {iv1/iv8,iv5/iv8,iv2/iv9,iv6/iv9,iv3/iv10,iv4/iv10,iv7/iv11,
+                   ie8/iv8,ie8/iv11,ie9/iv9,ie9/iv11,ie10/iv10,ie10/iv11}
+  \draw[g2inc edge] (\a)--(\b);
+\pic at (iv8) {g2tri={E}{B}{C}};
+\pic at (iv9) {g2tri={F}{D}{B}};
+\pic at (iv10) {g2tri={E}{A}{D}};
+\pic at (iv11) {g2tri={E}{D}{B}};
+\pic at (iv1) {g2pendant={B}{E}{C}};
+\pic at (iv2) {g2pendant={D}{F}{B}};
+\pic at (iv3) {g2pendant={A}{E}{D}};
+\pic at (iv4) {g2pendant={A}{E}{D}};
+\pic at (iv5) {g2pendant={B}{E}{C}};
+\pic at (iv6) {g2pendant={D}{F}{B}};
+\pic at (iv7) {g2pendant={D}{E}{B}};
+\pic at (ie8) {g2tet={E}{D}{B}{C}};
+\pic at (ie9) {g2tet={E}{D}{F}{B}};
+\pic at (ie10) {g2tet={E}{A}{D}{B}};
+% The taxa of the pendant tetrahedra, as in the trees, at their top corners.
+\node[g2inc dark,rectangle,minimum size=3.45mm] at ([xshift=0mm,yshift=2.25mm]iv1) {};
+\begin{scope}[shift={([xshift=0mm,yshift=2.25mm]iv2)},scale=.675]
+\path[fill=g2TaxonBlue,draw=white,line width=.4pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2inc dark,circle,minimum size=3.75mm] at ([xshift=0mm,yshift=2.25mm]iv3) {};
+\node[g2inc light,rectangle,minimum size=3.45mm] at ([xshift=0mm,yshift=2.25mm]iv4) {};
+\begin{scope}[shift={([xshift=0mm,yshift=2.25mm]iv5)},scale=.675]
+\path[fill=g2TaxonYellow,draw=white,line width=.4pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2inc light,circle,minimum size=3.75mm] at ([xshift=0mm,yshift=2.25mm]iv6) {};
+\begin{scope}[shift={([xshift=0mm,yshift=2.25mm]iv7)},scale=.675]
+\path[fill=g2HeartRed,draw=white,line width=.4pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}

@@ -1,0 +1,20 @@
+cone,tetrahedron,gb_size,lin_hom,H,I,torus,torus_kind
+1,3,42,true,true,true,true,ones
+10,3,45,true,true,true,true,ones
+11,3,42,true,true,true,true,ones
+13,3,42,true,true,true,true,ones
+14,3,42,true,true,true,true,ones
+38,3,45,true,true,true,true,ones
+101,1,45,true,true,true,true,ones
+102,1,47,true,true,true,true,ones
+103,1,46,true,true,true,true,ones
+104,1,45,true,true,true,true,ones
+105,1,45,true,true,true,true,ones
+106,1,46,true,true,true,true,ones
+120,2,43,true,true,true,true,ones
+121,2,46,true,true,true,true,ones
+122,2,46,true,true,true,true,ones
+123,2,43,true,true,true,true,ones
+124,2,43,true,true,true,true,ones
+125,2,43,true,true,true,true,ones
+# done

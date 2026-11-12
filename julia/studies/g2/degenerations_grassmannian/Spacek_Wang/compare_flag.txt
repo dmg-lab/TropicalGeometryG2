@@ -1,0 +1,14 @@
+word 212121: Chevalley polytope P(omega_1+omega_2): dimension 6, f-vector [22, 76, 120, 104, 50, 12], 64 lattice points, normalized volume 720; values on omega_1 + omega_2 = values on omega_1 + values on omega_2: true
+  summand [1, 0]: dimension 5, f-vector [6, 15, 20, 15, 6], 7 lattice points, normalized volume 2; lattice equivalent to the Chevalley polytope of G2/P1: true
+  summand [0, 1]: dimension 5, f-vector [6, 15, 20, 15, 6], 14 lattice points, normalized volume 18; lattice equivalent to the Chevalley polytope of G2/P2: true
+QQ flag orbit 149 (12 cells, body Unrecognized(6D; 22 vertices, 12 facets), slices 5-simplex + 5-simplex): lattice equivalent to the Chevalley polytope of word 212121; as the pair of summands under one map: true
+QQ flag: 81 toric orbits, 4 with the f-vector of the Chevalley polytope of word 212121 (136, 137, 149, 152), lattice equivalent to it: 149
+GF(2) flag orbit 165 (12 cells, body Unrecognized(6D; 22 vertices, 12 facets), slices 5-simplex + 5-simplex): lattice equivalent to the Chevalley polytope of word 212121; as the pair of summands under one map: true
+GF(2) flag: 83 toric orbits, 4 with the f-vector of the Chevalley polytope of word 212121 (155, 156, 165, 168), lattice equivalent to it: 165
+word 121212: Chevalley polytope P(omega_1+omega_2): dimension 6, f-vector [22, 76, 120, 104, 50, 12], 64 lattice points, normalized volume 720; values on omega_1 + omega_2 = values on omega_1 + values on omega_2: true
+  summand [1, 0]: dimension 5, f-vector [6, 15, 20, 15, 6], 7 lattice points, normalized volume 2; lattice equivalent to the Chevalley polytope of G2/P1: true
+  summand [0, 1]: dimension 5, f-vector [6, 15, 20, 15, 6], 14 lattice points, normalized volume 18; lattice equivalent to the Chevalley polytope of G2/P2: true
+QQ flag orbit 149 (12 cells, body Unrecognized(6D; 22 vertices, 12 facets), slices 5-simplex + 5-simplex): lattice equivalent to the Chevalley polytope of word 121212; as the pair of summands under one map: true
+QQ flag: 81 toric orbits, 4 with the f-vector of the Chevalley polytope of word 121212 (136, 137, 149, 152), lattice equivalent to it: 149
+GF(2) flag orbit 165 (12 cells, body Unrecognized(6D; 22 vertices, 12 facets), slices 5-simplex + 5-simplex): lattice equivalent to the Chevalley polytope of word 121212; as the pair of summands under one map: true
+GF(2) flag: 83 toric orbits, 4 with the f-vector of the Chevalley polytope of word 121212 (155, 156, 165, 168), lattice equivalent to it: 165

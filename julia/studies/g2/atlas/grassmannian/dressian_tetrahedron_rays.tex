@@ -1,0 +1,357 @@
+% The Dressian tetrahedron with QQ rays 34, 9, 40, 6 and the trees of its rays.
+% Indices are those of the stage-3 normalized census fans; the same four rays
+% are GF(2) rays 1, 2, 13, 14 (julia/data/g2/grassmannian_gf2/09_qq_comparison.json).
+% The trees are the fragments field_comparison_assets/tetra/qq_ray_*.tex of
+% export_field_atlas_assets.jl, with plain instead of lettered internal vertices.
+% Compile from this directory; the PDF is output/pdf/g2_dressian_tetrahedron_rays.pdf.
+\documentclass[11pt]{article}
+\usepackage[paperwidth=22.4cm,paperheight=23.5cm,margin=5mm]{geometry}
+\input{../../../../assets/tree_atlas_style.tex}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% Ray 34 of the QQ stage-3 normalized fan.
+\newsavebox{\TetRayA}
+\begin{lrbox}{\TetRayA}%
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\definecolor{g2EdgeBlue}{HTML}{205B7A}
+\tikzset{
+g2tree lettered vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.7pt,inner sep=0pt,minimum size=5.0mm,font={\sffamily\fontsize{10}{10}\selectfont\bfseries},text=white},
+  g2tree pendant/.style={draw=black!43,line width=.6pt,line cap=round},
+  g2tree internal/.style={draw=g2EdgeBlue,line width=2pt,line cap=round},
+  g2tree vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.4pt,inner sep=0pt,minimum size=4.8pt},
+  g2tree dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree weight/.style={circle,fill=white,draw=none,text=black,inner sep=.15pt,minimum size=10.0pt},
+  g2tree aligned pendant/.style={fill=white,text=g2EdgeBlue,inner sep=.7pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont}},
+  g2tree aligned internal/.style={fill=white,text=g2EdgeBlue,inner sep=1pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont\bfseries}},
+}
+\begin{tikzpicture}[x=1.0cm,y=1.0cm,baseline=(current bounding box.center)]
+\coordinate (v1) at (-2.06685,-0.47174);
+\coordinate (v2) at (1.65748,1.32180);
+\coordinate (v3) at (2.06685,-0.47174);
+\coordinate (v4) at (-1.65748,1.32180);
+\coordinate (v5) at (0.91983,-1.91005);
+\coordinate (v6) at (-0.91983,-1.91005);
+\coordinate (v7) at (0.00000,2.12000);
+\coordinate (v8) at (-0.39092,0.31174);
+\coordinate (v9) at (0.39092,-0.31174);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree pendant] (v1)--(v8);
+\draw[g2tree pendant] (v2)--(v9);
+\draw[g2tree pendant] (v3)--(v9);
+\draw[g2tree pendant] (v4)--(v8);
+\draw[g2tree pendant] (v5)--(v9);
+\draw[g2tree pendant] (v6)--(v9);
+\draw[g2tree pendant] (v7)--(v8);
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.00000,0.00000) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.22888,-0.08000) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.02420,0.50503) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.22888,-0.39174) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.02420,0.81677) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.65537,-1.11090) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.26446,-1.11090) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.19546,1.21587) {0};
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree dark,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v1) {1};
+\begin{scope}[shift={(v2)},scale=1.35,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {2};
+\end{scope}
+\node[g2tree dark,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v3) {3};
+\node[g2tree light,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v4) {4};
+\begin{scope}[shift={(v5)},scale=1.35,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {5};
+\end{scope}
+\node[g2tree light,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v6) {6};
+\begin{scope}[shift={(v7)},scale=1.35,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,.35mm) {7};
+\end{scope}
+\end{tikzpicture}
+\endgroup%
+\end{lrbox}
+
+% Ray 9 of the QQ stage-3 normalized fan.
+\newsavebox{\TetRayB}
+\begin{lrbox}{\TetRayB}%
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\definecolor{g2EdgeBlue}{HTML}{205B7A}
+\tikzset{
+g2tree lettered vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.7pt,inner sep=0pt,minimum size=5.0mm,font={\sffamily\fontsize{10}{10}\selectfont\bfseries},text=white},
+  g2tree pendant/.style={draw=black!43,line width=.6pt,line cap=round},
+  g2tree internal/.style={draw=g2EdgeBlue,line width=2pt,line cap=round},
+  g2tree vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.4pt,inner sep=0pt,minimum size=4.8pt},
+  g2tree dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree weight/.style={circle,fill=white,draw=none,text=black,inner sep=.15pt,minimum size=10.0pt},
+  g2tree aligned pendant/.style={fill=white,text=g2EdgeBlue,inner sep=.7pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont}},
+  g2tree aligned internal/.style={fill=white,text=g2EdgeBlue,inner sep=1pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont\bfseries}},
+}
+\begin{tikzpicture}[x=1.0cm,y=1.0cm,baseline=(current bounding box.center)]
+\coordinate (v1) at (1.65748,1.32180);
+\coordinate (v2) at (0.91983,-1.91005);
+\coordinate (v3) at (-0.91983,-1.91005);
+\coordinate (v4) at (2.06685,-0.47174);
+\coordinate (v5) at (-2.06685,-0.47174);
+\coordinate (v6) at (-1.65748,1.32180);
+\coordinate (v7) at (0.00000,2.12000);
+\coordinate (v8) at (0.48746,0.11126);
+\coordinate (v9) at (-0.48746,-0.11126);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree pendant] (v1)--(v8);
+\draw[g2tree pendant] (v2)--(v9);
+\draw[g2tree pendant] (v3)--(v9);
+\draw[g2tree pendant] (v4)--(v8);
+\draw[g2tree pendant] (v5)--(v9);
+\draw[g2tree pendant] (v6)--(v9);
+\draw[g2tree pendant] (v7)--(v9);
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.00000,0.00000) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.07247,0.71653) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.21618,-1.01066) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.70365,-1.01066) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.27716,-0.18024) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.27716,-0.29150) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.07247,0.60527) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.24373,1.00437) {1};
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree dark,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v1) {1};
+\begin{scope}[shift={(v2)},scale=1.35,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {2};
+\end{scope}
+\node[g2tree dark,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v3) {3};
+\node[g2tree light,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v4) {4};
+\begin{scope}[shift={(v5)},scale=1.35,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {5};
+\end{scope}
+\node[g2tree light,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v6) {6};
+\begin{scope}[shift={(v7)},scale=1.35,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,.35mm) {7};
+\end{scope}
+\end{tikzpicture}
+\endgroup%
+\end{lrbox}
+
+% Ray 40 of the QQ stage-3 normalized fan.
+\newsavebox{\TetRayC}
+\begin{lrbox}{\TetRayC}%
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\definecolor{g2EdgeBlue}{HTML}{205B7A}
+\tikzset{
+g2tree lettered vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.7pt,inner sep=0pt,minimum size=5.0mm,font={\sffamily\fontsize{10}{10}\selectfont\bfseries},text=white},
+  g2tree pendant/.style={draw=black!43,line width=.6pt,line cap=round},
+  g2tree internal/.style={draw=g2EdgeBlue,line width=2pt,line cap=round},
+  g2tree vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.4pt,inner sep=0pt,minimum size=4.8pt},
+  g2tree dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree weight/.style={circle,fill=white,draw=none,text=black,inner sep=.15pt,minimum size=10.0pt},
+  g2tree aligned pendant/.style={fill=white,text=g2EdgeBlue,inner sep=.7pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont}},
+  g2tree aligned internal/.style={fill=white,text=g2EdgeBlue,inner sep=1pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont\bfseries}},
+}
+\begin{tikzpicture}[x=1.0cm,y=1.0cm,baseline=(current bounding box.center)]
+\coordinate (v1) at (0.91983,-1.91005);
+\coordinate (v2) at (1.65748,1.32180);
+\coordinate (v3) at (-0.91983,-1.91005);
+\coordinate (v4) at (-2.06685,-0.47174);
+\coordinate (v5) at (-1.65748,1.32180);
+\coordinate (v6) at (2.06685,-0.47174);
+\coordinate (v7) at (0.00000,2.12000);
+\coordinate (v8) at (0.48746,0.11126);
+\coordinate (v9) at (-0.48746,-0.11126);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree pendant] (v1)--(v9);
+\draw[g2tree pendant] (v2)--(v8);
+\draw[g2tree pendant] (v3)--(v9);
+\draw[g2tree pendant] (v4)--(v9);
+\draw[g2tree pendant] (v5)--(v9);
+\draw[g2tree pendant] (v6)--(v8);
+\draw[g2tree pendant] (v7)--(v9);
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.00000,0.00000) {2};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.21618,-1.01066) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.07247,0.71653) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.70365,-1.01066) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.27716,-0.29150) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.07247,0.60527) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.27716,-0.18024) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.24373,1.00437) {1};
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree dark,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v1) {1};
+\begin{scope}[shift={(v2)},scale=1.35,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {2};
+\end{scope}
+\node[g2tree dark,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v3) {3};
+\node[g2tree light,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v4) {4};
+\begin{scope}[shift={(v5)},scale=1.35,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {5};
+\end{scope}
+\node[g2tree light,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v6) {6};
+\begin{scope}[shift={(v7)},scale=1.35,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,.35mm) {7};
+\end{scope}
+\end{tikzpicture}
+\endgroup%
+\end{lrbox}
+
+% Ray 6 of the QQ stage-3 normalized fan.
+\newsavebox{\TetRayD}
+\begin{lrbox}{\TetRayD}%
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\definecolor{g2EdgeBlue}{HTML}{205B7A}
+\tikzset{
+g2tree lettered vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.7pt,inner sep=0pt,minimum size=5.0mm,font={\sffamily\fontsize{10}{10}\selectfont\bfseries},text=white},
+  g2tree pendant/.style={draw=black!43,line width=.6pt,line cap=round},
+  g2tree internal/.style={draw=g2EdgeBlue,line width=2pt,line cap=round},
+  g2tree vertex/.style={circle,fill=g2EdgeBlue,draw=white,line width=.4pt,inner sep=0pt,minimum size=4.8pt},
+  g2tree dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree weight/.style={circle,fill=white,draw=none,text=black,inner sep=.15pt,minimum size=10.0pt},
+  g2tree aligned pendant/.style={fill=white,text=g2EdgeBlue,inner sep=.7pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont}},
+  g2tree aligned internal/.style={fill=white,text=g2EdgeBlue,inner sep=1pt,sloped,above=1pt,font={\sffamily\fontsize{10.25}{10.75}\selectfont\bfseries}},
+}
+\begin{tikzpicture}[x=1.0cm,y=1.0cm,baseline=(current bounding box.center)]
+\coordinate (v1) at (0.91983,-1.91005);
+\coordinate (v2) at (-0.91983,-1.91005);
+\coordinate (v3) at (1.65748,1.32180);
+\coordinate (v4) at (-2.06685,-0.47174);
+\coordinate (v5) at (2.06685,-0.47174);
+\coordinate (v6) at (-1.65748,1.32180);
+\coordinate (v7) at (0.00000,2.12000);
+\coordinate (v8) at (0.48746,0.11126);
+\coordinate (v9) at (-0.48746,-0.11126);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree pendant] (v1)--(v9);
+\draw[g2tree pendant] (v2)--(v9);
+\draw[g2tree pendant] (v3)--(v8);
+\draw[g2tree pendant] (v4)--(v9);
+\draw[g2tree pendant] (v5)--(v8);
+\draw[g2tree pendant] (v6)--(v9);
+\draw[g2tree pendant] (v7)--(v9);
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.00000,0.00000) {2};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (0.21618,-1.01066) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.70365,-1.01066) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.07247,0.71653) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.27716,-0.29150) {1};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (1.27716,-0.18024) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-1.07247,0.60527) {0};
+\node[g2tree weight,font={\sffamily\fontsize{10.25}{10.75}\selectfont}] at (-0.24373,1.00437) {1};
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree dark,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v1) {1};
+\begin{scope}[shift={(v2)},scale=1.35,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {2};
+\end{scope}
+\node[g2tree dark,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v3) {3};
+\node[g2tree light,rectangle,minimum size=6.21mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v4) {4};
+\begin{scope}[shift={(v5)},scale=1.35,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,-.35mm) {5};
+\end{scope}
+\node[g2tree light,circle,minimum size=6.48mm,font={\sffamily\fontsize{12}{12}\selectfont\bfseries}] at (v6) {6};
+\begin{scope}[shift={(v7)},scale=1.35,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\node[font={\sffamily\fontsize{8.888888888888888}{8.888888888888888}\selectfont\bfseries},text=white,inner sep=0pt] at (0mm,.35mm) {7};
+\end{scope}
+\end{tikzpicture}
+\endgroup%
+\end{lrbox}
+
+\tikzset{
+  tet edge/.style={draw=ink!70,line width=1.35pt,line cap=round,line join=round},
+  tet hidden/.style={tet edge,densely dashed,draw=ink!45},
+  tet vertex/.style={circle,draw=ink!60,fill=white,line width=.9pt,minimum size=8.2mm,
+    inner sep=0pt,font=\fontsize{13}{13}\selectfont\bfseries,text=ink},
+  tet leader/.style={draw=coreblue!45,line width=.9pt,line cap=round},
+  tet card/.style={rounded corners=4pt,draw=coreblue!28,fill=white,line width=.8pt},
+  tet ray name/.style={font=\fontsize{13}{15}\selectfont\bfseries,text=ink},
+  tet ray meta/.style={font=\fontsize{10.5}{12}\selectfont,text=muted},
+}
+% #1,#2: card centre; #3: tree box; #4: QQ ray; #5: GF(2) ray; #6: split; #7: orbit size.
+\newcommand{\TetRayCard}[7]{%
+  \path[tet card] (#1-2.9,#2-3.4) rectangle (#1+2.9,#2+3.4);
+  \node[tet ray name] at (#1,#2+2.95)
+    {$\mathbb Q$ ray #4\enspace\textcolor{muted}{\mdseries$=$ GF$(2)$ ray #5}};
+  \node[tet ray meta] at (#1,#2+2.40) {split $#6$\quad orbit of #7 rays};
+  \node[inner sep=0pt] at (#1,#2-.55) {\usebox{#3}};}
+\begin{document}
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \path[use as bounding box] (-10.7,-11.2) rectangle (10.7,11.3);
+
+  \node[anchor=north west,align=left,text width=6.9cm,
+        font=\fontsize{20}{24}\selectfont\bfseries,text=ink] at (-10.4,11.05)
+    {A tetrahedron of the $G_2$-Dressian};
+  \node[anchor=north west,align=flush left,text width=6.6cm,
+        font=\fontsize{11.5}{15.5}\selectfont,text=muted] at (-10.4,9.05)
+    {Maximal cone 190 of the Dressian fan, modulo lineality. Its four rays are
+     rays of the tropical $G_2$-Grassmannian, with the same generators over
+     $\mathbb Q$ and over GF$(2)$.};
+
+  % The projection is symmetric under the stabilizer, which exchanges 40 and 6.
+  \coordinate (P34) at (0,3.2);
+  \coordinate (P40) at (-3.6,-1.2);
+  \coordinate (P6) at (3.6,-1.2);
+  \coordinate (P9) at (0,-3.1);
+  \path[fill=coreblue!17] (P34)--(P40)--(P9)--cycle;
+  \path[fill=coreblue!7] (P34)--(P9)--(P6)--cycle;
+  \draw[tet hidden] (P40)--(P6);
+  \draw[tet edge] (P34)--(P40)--(P9)--(P6)--cycle (P34)--(P9);
+  \draw[tet leader] (P34)--(0,4.2) (P9)--(0,-4.1) (P40)--(-4.6,-1.2) (P6)--(4.6,-1.2);
+  \node[tet vertex] at (P34) {34};
+  \node[tet vertex] at (P40) {40};
+  \node[tet vertex] at (P6) {6};
+  \node[tet vertex] at (P9) {9};
+
+  \TetRayCard{0}{7.6}{\TetRayA}{34}{1}{147\mid2356}{3}
+  \TetRayCard{0}{-7.5}{\TetRayB}{9}{2}{14\mid23567}{3}
+  \TetRayCard{-7.5}{-1.2}{\TetRayC}{40}{13}{26\mid13457}{6}
+  \TetRayCard{7.5}{-1.2}{\TetRayD}{6}{14}{35\mid12467}{6}
+
+  \node[anchor=south west,align=flush left,text width=6.6cm,
+        font=\fontsize{11.5}{15.5}\selectfont,text=muted] at (3.8,-10.9)
+    {Over $\mathbb Q$ the four faces are the maximal cells 71, 132, 140, 159 of
+     the tropical $G_2$-Grassmannian; the open tetrahedron lies only in the
+     Dressian.\\[1.2mm]
+     Edge labels give the primitive Coxeter-balanced tree metric of each ray.
+     Drawn lengths are schematic.};
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,38 @@
+% The tree cert.trees[3][27] of hexagon_certificate.mrdi (see GUIDE.md): the subdivision of the maximal cone
+% C = cert.cones[3] = (297, [1, 4]) of Trop for the coordinate p23_13. Compile with pdflatex.
+%
+%   1(17:.,29:.,33:.,50:2(49:3(45:4(48:.,61:.,63:.,92:.)),52:3(39:4(35:.,48:.,61:.,63:.),45:4(35:.,48:.,61:.,63:.)),
+%     53:3(39:4(37:.,48:.,61:.,63:.),45:4(37:.,48:.,61:.,63:.))),55:.,57:.,68:.,71:.,74:.,89:.,97:.,99:.)
+%
+% Circle h_j: a piece of C, cut along the normal fan of Newt(g_j). Edge t: the part where the t-th term of g_j is minimal.
+% Box: a cell, labelled with its representative f_σ.
+\documentclass[border=4pt]{standalone}
+\usepackage{forest}
+\forestset{
+  cut/.style={draw, circle, inner sep=1pt, minimum size=15pt},
+  cell/.style={draw, rounded corners=2pt, inner sep=2pt, fill=#1},
+  t/.style={edge label={node[pos=1, anchor=south east, font=\scriptsize, inner sep=1pt]{#1}}},
+}
+\begin{document}
+\begin{forest}
+  for tree={grow'=east, parent anchor=east, child anchor=west, anchor=west, l sep=34pt, s sep=2pt, font=\small}
+  [$h_1$, cut, label=left:{$C$}
+    [$h_1$, cell=blue!12, t=17] [$h_1$, cell=blue!12, t=29] [$h_1$, cell=blue!12, t=33]
+    [$h_2$, cut, t=50
+      [$h_3$, cut, t=49
+        [$h_4$, cut, t=45
+          [$h_4$, cell=orange!20, t=48] [$h_4$, cell=orange!20, t=61] [$h_4$, cell=orange!20, t=63] [$h_4$, cell=orange!20, t=92]]]
+      [$h_3$, cut, t=52
+        [$h_4$, cut, t=39
+          [$h_4$, cell=orange!20, t=35] [$h_4$, cell=orange!20, t=48] [$h_4$, cell=orange!20, t=61] [$h_4$, cell=orange!20, t=63]]
+        [$h_4$, cut, t=45
+          [$h_4$, cell=orange!20, t=35] [$h_4$, cell=orange!20, t=48] [$h_4$, cell=orange!20, t=61] [$h_4$, cell=orange!20, t=63]]]
+      [$h_3$, cut, t=53
+        [$h_4$, cut, t=39
+          [$h_4$, cell=orange!20, t=37] [$h_4$, cell=orange!20, t=48] [$h_4$, cell=orange!20, t=61] [$h_4$, cell=orange!20, t=63]]
+        [$h_4$, cut, t=45
+          [$h_4$, cell=orange!20, t=37] [$h_4$, cell=orange!20, t=48] [$h_4$, cell=orange!20, t=61] [$h_4$, cell=orange!20, t=63]]]]
+    [$h_1$, cell=blue!12, t=55] [$h_1$, cell=blue!12, t=57] [$h_1$, cell=blue!12, t=68] [$h_1$, cell=blue!12, t=71]
+    [$h_1$, cell=blue!12, t=74] [$h_1$, cell=blue!12, t=89] [$h_1$, cell=blue!12, t=97] [$h_1$, cell=blue!12, t=99]]
+\end{forest}
+\end{document}

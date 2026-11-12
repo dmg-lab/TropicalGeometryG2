@@ -1,0 +1,2 @@
+experiment,status,supports,pieces,cells,certified,vertices,edges,legs,genus,core_vertices,core_edges,core_valences,multiplicities,balanced,points,point_multiplicities,degree,origin,candidates,target,seconds
+100128,curve,3;8;9;15;21,744;2956;2259;447;18,744;2956;2259;447;18,1;1;1;1;1,228,237,210,10,18,27,3^18,1^414 2^31 4^1 5^1,true,18,1^18,18,,,true,879

@@ -1,0 +1,22 @@
+ideal of the 35 Pfaffians in their coordinates: dimension 6, degree 18
+distinct initial ideals for 160 random admissible term orders: 8
+M1  diagonals {x00-x11, x00-y01, x10-y11}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 5 5 5 5 5 5 6 6
+M2  diagonals {x00-x11, x00-y01, x11-y10}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 4 5 5 5 5 6 6 6
+M3  diagonals {x00-x11, x01-y00, x10-y11}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 5 5 5 5 5 5 5 5 6   <== T11
+M4  diagonals {x00-x11, x01-y00, x11-y10}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 5 5 5 5 5 5 6 6
+M5  diagonals {x01-x10, x00-y01, x10-y11}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 5 5 5 5 5 5 6 6
+M6  diagonals {x01-x10, x00-y01, x11-y10}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 5 5 5 5 5 5 5 5 6   <== T11
+M7  diagonals {x01-x10, x01-y00, x10-y11}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 4 5 5 5 5 6 6 6
+M8  diagonals {x01-x10, x01-y00, x11-y10}  generators 28  simplex u v r  sphere: 11 vertices, 27 edges, valencies 4 4 4 5 5 5 5 5 5 6 6
+dictionary: u = p17, v = p47, w = p14, r = p25, x00 = p27, x01 = p37, x10 = p67, x11 = p13, y00 = p24, y01 = p34, y10 = p16, y11 = p15, z0 = p26, z1 = p35, -w-r = p36
+coarsest cells: 248, of which 167 have the maximum of p14, p25, p36 attained at p36
+M1: cells 35 (12), 39 (17), 43 (11), 68 (7), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15)
+M2: cells 68 (7), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15)
+M3: cells 35 (12), 39 (17), 43 (11), 68 (7), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15), 177 (12), 181 (11), 203 (17)
+M4: cells 68 (7), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15), 177 (12), 181 (11), 203 (17)
+M5: cells 39 (17), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15)
+M6: cells 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15)
+M7: cells 39 (17), 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15), 203 (17)
+M8: cells 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15), 203 (17)
+cells below all eight: 69 (7), 77 (10), 101 (non-toric orbit 15), 125 (10), 131 (non-toric orbit 15)
+the test in 14 variables and the direct test in 21 variables agree on all cells

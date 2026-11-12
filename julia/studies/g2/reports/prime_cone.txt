@@ -1,0 +1,19 @@
+ideal of the split G_2-Grassmannian: 42 generators, dim 6, degree 18
+
+in_w(I): 38 reduced Groebner basis elements
+(2) all binomial            : true
+(3) dim in_w(I) = 6  = dim I : true
+(4) deg in_w(I) = 18  = deg I : true
+(1) IS PRIME                : true
+(5) every binomial is homogeneous for p_ij -> (1, nu(p_ij)): true
+    rank of that grading matrix = 6 (= dim of the affine cone)
+    normalised volume of P_(1,3,2,3,1) = 18
+
+--- the same initial ideal at four points of the relative interior ---
+   lambda B=8               in cone true, prime true, monomial-free true, dim 6, deg 18
+   lambda B=10              in cone true, prime true, monomial-free true, dim 6, deg 18
+   lambda B=12              in cone true, prime true, monomial-free true, dim 6, deg 18
+   sum of the cone's rays   in cone true, prime true, monomial-free true, dim 6, deg 18
+   all four initial ideals are equal: true
+
+CONCLUSION: cone 139 is a PRIME CONE, and in_w(I) is the toric ideal of the 14 lattice points of the lecture-hall simplex.

@@ -1,0 +1,13 @@
+p = 0: dim Lie(Stab_SL7(Phi)) = 14, dim Lie(Stab_GL7(Phi)) = 14
+p = 2: dim Lie(Stab_SL7(Phi)) = 14, dim Lie(Stab_GL7(Phi)) = 14
+p = 3: dim Lie(Stab_SL7(Phi)) = 14, dim Lie(Stab_GL7(Phi)) = 15
+p = 5: dim Lie(Stab_SL7(Phi)) = 14, dim Lie(Stab_GL7(Phi)) = 14
+p = 7: dim Lie(Stab_SL7(Phi)) = 14, dim Lie(Stab_GL7(Phi)) = 14
+elementary divisors: SL_7 system ZZRingElem[1], GL_7 system ZZRingElem[1, 3]
+p = 2, E: dim U^+-invariants = 1, highest weight vector generates dim 14
+p = 2, Lie(G2): dim U^+-invariants = 1, highest weight vector generates dim 14
+p = 3, E: dim U^+-invariants = 2
+p = 3, Lie(G2): dim U^+-invariants = 2
+p = 5, E: dim U^+-invariants = 1, highest weight vector generates dim 14
+p = 5, Lie(G2): dim U^+-invariants = 1, highest weight vector generates dim 14
+E and Lie(G2) are simple with highest weight theta, hence isomorphic, for p = 2, 5; not for p = 3.

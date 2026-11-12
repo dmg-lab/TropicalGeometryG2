@@ -1,0 +1,28 @@
+writing polymake files to julia/data/chevalley
+
+=== Fl(1,3;4) = SL_4/P_{1,3}, adjoint     (A.1)
+    dim X = 5, deg X = 20, commutation classes = 3
+    word 1 2 3 2 1                        vol 20    = deg  verts 14  chevalley-A3-varpi_1-0-1-word_1-2-3-2-1.poly
+    word 3 1 2 3 1                        vol 20    = deg  verts 14  chevalley-A3-varpi_1-0-1-word_3-1-2-3-1.poly
+    word 3 2 1 2 3                        vol 20    = deg  verts 14  chevalley-A3-varpi_1-0-1-word_3-2-1-2-3.poly
+
+=== OG(2,5) = Spin_5/P_2, varpi = 3w_2   (A.2)
+    dim X = 3, deg X = 27, commutation classes = 1
+    word 2 1 2                            vol 27    = deg  verts 4   chevalley-B2-varpi_0-3-word_2-1-2.poly
+
+=== F_4/P_4, coadjoint                   (A.3)
+    dim X = 15, deg X = 78, commutation classes = 2
+    word 4 3 2 3 1 2 3 4 3 2 3 1 2 3 4    vol 48    < deg  verts 25  chevalley-F4-varpi_0-0-0-1-word_4-3-2-3-1-2-3-4-3-2-3-1-2-3-4.poly
+    word 4 3 2 3 4 1 2 3 4 2 3 1 2 3 4    vol 78    = deg  verts 25  chevalley-F4-varpi_0-0-0-1-word_4-3-2-3-4-1-2-3-4-2-3-1-2-3-4.poly
+
+=== G_2/P_2, adjoint                     (A.4)
+    dim X = 5, deg X = 18, commutation classes = 1
+    word 2 1 2 1 2                        vol 18    = deg  verts 6   chevalley-G2-varpi_0-1-word_2-1-2-1-2.poly
+
+=== SG(2,8) = Sp_8/P_2, coadjoint        (A.5)
+    dim X = 11, deg X = 132, commutation classes = 3
+    word 2 3 4 1 2 3 4 2 3 1 2            vol 132   = deg  verts 26  chevalley-C4-varpi_0-1-0-0-word_2-3-4-1-2-3-4-2-3-1-2.poly
+    word 2 3 4 3 1 2 3 4 3 1 2            vol 112   < deg  verts 26  chevalley-C4-varpi_0-1-0-0-word_2-3-4-3-1-2-3-4-3-1-2.poly
+    word 2 3 4 3 2 1 2 3 4 3 2            vol 84    < deg  verts 26  chevalley-C4-varpi_0-1-0-0-word_2-3-4-3-2-1-2-3-4-3-2.poly
+
+wrote 10 polymake files to julia/data/chevalley

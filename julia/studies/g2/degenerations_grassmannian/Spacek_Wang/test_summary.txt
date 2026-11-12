@@ -1,0 +1,90 @@
+===========================================================================
+A.1  adjoint two-step flag variety  Fl(1,3;4) = SL_4/P_{1,3},  varpi = w1 + w3
+===========================================================================
+
+--- A_3, s_1 = s3 s2 s1 s2 s3 ---
+  dim X = 5, dim V = 15, adapted basis = false
+  ok   degree (Borel-Hirzebruch): got 20
+  ok   normalised volume: got 20
+  ok   IDP: got true
+  ok   vertex set matches the paper: got true
+
+--- A_3, s_2 = s3 s1 s2 s1 s3 ---
+  dim X = 5, dim V = 15, adapted basis = false
+  ok   degree (Borel-Hirzebruch): got 20
+  ok   normalised volume: got 20
+  ok   IDP: got true
+  ok   vertex set matches the paper: got true
+
+===========================================================================
+A.2  maximal orthogonal Grassmannian  OG(2,5) = Spin_5/P_2,  varpi = 3 w2
+===========================================================================
+
+--- B_2, s = s2 s1 s2 ---
+  dim X = 3, dim V = 20, adapted basis = false
+  ok   degree (Borel-Hirzebruch): got 27
+  ok   normalised volume: got 27
+  ok   IDP: got true
+
+===========================================================================
+A.3  coadjoint F_4-Grassmannian  F_4/P_4,  varpi = w4
+===========================================================================
+
+--- F_4, s_1 = ... (s4 s3 s4) ... ---
+  dim X = 15, dim V = 26, adapted basis = true
+  ok   degree (Borel-Hirzebruch): got 78
+  ok   normalised volume: got 78
+  ok   IDP: got true
+
+--- F_4, s_2 = ... (s3 s4 s3) ...  [paper says 63] ---
+  dim X = 15, dim V = 26, adapted basis = true
+  ok   degree (Borel-Hirzebruch): got 78
+  ok   normalised volume: got 48
+
+===========================================================================
+A.4  adjoint G_2-Grassmannian  G_2/P_2,  varpi = w2
+===========================================================================
+
+--- G_2, s = s2 s1 s2 s1 s2 ---
+  dim X = 5, dim V = 14, adapted basis = true
+  ok   degree (Borel-Hirzebruch): got 18
+  ok   normalised volume: got 18
+  ok   number of vertices: got 6
+  ok   IDP: got true
+  ok   G_2 polytope is the lecture-hall simplex P_(1,3,2,3,1): got true
+
+===========================================================================
+A.5  coadjoint isotropic Grassmannian  SG(2,8) = Sp_8/P_2,  varpi = w2
+===========================================================================
+
+--- C_4, s_1 ---
+  dim X = 11, dim V = 27, adapted basis = true
+  ok   degree (Borel-Hirzebruch): got 132
+  ok   normalised volume: got 84
+
+--- C_4, s_2  [paper says 105] ---
+  dim X = 11, dim V = 27, adapted basis = true
+  ok   degree (Borel-Hirzebruch): got 132
+  ok   normalised volume: got 112
+
+--- C_4, s_3 ---
+  dim X = 11, dim V = 27, adapted basis = false
+  ok   degree (Borel-Hirzebruch): got 132
+  ok   normalised volume: got 132
+  ok   IDP: got true
+
+===========================================================================
+Conjecture "decomposition": subword embeddings (Appendix A.1)
+===========================================================================
+
+--- A_3, s_1 ---
+  ok   Minkowski decomposition exists: got true
+  ok   embedding positions match the paper: got [1 => [3, 4, 5], 3 => [1, 2, 3]]
+
+--- A_3, s_2 ---
+  ok   Minkowski decomposition exists: got true
+  ok   embedding positions match the paper: got [1 => [2, 3, 5], 3 => [1, 3, 4]]
+
+===========================================================================
+passed: 32   failed: 0
+===========================================================================

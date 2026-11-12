@@ -1,0 +1,22 @@
+generators: 42, all coefficients +-1: true
+linear forms: 7, quadrics: 35
+sigma = [1, 2, 3, 4, 5, 6, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [1, 3, 2, 4, 6, 5, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [2, 1, 3, 5, 4, 6, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [2, 3, 1, 5, 6, 4, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [3, 1, 2, 6, 4, 5, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [3, 2, 1, 6, 5, 4, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [4, 5, 6, 1, 2, 3, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [4, 6, 5, 1, 3, 2, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [5, 4, 6, 2, 1, 3, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [5, 6, 4, 2, 3, 1, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [6, 4, 5, 3, 1, 2, 7]  signs = [-1, 1, 1, -1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+sigma = [6, 5, 4, 3, 2, 1, 7]  signs = [1, 1, 1, 1, 1, 1, 1]: linear forms -> ZZ-span of linear forms, quadrics -> ZZ-span of quadrics
+all 12 taxon permutations act by signed permutations preserving I over ZZ
+witness f = -p14*p45*p67 + 2*p17*p27*p37 - p26*p45*p57 - p35*p46*p67 + p36*p47*p56;  f = sum_j c_j gens_j over ZZ: true
+tetrahedra (7-dim cones of the prevariety): 3
+all terms of f have equal weight along the lineality space: true
+tetrahedron 1 (4 rays): p15*p46*p47 + 2*p17*p27*p37 + p24*p56*p57 + p25*p45*p67 + p36*p46*p57  [2-term strictly minimal on the open cell; in I over ZZ with cofactors: true]
+tetrahedron 2 (4 rays): -p16*p45*p47 - 2*p17*p27*p37 - p25*p45*p67 + p34*p56*p67 - p36*p46*p57  [2-term strictly minimal on the open cell; in I over ZZ with cofactors: true]
+tetrahedron 3 (4 rays): -p14*p45*p67 + 2*p17*p27*p37 - p26*p45*p57 - p35*p46*p67 + p36*p47*p56  [2-term strictly minimal on the open cell; in I over ZZ with cofactors: true]
+saved certificates/witness.mrdi

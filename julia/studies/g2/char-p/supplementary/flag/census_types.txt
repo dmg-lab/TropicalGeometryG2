@@ -1,0 +1,2 @@
+census 02_coarsest_fan.mrdi, maximal cells by number of rays: [4 => 2588, 5 => 108, 6 => 18]
+f-vector: ZZRingElem[0, 0, 0, 1, 141, 1352, 3584, 2714]

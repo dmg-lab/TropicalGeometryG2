@@ -1,0 +1,1 @@
+flag rays: 141; image in lineality of trop(G): 7; on a ray of trop(G): 134 (51 of 51 rays hit); other: 0

@@ -1,0 +1,33 @@
+V(omega_2): 14 essential exponents; Definition 11.5 at (0,1): 14 lattice points; equal: true
+V(2 omega_2): 77 essential exponents; Definition 11.5 at (0,2): 77 lattice points; equal: true; S(2 omega_2) = S(omega_2) + S(omega_2): true
+homogeneous lexicographic order instead: equal to Definition 11.5: false
+essential exponents (p_1..p_6) of V(omega_2): 000000 000010 000100 001000 001010 010000 010010 010100 100000 100010 100100 101000 110000 200000
+FFL polytope: dimension 5, f-vector [13, 38, 48, 30, 9], 14 lattice points, normalized volume 18, lattice polytope: true
+type  1 (QQ orbit 29): f-vector [6, 15, 20, 15, 6], lattice equivalent to FFL: false
+type  2 (QQ orbit 27): f-vector [6, 15, 20, 15, 6], lattice equivalent to FFL: false
+type  3 (QQ orbit  9): f-vector [7, 19, 26, 19, 7], lattice equivalent to FFL: false
+type  4 (QQ orbit 20): f-vector [7, 19, 26, 19, 7], lattice equivalent to FFL: false
+type  5 (QQ orbit  7): f-vector [9, 26, 35, 24, 8], lattice equivalent to FFL: false
+type  6 (QQ orbit 23): f-vector [9, 26, 35, 24, 8], lattice equivalent to FFL: false
+type  7 (QQ orbit 22): f-vector [13, 38, 48, 30, 9], lattice equivalent to FFL: true
+type  8 (QQ orbit  2): f-vector [8, 23, 32, 23, 8], lattice equivalent to FFL: false
+type  9 (QQ orbit 10): f-vector [8, 23, 32, 23, 8], lattice equivalent to FFL: false
+type 10 (QQ orbit 14): f-vector [11, 33, 44, 29, 9], lattice equivalent to FFL: false
+type 11 (QQ orbit 21): f-vector [11, 33, 44, 29, 9], lattice equivalent to FFL: false
+type 12 (QQ orbit 19): f-vector [11, 33, 44, 29, 9], lattice equivalent to FFL: false
+type 13 (QQ orbit 25): f-vector [10, 33, 50, 37, 12], lattice equivalent to FFL: false
+type 14 (QQ orbit 26): f-vector [10, 33, 50, 37, 12], lattice equivalent to FFL: false
+type 15 (QQ orbit  4): f-vector [9, 27, 38, 27, 9], lattice equivalent to FFL: false
+type 16 (QQ orbit  1): f-vector [9, 27, 38, 27, 9], lattice equivalent to FFL: false
+type 17 (QQ orbit  8): f-vector [10, 30, 41, 28, 9], lattice equivalent to FFL: false
+type 18 (GF(2) orbit  9): f-vector [7, 19, 26, 19, 7], lattice equivalent to FFL: false
+type 19 (GF(2) orbit 20): f-vector [7, 19, 26, 19, 7], lattice equivalent to FFL: false
+type 20 (GF(2) orbit  1): f-vector [9, 26, 35, 24, 8], lattice equivalent to FFL: false
+types lattice equivalent to the FFL polytope P(omega_2): 7
+V(omega_1): 7 essential exponents; Definition 11.5 at (1,0): 7 lattice points; equal: true
+V(omega_1+omega_2): 64 essential exponents; Definition 11.5 at (1,1): 64 lattice points; equal: true; S(omega_1+omega_2) = S(omega_1) + S(omega_2): true
+FFL polytope P(omega_1+omega_2): dimension 6, f-vector [35, 123, 185, 146, 62, 13], 64 lattice points, normalized volume 720, lattice polytope: true
+QQ flag orbit 64 (6 cells, body Wedge(Unrecognized(5D; 21 vertices, 11 facets); face=Wedge(4-gon; face=point)), slices Pyramid(Pyramid(Pyramid(4-gon))) + Wedge(Wedge(Pyramid(4-gon); face=segment); face=3-gon)): lattice equivalent to P(omega_1+omega_2); as the pair of summands under one map: true
+QQ flag: 81 toric orbits, 2 with the f-vector of P(omega_1+omega_2) (64, 67), lattice equivalent to it: 64
+GF(2) flag orbit 88 (6 cells, body Wedge(Unrecognized(5D; 21 vertices, 11 facets); face=Wedge(4-gon; face=point)), slices Pyramid(Pyramid(Pyramid(4-gon))) + Wedge(Wedge(Pyramid(4-gon); face=segment); face=3-gon)): lattice equivalent to P(omega_1+omega_2); as the pair of summands under one map: true
+GF(2) flag: 83 toric orbits, 2 with the f-vector of P(omega_1+omega_2) (88, 91), lattice equivalent to it: 88

@@ -1,0 +1,7 @@
+constructed cells: 2714, rays: 141
+f-vector (mod lineality): ZZRingElem[0, 0, 0, 1, 141, 1352, 3584, 2714]   census: (141, 1352, 3584, 2714)
+maximal cells by number of rays: [4 => 2588, 5 => 108, 6 => 18]   census: 2564 tetrahedra, 108 square pyramids (5 rays), 42 triangular prisms (6 rays)
+maximal cells by (rays, facets): [(4, 4) => 2588, (5, 5) => 108, (6, 5) => 18]   [tetrahedron (4,4), square pyramid (5,5), triangular bipyramid (5,6), triangular prism (6,5), octahedron (6,8)]
+number of taxon permutations: 12
+Weyl orbits on maximal cells: 270   census: 270
+Weyl orbits on rays: 27   census: 27

@@ -1,0 +1,430 @@
+% decorated_graph_1_reduced.csv: the core and the regions of its cells, with their G2-trees and types. Written by curve_portraits.jl.
+\documentclass[12pt,tikz,border=1pt]{standalone}
+\usepackage{amsmath,pdfrender}
+% The types as main.tex writes them.
+\providecommand{\celltype}[1]{\text{\textpdfrender{TextRenderingMode=Fill,LineWidth=.05pt}{\normalfont\bfseries\oldstylenums{#1}}}}
+\begin{document}
+\begingroup
+\definecolor{g2TaxonBlue}{HTML}{1676A3}
+\definecolor{g2TaxonYellow}{HTML}{E39A24}
+\definecolor{g2HeartRed}{HTML}{D7443E}
+\tikzset{
+  g2tree pendant/.style={draw=black,line width=.6pt,line cap=round},
+  g2tree internal/.style={draw=black,line width=2pt,line cap=round},
+  g2tree vertex/.style={circle,fill=black,draw=white,line width=.4pt,inner sep=0pt,minimum size=3.8pt},
+  g2tree dark/.style={fill=g2TaxonBlue,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree light/.style={fill=g2TaxonYellow,draw=white,line width=.55pt,text=white,inner sep=0pt},
+  g2tree weight/.style={circle,fill=white,draw=none,text=black,inner sep=.15pt,minimum size=8.5pt},
+  g2tree aligned pendant/.style={fill=white,text=black,inner sep=.7pt,sloped,above=1pt,font={\sffamily\fontsize{7.5}{8}\selectfont}},
+  g2tree aligned internal/.style={fill=white,text=black,inner sep=1pt,sloped,above=1pt,font={\sffamily\fontsize{7.5}{8}\selectfont\bfseries}},
+}
+\definecolor{cell68}{HTML}{1676A3}
+\definecolor{cell43}{HTML}{647584}
+\definecolor{cell181}{HTML}{D7443E}
+\definecolor{cell35}{HTML}{E39A24}
+\definecolor{cell177}{HTML}{7CB342}
+\begin{tikzpicture}[x=1cm,y=1cm]
+\useasboundingbox (0,0) rectangle (9.1014550153523,6.7418008673876235);
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.2196,4.3027) -- (5.8657,3.7940) -- (6.2768,3.6433) -- (6.5725,4.1523) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (5.6622,5.4236) -- (4.5529,5.6557) -- (4.9352,5.3143) -- (5.4167,5.2768) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (5.4167,5.2768) -- (6.2196,4.3027) -- (6.5725,4.1523) -- (5.6622,5.4236) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (4.5529,5.6557) -- (3.6097,5.1640) -- (4.2987,4.7471) -- (4.9352,5.3143) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.7955,3.8518) -- (5.1591,3.5372) -- (5.8657,3.7940) -- (6.2196,4.3027) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (5.4167,5.2768) -- (4.9352,5.3143) -- (4.2987,4.7471) -- (4.4253,4.5286) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (4.4253,4.5286) -- (4.7955,3.8518) -- (6.2196,4.3027) -- (5.4167,5.2768) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.9902,4.2817) -- (2.4473,3.2474) -- (2.8626,3.1794) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (2.8626,3.1794) -- (3.4177,2.4896) -- (3.9108,2.4552) -- (4.3876,2.7925) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.3876,2.7925) -- (4.9456,2.9119) -- (5.1591,3.5372) -- (4.7955,3.8518) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (4.4253,4.5286) -- (4.2987,4.7471) -- (3.6097,5.1640) -- (2.9902,4.2817) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (3.8321,3.6885) -- (2.9902,4.2817) -- (2.8626,3.1794) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (3.8321,3.6885) -- (2.8626,3.1794) -- (4.3876,2.7925) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (3.8321,3.6885) -- (4.3876,2.7925) -- (4.7955,3.8518) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (3.8321,3.6885) -- (4.7955,3.8518) -- (4.4253,4.5286) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (3.8321,3.6885) -- (4.4253,4.5286) -- (2.9902,4.2817) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (5.9811,1.3762) -- (6.6542,2.2578) -- (6.2712,2.3483) -- (5.7053,1.4854) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (4.7535,1.3710) -- (3.9108,2.4552) -- (3.4177,2.4896) -- (2.9896,2.0524) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.9896,2.0524) -- (2.5436,2.1628) -- (3.2667,1.3823) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.8307,1.0861) -- (5.9811,1.3762) -- (5.7053,1.4854) -- (5.1834,1.5566) -- (4.7535,1.3710) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (4.7535,1.3710) -- (2.9896,2.0524) -- (3.2667,1.3823) -- (4.8307,1.0861) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.7535,1.3710) -- (5.1834,1.5566) -- (5.3416,2.3830) -- (4.9456,2.9119) -- (4.3876,2.7925) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (4.3876,2.7925) -- (3.9108,2.4552) -- (4.7535,1.3710) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (2.9896,2.0524) -- (3.4177,2.4896) -- (2.8626,3.1794) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.8626,3.1794) -- (2.4473,3.2474) -- (2.5436,2.1628) -- (2.9896,2.0524) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.6542,2.2578) -- (6.2768,3.6433) -- (5.8657,3.7940) -- (5.1591,3.5372) -- (4.9456,2.9119) -- (5.3416,2.3830) -- (6.2712,2.3483) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (5.7053,1.4854) -- (6.2712,2.3483) -- (5.3416,2.3830) -- (5.1834,1.5566) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.5725,4.1523) -- (6.2768,3.6433) -- (6.6542,2.2578) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.4473,3.2474) -- (2.5436,2.1628) -- (2.3686,2.1472) -- (2.2722,3.2319) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.5436,2.1628) -- (3.2667,1.3823) -- (3.1378,1.2629) -- (2.4147,2.0433) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (3.2667,1.3823) -- (4.8307,1.0861) -- (4.7980,0.9134) -- (3.2340,1.2097) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.8307,1.0861) -- (5.9811,1.3762) -- (6.0241,1.2058) -- (4.8737,0.9157) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (5.9811,1.3762) -- (6.6542,2.2578) -- (6.7939,2.1511) -- (6.1208,1.2695) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.6542,2.2578) -- (6.5725,4.1523) -- (6.7481,4.1599) -- (6.8298,2.2654) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (6.5725,4.1523) -- (5.6622,5.4236) -- (5.8051,5.5259) -- (6.7154,4.2546) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (5.6622,5.4236) -- (4.5529,5.6557) -- (4.5889,5.8277) -- (5.6982,5.5956) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (4.5529,5.6557) -- (3.6097,5.1640) -- (3.5285,5.3199) -- (4.4716,5.8116) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (3.6097,5.1640) -- (2.9902,4.2817) -- (2.8463,4.3827) -- (3.4659,5.2650) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.9902,4.2817) -- (2.4473,3.2474) -- (2.2917,3.3291) -- (2.8346,4.3634) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.4473,3.2474) -- (2.2917,3.3291) -- (2.2885,3.3227) -- (2.2855,3.3161) -- (2.2829,3.3095) -- (2.2805,3.3027) -- (2.2783,3.2958) -- (2.2765,3.2889) -- (2.2749,3.2819) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.4473,3.2474) -- (2.2749,3.2819) -- (2.2737,3.2748) -- (2.2727,3.2677) -- (2.2720,3.2606) -- (2.2716,3.2534) -- (2.2715,3.2462) -- (2.2717,3.2390) -- (2.2722,3.2319) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.5436,2.1628) -- (2.3686,2.1472) -- (2.3695,2.1390) -- (2.3708,2.1308) -- (2.3725,2.1228) -- (2.3746,2.1148) -- (2.3770,2.1069) -- (2.3798,2.0991) -- (2.3830,2.0914) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.5436,2.1628) -- (2.3830,2.0914) -- (2.3865,2.0840) -- (2.3904,2.0767) -- (2.3946,2.0696) -- (2.3992,2.0627) -- (2.4040,2.0560) -- (2.4092,2.0495) -- (2.4147,2.0433) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (3.2667,1.3823) -- (3.1378,1.2629) -- (3.1433,1.2572) -- (3.1491,1.2517) -- (3.1552,1.2465) -- (3.1615,1.2416) -- (3.1680,1.2369) -- (3.1747,1.2326) -- (3.1816,1.2286) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (3.2667,1.3823) -- (3.1816,1.2286) -- (3.1887,1.2249) -- (3.1959,1.2215) -- (3.2033,1.2184) -- (3.2108,1.2157) -- (3.2184,1.2134) -- (3.2261,1.2114) -- (3.2340,1.2097) -- cycle;
+\fill[cell68!22,draw=cell68!22,line width=.25pt,line join=round] (4.8307,1.0861) -- (4.7980,0.9134) -- (4.8034,0.9125) -- (4.8088,0.9117) -- (4.8142,0.9111) -- (4.8196,0.9107) -- (4.8250,0.9104) -- (4.8305,0.9103) -- (4.8359,0.9104) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (4.8307,1.0861) -- (4.8359,0.9104) -- (4.8414,0.9107) -- (4.8468,0.9111) -- (4.8522,0.9117) -- (4.8576,0.9124) -- (4.8630,0.9133) -- (4.8684,0.9144) -- (4.8737,0.9157) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (5.9811,1.3762) -- (6.0241,1.2058) -- (6.0322,1.2080) -- (6.0402,1.2107) -- (6.0481,1.2137) -- (6.0558,1.2171) -- (6.0634,1.2209) -- (6.0707,1.2250) -- (6.0779,1.2294) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (5.9811,1.3762) -- (6.0779,1.2294) -- (6.0848,1.2343) -- (6.0915,1.2394) -- (6.0979,1.2448) -- (6.1041,1.2506) -- (6.1100,1.2566) -- (6.1156,1.2630) -- (6.1208,1.2695) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.6542,2.2578) -- (6.7939,2.1511) -- (6.7990,2.1582) -- (6.8038,2.1655) -- (6.8081,2.1731) -- (6.8122,2.1808) -- (6.8158,2.1887) -- (6.8190,2.1968) -- (6.8218,2.2051) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.6542,2.2578) -- (6.8218,2.2051) -- (6.8242,2.2135) -- (6.8262,2.2220) -- (6.8278,2.2306) -- (6.8289,2.2392) -- (6.8296,2.2479) -- (6.8299,2.2566) -- (6.8298,2.2654) -- cycle;
+\fill[cell177!22,draw=cell177!22,line width=.25pt,line join=round] (6.5725,4.1523) -- (6.7481,4.1599) -- (6.7476,4.1671) -- (6.7468,4.1744) -- (6.7458,4.1815) -- (6.7444,4.1887) -- (6.7428,4.1957) -- (6.7408,4.2027) -- (6.7386,4.2097) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (6.5725,4.1523) -- (6.7386,4.2097) -- (6.7361,4.2165) -- (6.7333,4.2232) -- (6.7302,4.2297) -- (6.7269,4.2362) -- (6.7233,4.2425) -- (6.7195,4.2487) -- (6.7154,4.2546) -- cycle;
+\fill[cell181!22,draw=cell181!22,line width=.25pt,line join=round] (5.6622,5.4236) -- (5.8051,5.5259) -- (5.7994,5.5334) -- (5.7934,5.5405) -- (5.7870,5.5473) -- (5.7803,5.5537) -- (5.7732,5.5598) -- (5.7658,5.5655) -- (5.7582,5.5708) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (5.6622,5.4236) -- (5.7582,5.5708) -- (5.7502,5.5757) -- (5.7420,5.5802) -- (5.7336,5.5842) -- (5.7250,5.5877) -- (5.7162,5.5908) -- (5.7072,5.5935) -- (5.6982,5.5956) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (4.5529,5.6557) -- (4.5889,5.8277) -- (4.5804,5.8293) -- (4.5718,5.8304) -- (4.5632,5.8312) -- (4.5546,5.8315) -- (4.5460,5.8313) -- (4.5374,5.8308) -- (4.5288,5.8298) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (4.5529,5.6557) -- (4.5288,5.8298) -- (4.5203,5.8284) -- (4.5119,5.8266) -- (4.5036,5.8244) -- (4.4954,5.8218) -- (4.4873,5.8188) -- (4.4794,5.8154) -- (4.4716,5.8116) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (3.6097,5.1640) -- (3.5285,5.3199) -- (3.5232,5.3170) -- (3.5181,5.3140) -- (3.5130,5.3107) -- (3.5080,5.3074) -- (3.5032,5.3038) -- (3.4985,5.3001) -- (3.4939,5.2962) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (3.6097,5.1640) -- (3.4939,5.2962) -- (3.4895,5.2922) -- (3.4852,5.2880) -- (3.4810,5.2837) -- (3.4770,5.2792) -- (3.4731,5.2746) -- (3.4695,5.2699) -- (3.4659,5.2650) -- cycle;
+\fill[cell43!22,draw=cell43!22,line width=.25pt,line join=round] (2.9902,4.2817) -- (2.8463,4.3827) -- (2.8454,4.3814) -- (2.8445,4.3800) -- (2.8436,4.3787) -- (2.8427,4.3773) -- (2.8419,4.3760) -- (2.8410,4.3746) -- (2.8401,4.3732) -- cycle;
+\fill[cell35!22,draw=cell35!22,line width=.25pt,line join=round] (2.9902,4.2817) -- (2.8401,4.3732) -- (2.8393,4.3719) -- (2.8385,4.3705) -- (2.8377,4.3691) -- (2.8369,4.3677) -- (2.8361,4.3662) -- (2.8353,4.3648) -- (2.8346,4.3634) -- cycle;
+\draw[white,line width=.8pt,line cap=round] (5.4167,5.2768) -- (5.6622,5.4236);
+\draw[white,line width=.8pt,line cap=round] (3.8321,3.6885) -- (4.4253,4.5286);
+\draw[white,line width=.8pt,line cap=round] (2.9902,4.2817) -- (3.8321,3.6885);
+\draw[white,line width=.8pt,line cap=round] (4.4253,4.5286) -- (5.4167,5.2768);
+\draw[white,line width=.8pt,line cap=round] (3.8321,3.6885) -- (4.3876,2.7925);
+\draw[white,line width=.8pt,line cap=round] (3.8321,3.6885) -- (4.7955,3.8518);
+\draw[white,line width=.8pt,line cap=round] (4.7955,3.8518) -- (6.2196,4.3027);
+\draw[white,line width=.8pt,line cap=round] (2.8626,3.1794) -- (2.9896,2.0524);
+\draw[white,line width=.8pt,line cap=round] (4.3876,2.7925) -- (4.7534,1.3710);
+\draw[white,line width=.8pt,line cap=round] (4.7534,1.3710) -- (4.8307,1.0861);
+\draw[white,line width=.8pt,line cap=round] (2.9896,2.0524) -- (3.2667,1.3823);
+\draw[white,line width=.8pt,line cap=round] (6.2196,4.3027) -- (6.5725,4.1523);
+\draw[white,line width=.8pt,line cap=round] (2.8626,3.1794) -- (3.8321,3.6885);
+\draw[cell43,line width=.7pt] (2.1473,5.6682) -- (3.5949,4.7184);
+\draw[cell35,line width=.7pt] (2.1473,3.3709) -- (2.6616,3.3762);
+\draw[cell68,line width=.7pt] (2.1473,1.0736) -- (3.4052,1.6730);
+\draw[cell181,line width=.7pt] (6.9542,5.6682) -- (5.7753,4.8367);
+\draw[cell177,line width=.7pt] (6.9542,1.0736) -- (6.1224,1.8940);
+\draw[cell177,line width=1.5pt,line cap=round] (6.6542,2.2578) -- (5.9811,1.3762);
+\draw[cell43,line width=1.5pt,line cap=round] (4.5529,5.6557) -- (5.6622,5.4236);
+\draw[cell177,line width=1.5pt,line cap=round] (6.5725,4.1523) -- (6.2768,3.6433);
+\draw[cell181,line width=1.5pt,line cap=round] (5.6622,5.4236) -- (6.5725,4.1523);
+\draw[cell43,line width=1.5pt,line cap=round] (4.9352,5.3143) -- (4.5529,5.6557);
+\draw[cell43,line width=1.5pt,line cap=round] (3.6097,5.1640) -- (4.5529,5.6557);
+\draw[cell43,line width=1.5pt,line cap=round] (4.9352,5.3143) -- (5.4167,5.2768);
+\draw[cell177,line width=1.5pt,line cap=round] (6.2196,4.3027) -- (5.8657,3.7940);
+\draw[cell181,line width=1.5pt,line cap=round] (5.4167,5.2768) -- (6.2196,4.3027);
+\draw[cell43,line width=1.5pt,line cap=round] (4.2987,4.7471) -- (4.9352,5.3143);
+\draw[cell35,line width=1.5pt,line cap=round] (2.9902,4.2817) -- (2.4473,3.2474);
+\draw[cell43,line width=1.5pt,line cap=round] (3.6097,5.1640) -- (2.9902,4.2817);
+\draw[cell43,line width=1.5pt,line cap=round] (4.2987,4.7471) -- (3.6097,5.1640);
+\draw[cell68,line width=1.5pt,line cap=round] (3.9108,2.4552) -- (4.3876,2.7925);
+\draw[cell177,line width=1.5pt,line cap=round] (4.9456,2.9119) -- (4.3876,2.7925);
+\draw[cell43,line width=1.5pt,line cap=round] (4.2987,4.7471) -- (4.4253,4.5286);
+\draw[cell177,line width=1.5pt,line cap=round] (4.7955,3.8518) -- (5.1591,3.5372);
+\draw[cell181,line width=1.5pt,line cap=round] (4.4253,4.5286) -- (4.7955,3.8518);
+\draw[cell177,line width=1.5pt,line cap=round] (5.7053,1.4854) -- (5.9811,1.3762);
+\draw[cell35,line width=1.5pt,line cap=round] (3.2667,1.3823) -- (2.5436,2.1628);
+\draw[cell68,line width=1.5pt,line cap=round] (3.2667,1.3823) -- (4.8307,1.0861);
+\draw[cell177,line width=1.5pt,line cap=round] (4.8307,1.0861) -- (5.9811,1.3762);
+\draw[cell68,line width=1.5pt,line cap=round] (3.9108,2.4552) -- (4.7535,1.3710);
+\draw[cell177,line width=1.5pt,line cap=round] (5.1834,1.5566) -- (4.7535,1.3710);
+\draw[cell68,line width=1.5pt,line cap=round] (3.4177,2.4896) -- (3.9108,2.4552);
+\draw[cell35,line width=1.5pt,line cap=round] (2.5436,2.1628) -- (2.4473,3.2474);
+\draw[cell35,line width=1.5pt,line cap=round] (2.8626,3.1794) -- (2.4473,3.2474);
+\draw[cell68,line width=1.5pt,line cap=round] (3.4177,2.4896) -- (2.8626,3.1794);
+\draw[cell35,line width=1.5pt,line cap=round] (2.9896,2.0524) -- (2.5436,2.1628);
+\draw[cell68,line width=1.5pt,line cap=round] (3.4177,2.4896) -- (2.9896,2.0524);
+\draw[cell177,line width=1.5pt,line cap=round] (6.2712,2.3483) -- (5.7053,1.4854);
+\draw[cell177,line width=1.5pt,line cap=round] (5.3416,2.3830) -- (5.1834,1.5566);
+\draw[cell177,line width=1.5pt,line cap=round] (5.1834,1.5566) -- (5.7053,1.4854);
+\draw[cell177,line width=1.5pt,line cap=round] (6.2712,2.3483) -- (6.6542,2.2578);
+\draw[cell177,line width=1.5pt,line cap=round] (5.8657,3.7940) -- (6.2768,3.6433);
+\draw[cell177,line width=1.5pt,line cap=round] (6.2768,3.6433) -- (6.6542,2.2578);
+\draw[cell177,line width=1.5pt,line cap=round] (5.3416,2.3830) -- (4.9456,2.9119);
+\draw[cell177,line width=1.5pt,line cap=round] (5.1591,3.5372) -- (5.8657,3.7940);
+\draw[cell177,line width=1.5pt,line cap=round] (5.1591,3.5372) -- (4.9456,2.9119);
+\draw[cell177,line width=1.5pt,line cap=round] (5.3416,2.3830) -- (6.2712,2.3483);
+\fill[cell43] (4.5529,5.6557) circle (2.5pt);
+\draw[white,line width=.5pt] (4.5529,5.6557) circle (2.5pt);
+\fill[cell43] (4.9352,5.3143) circle (2.5pt);
+\draw[white,line width=.5pt] (4.9352,5.3143) circle (2.5pt);
+\fill[cell43] (3.6097,5.1640) circle (2.5pt);
+\draw[white,line width=.5pt] (3.6097,5.1640) circle (2.5pt);
+\fill[cell43] (4.2987,4.7471) circle (2.5pt);
+\draw[white,line width=.5pt] (4.2987,4.7471) circle (2.5pt);
+\fill[cell177] (5.9811,1.3762) circle (2.5pt);
+\draw[white,line width=.5pt] (5.9811,1.3762) circle (2.5pt);
+\fill[cell68] (3.9108,2.4552) circle (2.5pt);
+\draw[white,line width=.5pt] (3.9108,2.4552) circle (2.5pt);
+\fill[cell35] (2.4473,3.2474) circle (2.5pt);
+\draw[white,line width=.5pt] (2.4473,3.2474) circle (2.5pt);
+\fill[cell35] (2.5436,2.1628) circle (2.5pt);
+\draw[white,line width=.5pt] (2.5436,2.1628) circle (2.5pt);
+\fill[cell68] (3.4177,2.4896) circle (2.5pt);
+\draw[white,line width=.5pt] (3.4177,2.4896) circle (2.5pt);
+\fill[cell177] (6.6542,2.2578) circle (2.5pt);
+\draw[white,line width=.5pt] (6.6542,2.2578) circle (2.5pt);
+\fill[cell177] (6.2768,3.6433) circle (2.5pt);
+\draw[white,line width=.5pt] (6.2768,3.6433) circle (2.5pt);
+\fill[cell177] (5.8657,3.7940) circle (2.5pt);
+\draw[white,line width=.5pt] (5.8657,3.7940) circle (2.5pt);
+\fill[cell177] (4.9456,2.9119) circle (2.5pt);
+\draw[white,line width=.5pt] (4.9456,2.9119) circle (2.5pt);
+\fill[cell177] (5.1591,3.5372) circle (2.5pt);
+\draw[white,line width=.5pt] (5.1591,3.5372) circle (2.5pt);
+\fill[cell177] (5.7053,1.4854) circle (2.5pt);
+\draw[white,line width=.5pt] (5.7053,1.4854) circle (2.5pt);
+\fill[cell177] (5.1834,1.5566) circle (2.5pt);
+\draw[white,line width=.5pt] (5.1834,1.5566) circle (2.5pt);
+\fill[cell177] (6.2712,2.3483) circle (2.5pt);
+\draw[white,line width=.5pt] (6.2712,2.3483) circle (2.5pt);
+\fill[cell177] (5.3416,2.3830) circle (2.5pt);
+\draw[white,line width=.5pt] (5.3416,2.3830) circle (2.5pt);
+\draw[cell43,line width=1.2pt,rounded corners=4pt,fill=white] (0.000,4.595) rectangle (2.147,6.742);
+\node[anchor=north west,inner sep=2pt] at (0.050,6.692) {\celltype{11}};
+\begin{scope}[shift={(1.074,5.608)}]
+\coordinate (v1) at (0.65370,0.52131);
+\coordinate (v2) at (0.36278,-0.75332);
+\coordinate (v3) at (0.81516,-0.18605);
+\coordinate (v4) at (-0.81516,-0.18605);
+\coordinate (v5) at (-0.36278,-0.75332);
+\coordinate (v6) at (-0.65370,0.52131);
+\coordinate (v7) at (0.00000,0.83612);
+\coordinate (v8) at (-0.35364,0.10565);
+\coordinate (v9) at (-0.08900,0.18430);
+\coordinate (v10) at (0.34192,0.04960);
+\coordinate (v11) at (0.02167,-0.30479);
+\coordinate (v12) at (0.07905,-0.03475);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree internal] (v9)--(v12);
+\draw[g2tree internal] (v10)--(v12);
+\draw[g2tree internal] (v11)--(v12);
+\draw[g2tree pendant] (v1)--(v10);
+\draw[g2tree pendant] (v2)--(v11);
+\draw[g2tree pendant] (v3)--(v10);
+\draw[g2tree pendant] (v4)--(v8);
+\draw[g2tree pendant] (v5)--(v11);
+\draw[g2tree pendant] (v6)--(v8);
+\draw[g2tree pendant] (v7)--(v9);
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree vertex] at (v10) {};
+\node[g2tree vertex] at (v11) {};
+\node[g2tree vertex] at (v12) {};
+\node[g2tree dark,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v1) {};
+\begin{scope}[shift={(v2)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree dark,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v3) {};
+\node[g2tree light,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v4) {};
+\begin{scope}[shift={(v5)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree light,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v6) {};
+\begin{scope}[shift={(v7)},scale=0.4969389240556166,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}
+\draw[cell35,line width=1.2pt,rounded corners=4pt,fill=white] (0.000,2.297) rectangle (2.147,4.445);
+\node[anchor=north west,inner sep=2pt] at (0.050,4.395) {\celltype{12}};
+\begin{scope}[shift={(1.074,3.311)}]
+\coordinate (v1) at (0.36278,-0.75332);
+\coordinate (v2) at (0.81516,-0.18605);
+\coordinate (v3) at (-0.36278,-0.75332);
+\coordinate (v4) at (-0.81516,-0.18605);
+\coordinate (v5) at (0.65370,0.52131);
+\coordinate (v6) at (-0.65370,0.52131);
+\coordinate (v7) at (0.00000,0.83612);
+\coordinate (v8) at (0.05522,-0.36520);
+\coordinate (v9) at (0.21756,-0.14189);
+\coordinate (v10) at (0.16089,0.12830);
+\coordinate (v11) at (-0.34375,0.13510);
+\coordinate (v12) at (-0.08992,0.24368);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree internal] (v9)--(v10);
+\draw[g2tree internal] (v10)--(v12);
+\draw[g2tree internal] (v11)--(v12);
+\draw[g2tree pendant] (v1)--(v8);
+\draw[g2tree pendant] (v2)--(v9);
+\draw[g2tree pendant] (v3)--(v8);
+\draw[g2tree pendant] (v4)--(v11);
+\draw[g2tree pendant] (v5)--(v10);
+\draw[g2tree pendant] (v6)--(v11);
+\draw[g2tree pendant] (v7)--(v12);
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree vertex] at (v10) {};
+\node[g2tree vertex] at (v11) {};
+\node[g2tree vertex] at (v12) {};
+\node[g2tree dark,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v1) {};
+\begin{scope}[shift={(v2)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree dark,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v3) {};
+\node[g2tree light,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v4) {};
+\begin{scope}[shift={(v5)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree light,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v6) {};
+\begin{scope}[shift={(v7)},scale=0.4969389240556166,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}
+\draw[cell68,line width=1.2pt,rounded corners=4pt,fill=white] (0.000,0.000) rectangle (2.147,2.147);
+\node[anchor=north west,inner sep=2pt] at (0.050,2.097) {\celltype{7}};
+\begin{scope}[shift={(1.074,1.014)}]
+\coordinate (v1) at (0.81516,-0.18605);
+\coordinate (v2) at (0.65370,0.52131);
+\coordinate (v3) at (0.36278,-0.75332);
+\coordinate (v4) at (-0.36278,-0.75332);
+\coordinate (v5) at (-0.65370,0.52131);
+\coordinate (v6) at (-0.81516,-0.18605);
+\coordinate (v7) at (0.00000,0.83612);
+\coordinate (v8) at (0.31995,-0.18452);
+\coordinate (v9) at (0.24659,0.08163);
+\coordinate (v10) at (-0.00000,0.20578);
+\coordinate (v11) at (-0.31995,-0.18452);
+\coordinate (v12) at (-0.24659,0.08163);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree internal] (v9)--(v10);
+\draw[g2tree internal] (v10)--(v12);
+\draw[g2tree internal] (v11)--(v12);
+\draw[g2tree pendant] (v1)--(v8);
+\draw[g2tree pendant] (v2)--(v9);
+\draw[g2tree pendant] (v3)--(v8);
+\draw[g2tree pendant] (v4)--(v11);
+\draw[g2tree pendant] (v5)--(v12);
+\draw[g2tree pendant] (v6)--(v11);
+\draw[g2tree pendant] (v7)--(v10);
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree vertex] at (v10) {};
+\node[g2tree vertex] at (v11) {};
+\node[g2tree vertex] at (v12) {};
+\node[g2tree dark,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v1) {};
+\begin{scope}[shift={(v2)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree dark,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v3) {};
+\node[g2tree light,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v4) {};
+\begin{scope}[shift={(v5)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree light,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v6) {};
+\begin{scope}[shift={(v7)},scale=0.4969389240556166,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}
+\draw[cell181,line width=1.2pt,rounded corners=4pt,fill=white] (6.954,4.595) rectangle (9.101,6.742);
+\node[anchor=north west,inner sep=2pt] at (7.004,6.692) {\celltype{11}};
+\begin{scope}[shift={(8.028,5.608)}]
+\coordinate (v1) at (0.65370,0.52131);
+\coordinate (v2) at (0.36278,-0.75332);
+\coordinate (v3) at (0.81516,-0.18605);
+\coordinate (v4) at (-0.81516,-0.18605);
+\coordinate (v5) at (-0.36278,-0.75332);
+\coordinate (v6) at (-0.65370,0.52131);
+\coordinate (v7) at (0.00000,0.83612);
+\coordinate (v8) at (0.35364,0.10565);
+\coordinate (v9) at (0.08900,0.18430);
+\coordinate (v10) at (-0.02167,-0.30479);
+\coordinate (v11) at (-0.34192,0.04960);
+\coordinate (v12) at (-0.07905,-0.03475);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree internal] (v9)--(v12);
+\draw[g2tree internal] (v10)--(v12);
+\draw[g2tree internal] (v11)--(v12);
+\draw[g2tree pendant] (v1)--(v8);
+\draw[g2tree pendant] (v2)--(v10);
+\draw[g2tree pendant] (v3)--(v8);
+\draw[g2tree pendant] (v4)--(v11);
+\draw[g2tree pendant] (v5)--(v10);
+\draw[g2tree pendant] (v6)--(v11);
+\draw[g2tree pendant] (v7)--(v9);
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree vertex] at (v10) {};
+\node[g2tree vertex] at (v11) {};
+\node[g2tree vertex] at (v12) {};
+\node[g2tree dark,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v1) {};
+\begin{scope}[shift={(v2)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree dark,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v3) {};
+\node[g2tree light,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v4) {};
+\begin{scope}[shift={(v5)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree light,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v6) {};
+\begin{scope}[shift={(v7)},scale=0.4969389240556166,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}
+\draw[cell177,line width=1.2pt,rounded corners=4pt,fill=white] (6.954,0.000) rectangle (9.101,2.147);
+\node[anchor=north west,inner sep=2pt] at (7.004,2.097) {\celltype{12}};
+\begin{scope}[shift={(8.028,1.014)}]
+\coordinate (v1) at (-0.81516,-0.18605);
+\coordinate (v2) at (0.65370,0.52131);
+\coordinate (v3) at (-0.65370,0.52131);
+\coordinate (v4) at (0.36278,-0.75332);
+\coordinate (v5) at (0.81516,-0.18605);
+\coordinate (v6) at (-0.36278,-0.75332);
+\coordinate (v7) at (0.00000,0.83612);
+\coordinate (v8) at (0.05522,-0.36520);
+\coordinate (v9) at (0.21756,-0.14189);
+\coordinate (v10) at (0.16089,0.12830);
+\coordinate (v11) at (-0.34375,0.13510);
+\coordinate (v12) at (-0.08992,0.24368);
+\draw[g2tree internal] (v8)--(v9);
+\draw[g2tree internal] (v9)--(v10);
+\draw[g2tree internal] (v10)--(v12);
+\draw[g2tree internal] (v11)--(v12);
+\draw[g2tree pendant] (v1)--(v11);
+\draw[g2tree pendant] (v2)--(v10);
+\draw[g2tree pendant] (v3)--(v11);
+\draw[g2tree pendant] (v4)--(v8);
+\draw[g2tree pendant] (v5)--(v9);
+\draw[g2tree pendant] (v6)--(v8);
+\draw[g2tree pendant] (v7)--(v12);
+\node[g2tree vertex] at (v8) {};
+\node[g2tree vertex] at (v9) {};
+\node[g2tree vertex] at (v10) {};
+\node[g2tree vertex] at (v11) {};
+\node[g2tree vertex] at (v12) {};
+\node[g2tree dark,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v1) {};
+\begin{scope}[shift={(v2)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonBlue,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree dark,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v3) {};
+\node[g2tree light,rectangle,minimum size=2.2859190506558362mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v4) {};
+\begin{scope}[shift={(v5)},scale=0.4969389240556166,transform shape]
+\path[fill=g2TaxonYellow,draw=white,line width=.55pt,line join=round] (0mm,3.0mm)--(-3.0mm,-2.2mm)--(3.0mm,-2.2mm)--cycle;
+\end{scope}
+\node[g2tree light,circle,minimum size=2.3853068354669595mm,font={\sffamily\fontsize{4.41723}{4.41723}\selectfont\bfseries}] at (v6) {};
+\begin{scope}[shift={(v7)},scale=0.4969389240556166,transform shape]
+\path[fill=g2HeartRed,draw=white,line width=.55pt]
+  (0mm,-2.7mm)..controls(-.45mm,-2.1mm)and(-3.0mm,.35mm)..(-3.0mm,1.45mm)
+  ..controls(-3.0mm,3.2mm)and(-.9mm,3.4mm)..(0mm,1.75mm)
+  ..controls(.9mm,3.4mm)and(3.0mm,3.2mm)..(3.0mm,1.45mm)
+  ..controls(3.0mm,.35mm)and(.45mm,-2.1mm)..(0mm,-2.7mm)--cycle;
+\end{scope}
+\end{scope}
+\end{tikzpicture}
+\endgroup
+\end{document}

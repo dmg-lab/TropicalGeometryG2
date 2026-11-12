@@ -1,0 +1,94 @@
+===========================================================================
+The split G_2 model in ../main.tex's labels
+===========================================================================
+Phi = e123 + e147 + e257 + e367 + e456
+
+(1) dim of the annihilator of Phi in gl_7 = 14   (expect 14 = dim g_2)
+(2) dim of the space of invariant symmetric forms = 1   (expect 1)
+    q = 1//1 x1x4 + 1//1 x2x5 + 1//1 x3x6 + -1//1 x7^2   (bilinear entries; halve the diagonal)
+    matches q = x1x4 + x2x5 + x3x6 - x7^2 of ../main.tex: true
+
+(3) the seven linear forms L_i(p) = sum_{j<k} Phi_{ijk} p_jk:
+    L_1 = + p23 + p47
+    L_2 = - p13 + p57
+    L_3 = + p12 + p67
+    L_4 = - p17 + p56
+    L_5 = - p27 - p46
+    L_6 = - p37 + p45
+    L_7 = + p14 + p25 + p36
+    these are exactly eq:7linear of ../main.tex: true
+
+(4) matroid: 6 binomials (6 x U_{1,2}), one trinomial (U_{2,3}) on [(1, 4), (2, 5), (3, 6)], and 6 coloops
+    coloops = [(1, 5), (1, 6), (2, 4), (2, 6), (3, 4), (3, 5)]
+    they form the hexagon 1-5-3-4-2-6-1   (a single 6-cycle: true)
+
+(5) permutations of the seven indices preserving Phi
+    up to a global scalar   |A| = 6
+    up to a diagonal sign   |B| = 12     index [B:A] = 2
+    element orders of A = [1, 2, 2, 2, 3, 3],  abelian = false  ->  A is S_3
+      [1, 2, 3, 4, 5, 6, 7]   order 1   lambda = 1//1
+      [4, 6, 5, 1, 3, 2, 7]   order 2   lambda = -1//1
+      [5, 4, 6, 2, 1, 3, 7]   order 2   lambda = -1//1
+      [6, 5, 4, 3, 2, 1, 7]   order 2   lambda = -1//1
+      [2, 3, 1, 5, 6, 4, 7]   order 3   lambda = 1//1
+      [3, 1, 2, 6, 4, 5, 7]   order 3   lambda = 1//1
+    action on the hexagon 1-5-3-4-2-6:
+      [1, 2, 3, 4, 5, 6, 7]  ->  rotation by 0
+      [2, 3, 1, 5, 6, 4, 7]  ->  rotation by 4
+      [3, 1, 2, 6, 4, 5, 7]  ->  rotation by 2
+      [4, 6, 5, 1, 3, 2, 7]  ->  reflection
+      [5, 4, 6, 2, 1, 3, 7]  ->  reflection
+      [6, 5, 4, 3, 2, 1, 7]  ->  reflection
+    B preserves the hexagon: true;  6 rotations + 6 reflections = the dihedral group of order 12
+
+(6) dictionary from Section 6's old Zorn basis (indices 0..6, h' at 3)
+    relabelling 0,1,2,3,4,5,6 -> [1, 2, 3, 7, 4, 5, 6]   (h' at 3 becomes index 7)
+    as printed (h' = sqrt(-1) h):  1//1 + 0//1*im e123  0//1 + 1//1*im e147  0//1 + 1//1*im e257  0//1 + 1//1*im e367  -1//1 + 0//1*im e456
+        rescaling to ../main.tex's Phi: x1 -> 1//1 + 0//1*im, x2 -> 1//1 + 0//1*im, x3 -> 1//1 + 0//1*im, x4 -> -1//1 + 0//1*im, x5 -> -1//1 + 0//1*im, x6 -> -1//1 + 0//1*im, x7 -> 0//1 + 1//1*im
+        is it a relabelling alone (all entries 1)? false
+        its own up-to-scalar stabiliser: order 6, element orders [1, 2, 3, 3, 6, 6]  ->  cyclic Z/6
+    h' = h variant:  1//1 + 0//1*im e123  1//1 + 0//1*im e147  1//1 + 0//1*im e257  1//1 + 0//1*im e367  -1//1 + 0//1*im e456
+        rescaling to ../main.tex's Phi: x1 -> 1//1 + 0//1*im, x2 -> 1//1 + 0//1*im, x3 -> 1//1 + 0//1*im, x4 -> -1//1 + 0//1*im, x5 -> -1//1 + 0//1*im, x6 -> -1//1 + 0//1*im, x7 -> -1//1 + 0//1*im
+        is it a relabelling alone (all entries 1)? false
+        its own up-to-scalar stabiliser: order 6, element orders [1, 2, 3, 3, 6, 6]  ->  cyclic Z/6
+
+    Conclusion: the old Zorn form is NOT a relabelling of ../main.tex's Phi -- a
+    diagonal rescaling is needed as well -- which is why its up-to-scalar stabiliser
+    is the cyclic Z/6 while ../main.tex's is the S_3.  In ../main.tex's labels the
+    group is S_3, and the note now uses those labels throughout.
+
+(7) recovering q from Phi
+    eq:metric-from-phi, g(e_a,e_b) = (1/6)(i_a Phi)^(i_b Phi)^Phi:
+      g(e1,e4) = 1//2,  g(e2,e5) = 1//2,  g(e3,e6) = 1//2,  g(e7,e7) = -1//1
+    proportional to the polarisation of q = x1x4+x2x5+x3x6-x7^2, factor 1//1: true
+    ../main.tex's formula (x _| Phi)^(x _| Phi)^Phi gives the quadratic form
+      6//1 x1x4 + 6//1 x2x5 + 6//1 x3x6 + -6//1 x7x7
+    = 6//1 * (x1x4 + x2x5 + x3x6 - x7^2): true
+
+(8) the Zorn construction of Section 6.3, in the basis
+      (v_1,...,v_7) = (u_1, u_2, u_3, -w_1, -w_2, -w_3, -h)   [note: h, not h' = sqrt(-1) h]
+    twice the 3-form B(x x y, z) is  + e123 + e147 + e257 + e367 + e456
+    equals ../main.tex's Phi exactly: true
+    the associated quadratic form is  -1//1 x1x4 + -1//1 x2x5 + -1//1 x3x6 + 1//1 x7^2
+    = -(x1x4 + x2x5 + x3x6 - x7^2), i.e. q of ../main.tex up to the global sign: true
+
+    So no sqrt(-1) is needed anywhere: over Q, the Zorn basis rescaled this way
+    gives ../main.tex's Phi on the nose, and its quadratic form is -q.  Since
+    {q = 0} = {-q = 0} and O(cB) = O(B), the sign is immaterial.
+
+(9) the Weyl group of the GL_3 Levi factor, as permutations of the labels
+    |W(Levi)| = 6:  [[1, 2, 3, 4, 5, 6, 7], [1, 3, 2, 4, 6, 5, 7], [2, 1, 3, 5, 4, 6, 7], [2, 3, 1, 5, 6, 4, 7], [3, 1, 2, 6, 4, 5, 7], [3, 2, 1, 6, 5, 4, 7]]
+    W(Levi) is contained in B (the order-12 group): true
+    W(Levi) equals A (the up-to-scalar stabiliser): false
+    A cap W(Levi) = 3 elements: [[1, 2, 3, 4, 5, 6, 7], [2, 3, 1, 5, 6, 4, 7], [3, 1, 2, 6, 4, 5, 7]]
+    so A and W(Levi) are two DIFFERENT order-6 subgroups sharing the 3-cycles.
+    reflections in A:
+      [4, 6, 5, 1, 3, 2, 7]  through opposite edges (no fixed vertex)
+      [5, 4, 6, 2, 1, 3, 7]  through opposite edges (no fixed vertex)
+      [6, 5, 4, 3, 2, 1, 7]  through opposite edges (no fixed vertex)
+    reflections in W(Levi):
+      [1, 3, 2, 4, 6, 5, 7]  through the opposite vertices [1, 4]
+      [2, 1, 3, 5, 4, 6, 7]  through the opposite vertices [3, 6]
+      [3, 2, 1, 6, 5, 4, 7]  through the opposite vertices [5, 2]
+    A normal in B: true;  W(Levi) normal in B: true
+    (both of index 2, so the two S_3's are not conjugate in B)

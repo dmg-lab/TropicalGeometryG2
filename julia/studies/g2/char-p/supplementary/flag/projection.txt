@@ -1,0 +1,2 @@
+flag: ambient 28, dim 8, maximal 2714; grassmannian: ambient 21, dim 6, maximal 248
+flag maximal cells whose image lies in a single maximal Grassmannian cell: 2714 (onto it: 2714); in no single cell: 0; Grassmannian cells hit: 248 of 248

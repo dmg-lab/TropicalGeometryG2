@@ -1,0 +1,245 @@
+% Final page of the QQ / GF(2) orbit atlas.
+% Input after tree_atlas_style.tex; graphicx and arrows.meta are also required.
+% Asset paths are relative to this directory, as in the enclosing atlas.
+% Vertex correspondence is exact modulo common lineality:
+% A = QQ 34 = GF2 1, B = QQ 9 = GF2 2,
+% C = QQ 40 = GF2 13, D = QQ 6 = GF2 14; O = GF2 3.
+% The QQ orbit labels below were checked against 02_coarsest_cells.csv.
+\begingroup
+\definecolor{ftQQBlue}{HTML}{397997}
+\definecolor{ftQQTeal}{HTML}{268375}
+\definecolor{ftQQPurple}{HTML}{81629C}
+\definecolor{ftGFRed}{HTML}{B55F61}
+\definecolor{ftGFTeal}{HTML}{398A77}
+\definecolor{ftGFPurple}{HTML}{81629C}
+\definecolor{ftGFGold}{HTML}{BA8A38}
+\tikzset{
+  ft vertex/.style={circle,draw=ink!55,fill=white,line width=.9pt,
+    minimum size=6.2mm,inner sep=0pt,font=\fontsize{14}{14}\selectfont\bfseries,text=ink},
+  ft central/.style={ft vertex,draw=heartred,fill=heartred!9,line width=1.3pt},
+  ft edge/.style={draw=ink!65,line width=1.35pt,line cap=round},
+  ft hidden/.style={ft edge,densely dashed,draw=ink!45},
+  ft centre edge/.style={draw=heartred!55,line width=1.25pt,line cap=round},
+  ft face label/.style={fill=white,fill opacity=.95,text opacity=1,rounded corners=1.5pt,
+    inner sep=1.0mm,font=\fontsize{13}{14}\selectfont\bfseries},
+  ft small/.style={text=muted,font=\fontsize{11}{13}\selectfont,align=center},
+  ft tree caption/.style={text=muted,font=\fontsize{10.5}{12}\selectfont,align=center},
+  ft title/.style={text=ink,font=\fontsize{15.5}{17}\selectfont\bfseries,align=center},
+  ft arrow/.style={line width=1.65pt,line cap=round,line join=round,
+    -{Stealth[length=3.2mm,width=2.4mm]}},
+  ft leader/.style={line width=1.25pt,line cap=round},
+  ft underlay/.style={draw=white,line width=4.7pt,line cap=round,line join=round},
+}
+% All miniature triangles are labelled: transparency in the tetrahedron
+% projection cannot make their incidences ambiguous.
+\newcommand{\FTTriangle}[6]{%
+  \begin{scope}[shift={(#1,#2)}]
+    \path[fill=#3!18,draw=#3,line width=1.3pt,line join=round]
+      (-.70,-.42)--(.70,-.42)--(0,.70)--cycle;
+    \foreach \pos/\lbl in {(-.70,-.42)/#4,(.70,-.42)/#5,(0,.70)/#6}{%
+      \node[circle,fill=white,draw=#3,line width=.65pt,minimum size=4.3mm,
+        inner sep=0pt,font=\fontsize{10}{10}\selectfont\bfseries,text=ink]
+        at \pos {$\lbl$};}
+  \end{scope}}
+\noindent\begin{tikzpicture}[x=1cm,y=1cm]
+  \path[use as bounding box] (0,0) rectangle (39.5,24.6);
+  \node[font=\fontsize{25}{28}\selectfont\bfseries,text=ink] at (19.75,24.0)
+    {The field-dependent tetrahedra};
+  \node[font=\fontsize{15}{17}\selectfont,text=muted] at (19.75,23.05)
+    {In each of three Dressian tetrahedra, four boundary faces are replaced by six centre-to-edge triangles.};
+  \node[font=\fontsize{18}{20}\selectfont\bfseries,text=ink] at (4.65,21.9)
+    {$\mathbb Q$ only\;\textemdash\;3 maximal-cell orbits};
+  \node[font=\fontsize{18}{20}\selectfont\bfseries,text=ink] at (34.8,21.9)
+    {$\operatorname{GF}(2)$ only\;\textemdash\;4 maximal-cell orbits};
+
+  % Left: the three QQ-only orbits.  The input trees use the census's
+  % canonical orbit representatives, while the labelled triangles identify
+  % the members of the displayed tetrahedron.
+  \path[rounded corners=3pt,fill=ftQQBlue!4,draw=ftQQBlue!38,line width=.8pt]
+    (0.05,15.55) rectangle (9.25,21.25);
+  \node[ft title] at (4.65,20.68) {$\mathbb Q$ orbit 24\qquad size 6};
+  \node at (2.65,18.58) {\resizebox{4.25cm}{!}{\input{field_comparison_assets/exceptional/qq_24.tex}}};
+  \node[ft tree caption] at (2.65,16.12) {representative cell 70\\rays $7,10,33$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftQQBlue,align=center] at (7.1,19.85)
+    {$ABC$ and $ABD$};
+  \FTTriangle{6.10}{18.48}{ftQQBlue}{A}{B}{C}
+  \FTTriangle{8.02}{18.48}{ftQQBlue}{A}{B}{D}
+  \node[ft small,text width=3.8cm] at (7.1,16.90)
+    {2 faces / tetrahedron\\cells 159 and 71};
+
+  \path[rounded corners=3pt,fill=ftQQTeal!4,draw=ftQQTeal!38,line width=.8pt]
+    (0.05,8.65) rectangle (9.25,14.95);
+  \node[ft title] at (4.65,14.28) {$\mathbb Q$ orbit 28\qquad size 3};
+  \node at (2.65,11.68) {\resizebox{4.25cm}{!}{\input{field_comparison_assets/exceptional/qq_28.tex}}};
+  \node[ft tree caption] at (2.65,9.22) {representative cell 120\\rays $8,11,12$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftQQTeal] at (7.1,12.95) {$ACD$};
+  \FTTriangle{7.1}{11.58}{ftQQTeal}{A}{C}{D}
+  \node[ft small,text width=3.8cm] at (7.1,10.0)
+    {1 face per tetrahedron\\displayed cell 140};
+
+  \path[rounded corners=3pt,fill=ftQQPurple!4,draw=ftQQPurple!38,line width=.8pt]
+    (0.05,1.75) rectangle (9.25,8.05);
+  \node[ft title] at (4.65,7.38) {$\mathbb Q$ orbit 30\qquad size 3};
+  \node at (2.65,4.78) {\resizebox{4.25cm}{!}{\input{field_comparison_assets/exceptional/qq_30.tex}}};
+  \node[ft tree caption] at (2.65,2.32) {representative cell 132\\rays $6,9,40$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftQQPurple] at (7.1,6.05) {$BCD$};
+  \FTTriangle{7.1}{4.68}{ftQQPurple}{B}{C}{D}
+  \node[ft small,text width=3.8cm] at (7.1,3.1)
+    {1 face per tetrahedron\\displayed cell 132};
+
+  % Right: spatial order follows the tetrahedron, rather than orbit number.
+  \path[rounded corners=3pt,fill=ftGFGold!4,draw=ftGFGold!38,line width=.8pt]
+    (30.2,16.35) rectangle (39.4,21.25);
+  \node[ft title] at (34.8,20.68) {$\operatorname{GF}(2)$ orbit 20\qquad size 3};
+  \node at (32.5,18.66) {\resizebox{3.65cm}{!}{\input{field_comparison_assets/exceptional/gf2_20.tex}}};
+  \node[ft tree caption] at (32.5,16.65) {rep. cell 37\quad rays $3,13,14$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftGFGold] at (36.95,19.64) {$OCD$};
+  \FTTriangle{36.95}{18.36}{ftGFGold}{C}{D}{O}
+  \node[ft small] at (36.95,17.07) {1 triangle per tetrahedron};
+
+  \path[rounded corners=3pt,fill=ftGFTeal!4,draw=ftGFTeal!38,line width=.8pt]
+    (30.2,11.05) rectangle (39.4,15.95);
+  \node[ft title] at (34.8,15.38) {$\operatorname{GF}(2)$ orbit 9\qquad size 6};
+  \node at (32.5,13.36) {\resizebox{3.65cm}{!}{\input{field_comparison_assets/exceptional/gf2_09.tex}}};
+  \node[ft tree caption] at (32.5,11.35) {rep. cell 10\quad rays $2,3,13$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftGFTeal] at (36.95,14.34) {$OBC$ and $OBD$};
+  \FTTriangle{35.98}{13.06}{ftGFTeal}{B}{C}{O}
+  \FTTriangle{37.92}{13.06}{ftGFTeal}{B}{D}{O}
+  \node[ft small] at (36.95,11.77) {2 triangles per tetrahedron};
+
+  \path[rounded corners=3pt,fill=ftGFPurple!4,draw=ftGFPurple!38,line width=.8pt]
+    (30.2,5.75) rectangle (39.4,10.65);
+  \node[ft title] at (34.8,10.08) {$\operatorname{GF}(2)$ orbit 10\qquad size 6};
+  \node at (32.5,8.06) {\resizebox{3.65cm}{!}{\input{field_comparison_assets/exceptional/gf2_10.tex}}};
+  \node[ft tree caption] at (32.5,6.05) {rep. cell 12\quad rays $1,3,13$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftGFPurple] at (36.95,9.04) {$OAC$ and $OAD$};
+  \FTTriangle{35.98}{7.76}{ftGFPurple}{A}{C}{O}
+  \FTTriangle{37.92}{7.76}{ftGFPurple}{A}{D}{O}
+  \node[ft small] at (36.95,6.47) {2 triangles per tetrahedron};
+
+  \path[rounded corners=3pt,fill=ftGFRed!4,draw=ftGFRed!38,line width=.8pt]
+    (30.2,.45) rectangle (39.4,5.35);
+  \node[ft title] at (34.8,4.78) {$\operatorname{GF}(2)$ orbit 1\qquad size 3};
+  \node at (32.5,2.76) {\resizebox{3.65cm}{!}{\input{field_comparison_assets/exceptional/gf2_01.tex}}};
+  \node[ft tree caption] at (32.5,.75) {rep. cell 1\quad rays $1,2,3$};
+  \node[font=\fontsize{14}{16}\selectfont\bfseries,text=ftGFRed] at (36.95,3.74) {$OAB$};
+  \FTTriangle{36.95}{2.46}{ftGFRed}{A}{B}{O}
+  \node[ft small] at (36.95,1.17) {1 triangle per tetrahedron};
+
+  % The two projections use exactly the same vertex positions.
+  \node[font=\fontsize{16}{18}\selectfont\bfseries,text=ink] at (15.0,20.10)
+    {Boundary over $\mathbb Q$};
+  \node[font=\fontsize{16}{18}\selectfont\bfseries,text=ink] at (24.0,20.10)
+    {Central triangles over $\operatorname{GF}(2)$};
+  \begin{scope}[shift={(15.0,14.4)}]
+    \coordinate (qA) at (-3.2,-2.4);
+    \coordinate (qB) at (3.1,-2.7);
+    \coordinate (qC) at (-1.6,4.0);
+    \coordinate (qD) at (1.2,.9);
+    \path[fill=ftQQBlue,fill opacity=.08] (qA)--(qB)--(qC)--cycle;
+    \path[fill=ftQQBlue,fill opacity=.30] (qA)--(qB)--(qD)--cycle;
+    \path[fill=ftQQTeal,fill opacity=.26] (qA)--(qC)--(qD)--cycle;
+    \path[fill=ftQQPurple,fill opacity=.26] (qB)--(qC)--(qD)--cycle;
+    \draw[ft edge] (qA)--(qB)--(qC)--cycle;
+    \draw[ft hidden] (qA)--(qD)--(qB);
+    \draw[ft edge] (qC)--(qD);
+    \node[ft face label,text=ftQQBlue] (fABD) at (.15,-1.65) {$ABD$};
+    \node[ft face label,text=ftQQTeal] (fACD) at (-1.72,.67) {$ACD$};
+    \node[ft face label,text=ftQQPurple] (fBCD) at (.78,1.6) {$BCD$};
+    \node[ft face label,text=ftQQBlue] (fABC) at (-3.38,2.8) {$ABC$};
+    \draw[draw=ftQQBlue,line width=.8pt,densely dashed] (fABC.east)--(-1.40,-.25);
+    \node[ft vertex] at (qA) {$A$};
+    \node[ft vertex] at (qB) {$B$};
+    \node[ft vertex] at (qC) {$C$};
+    \node[ft vertex] at (qD) {$D$};
+  \end{scope}
+  \node[ft small,text width=7.6cm] at (15.0,19.07)
+    {$ABC$ is the rear face.\\All four boundary faces are present.};
+
+  \begin{scope}[shift={(24.0,14.4)}]
+    \coordinate (gA) at (-3.2,-2.4);
+    \coordinate (gB) at (3.1,-2.7);
+    \coordinate (gC) at (-1.6,4.0);
+    \coordinate (gD) at (1.2,.9);
+    \coordinate (gO) at (-.125,-.05);
+    \path[fill=ftGFPurple,fill opacity=.25] (gO)--(gA)--(gC)--cycle;
+    \path[fill=ftGFTeal,fill opacity=.25] (gO)--(gB)--(gC)--cycle;
+    \path[fill=ftGFGold,fill opacity=.34] (gO)--(gC)--(gD)--cycle;
+    \path[fill=ftGFPurple,fill opacity=.21] (gO)--(gA)--(gD)--cycle;
+    \path[fill=ftGFTeal,fill opacity=.21] (gO)--(gB)--(gD)--cycle;
+    \path[fill=ftGFRed,fill opacity=.29] (gO)--(gA)--(gB)--cycle;
+    \draw[ft edge] (gA)--(gB)--(gC)--cycle;
+    \draw[ft hidden] (gA)--(gD)--(gB);
+    \draw[ft edge] (gC)--(gD);
+    \draw[ft centre edge] (gO)--(gA) (gO)--(gB) (gO)--(gC);
+    \draw[ft centre edge,densely dashed] (gO)--(gD);
+    \node[ft face label,text=ftGFGold] (fOCD) at (-.25,2.0) {$OCD$};
+    \node[ft face label,text=ftGFTeal] (fOBC) at (.65,1.1) {$OBC$};
+    \node[ft face label,text=ftGFTeal] (fOBD) at (1.6,-.6) {$OBD$};
+    \node[ft face label,text=ftGFPurple] (fOAC) at (-1.7,.8) {$OAC$};
+    \node[ft face label,text=ftGFPurple] (fOAD) at (-.85,-.62) {$OAD$};
+    \node[ft face label,text=ftGFRed] (fOAB) at (-.08,-1.63) {$OAB$};
+    \node[ft vertex] at (gA) {$A$};
+    \node[ft vertex] at (gB) {$B$};
+    \node[ft vertex] at (gC) {$C$};
+    \node[ft vertex] at (gD) {$D$};
+    \node[ft central] at (gO) {$O$};
+  \end{scope}
+  \node[ft small,text width=7.6cm] at (24.0,19.07)
+    {The six edges give six triangles\\through the central ray $O$.};
+
+  % Arrows run outward from the labelled, coloured cells to their orbit
+  % trees. White underlays preserve readability when projections overlap.
+  \draw[ft underlay] (fABC.west)..controls(10.7,18.5)and(10.5,18.7)..(9.40,18.7);
+  \draw[ft arrow,draw=ftQQBlue] (fABC.west)..controls(10.7,18.5)and(10.5,18.7)..(9.40,18.7);
+  \draw[ft underlay] (fABD.west)..controls(11.15,13.4)and(10.55,17.6)..(10.0,18.7);
+  \draw[ft leader,draw=ftQQBlue] (fABD.west)..controls(11.15,13.4)and(10.55,17.6)..(10.0,18.7);
+  \draw[ft underlay] (fACD.west)..controls(11.3,15.0)and(11.0,12.8)..(9.40,11.8);
+  \draw[ft arrow,draw=ftQQTeal] (fACD.west)..controls(11.3,15.0)and(11.0,12.8)..(9.40,11.8);
+  \draw[ft underlay] (fBCD.east)..controls(18.6,15.7)and(12.5,10.8)..(11.1,9.7)
+    ..controls(10.25,8.1)and(10.8,5.8)..(9.40,4.9);
+  \draw[ft arrow,draw=ftQQPurple] (fBCD.east)..controls(18.6,15.7)and(12.5,10.8)..(11.1,9.7)
+    ..controls(10.25,8.1)and(10.8,5.8)..(9.40,4.9);
+
+  \draw[ft underlay] (fOCD.east)..controls(27.1,17.3)and(28.0,18.8)..(30.05,18.8);
+  \draw[ft arrow,draw=ftGFGold] (fOCD.east)..controls(27.1,17.3)and(28.0,18.8)..(30.05,18.8);
+  \draw[ft underlay] (fOBC.east)..controls(27.3,16.0)and(28.0,13.5)..(30.05,13.5);
+  \draw[ft arrow,draw=ftGFTeal] (fOBC.east)..controls(27.3,16.0)and(28.0,13.5)..(30.05,13.5);
+  \draw[ft underlay] (fOBD.east)..controls(27.2,13.5)and(28.0,13.5)..(29.4,13.5);
+  \draw[ft leader,draw=ftGFTeal] (fOBD.east)..controls(27.2,13.5)and(28.0,13.5)..(29.4,13.5);
+  \draw[ft underlay] (fOAC.west)..controls(20.4,14.9)and(20.2,12.3)..(22.0,11.2)
+    ..controls(24.0,9.8)and(28.1,10.0)..(28.85,9.0)
+    ..controls(29.1,8.55)and(29.3,8.2)..(30.05,8.2);
+  \draw[ft arrow,draw=ftGFPurple] (fOAC.west)..controls(20.4,14.9)and(20.2,12.3)..(22.0,11.2)
+    ..controls(24.0,9.8)and(28.1,10.0)..(28.85,9.0)
+    ..controls(29.1,8.55)and(29.3,8.2)..(30.05,8.2);
+  \draw[ft underlay] (fOAD.south)..controls(23.0,11.6)and(26.0,9.8)..(28.85,9.0)
+    ..controls(29.1,8.55)and(29.3,8.2)..(29.4,8.2);
+  \draw[ft leader,draw=ftGFPurple] (fOAD.south)..controls(23.0,11.6)and(26.0,9.8)..(28.85,9.0)
+    ..controls(29.1,8.55)and(29.3,8.2)..(29.4,8.2);
+  \draw[ft underlay] (fOAB.east)..controls(27.5,12.77)and(28.5,12.7)..(28.6,11.1)
+    ..controls(29.0,8.5)and(29.0,3.6)..(30.05,2.9);
+  \draw[ft arrow,draw=ftGFRed] (fOAB.east)..controls(27.5,12.77)and(28.5,12.7)..(28.6,11.1)
+    ..controls(29.0,8.5)and(29.0,3.6)..(30.05,2.9);
+
+  % The new ray and the exact correspondence of the four old vertices.
+  \path[rounded corners=4pt,fill=paperblue!40,draw=coreblue!22,line width=.8pt]
+    (11.2,1.15) rectangle (27.85,9.1);
+  \node[font=\fontsize{16}{18}\selectfont\bfseries,text=ink] at (19.525,8.38)
+    {One new ray orbit, shared by the three tetrahedra};
+  \node at (14.0,5.60) {\resizebox{3.65cm}{!}{\input{field_comparison_assets/exceptional/gf2_central_ray.tex}}};
+  \node[ft tree caption] at (14.0,3.38) {$O$: GF$(2)$ ray 3};
+  \node[anchor=west,font=\fontsize{15}{17}\selectfont\bfseries,text=heartred] at (16.8,6.95)
+    {GF$(2)$ rays $3,36,39$\quad (orbit size 3)};
+  \node[anchor=west,align=left,text width=10.6cm,font=\fontsize{13}{16}\selectfont,text=ink]
+    at (16.6,5.55) {In the quotient by lineality, the central ray\\is the sum of the four primitive vertex rays.};
+  \node[anchor=west,align=left,text width=10.6cm,font=\fontsize{13}{16}\selectfont,text=muted]
+    at (16.6,3.9) {The stabilizer fixes $A,B$ and exchanges $C,D$.\\The faces split $2+1+1$;\\the edges split $1+2+2+1$.};
+  \node[font=\fontsize{12}{14}\selectfont,text=ink] at (19.525,2.32)
+    {$\begin{array}{c|rrrr}\text{vertex}&A&B&C&D\\\hline
+      \mathbb Q\text{ ray}&34&9&40&6\\
+      \operatorname{GF}(2)\text{ ray}&1&2&13&14\end{array}$};
+  \node[font=\fontsize{10.5}{12}\selectfont,text=muted] at (19.75,.28)
+    {Representative Dressian tetrahedron 190. Orbit, cell and ray indices are field-specific census indices. The two tetrahedra are schematic projections of the same cell.};
+\end{tikzpicture}
+\endgroup

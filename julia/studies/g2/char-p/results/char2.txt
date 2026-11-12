@@ -1,0 +1,62 @@
+QQ raw fan: 251 maximal cones;  GF(2) raw fan: 257 maximal cones;  tetrahedra of the Dressian: 3
+lineality spaces of the QQ fan, the GF(2) fan and the Dressian agree: true
+rays modulo lineality: QQ 51, GF(2) 54, QQ rays contained in GF(2) rays: true
+new rays over GF(2): 3
+GF(2) cones equal to a QQ cone: 239;  new GF(2) cones: 18;  QQ cones missing over GF(2): [71, 72, 101, 103, 121, 133, 134, 135, 136, 141, 162, 163]
+tetrahedron 1: 4 vertices; epsilon = [2, -5, 2, 16, -5, -5, -5, 16, 2, -5, -5, -5, -5, 16, 2, 2, -5, -5, -5, -5, 2] = (vertices) * QQFieldElem[2//3, 1, 1//15, 1//15] modulo lineality
+   its four facets are the QQ cones [101, 103, 121, 134] (missing over GF(2))
+   new GF(2) cones with apex epsilon: [101, 102, 103, 104, 105, 106], each spanned by epsilon and an edge: true
+tetrahedron 2: 4 vertices; epsilon = [-5, 2, 2, -5, 16, -5, -5, -5, 16, -5, 2, 16, -5, 2, -5, -5, 2, -5, -5, 2, -5] = (vertices) * QQFieldElem[1//15, 1//15, 1, 2//3] modulo lineality
+   its four facets are the QQ cones [71, 135, 136, 163] (missing over GF(2))
+   new GF(2) cones with apex epsilon: [120, 121, 122, 123, 124, 125], each spanned by epsilon and an edge: true
+tetrahedron 3: 4 vertices; epsilon = [-5, -5, 16, -5, -5, 2, 2, -5, 2, 16, -5, -5, 16, 2, -5, -5, -5, 2, 2, -5, -5] = (vertices) * QQFieldElem[1//15, 1//15, 1, 2//3] modulo lineality
+   its four facets are the QQ cones [72, 133, 141, 162] (missing over GF(2))
+   new GF(2) cones with apex epsilon: [1, 10, 11, 13, 14, 38], each spanned by epsilon and an edge: true
+every new ray and every new cone belongs to a tetrahedron: true
+cubic 1: -p12*p14*p45 - p12*p35*p46 + p13*p26*p45 + p23*p36*p56 + 2*p45*p46*p56
+   in I over ZZ with integer cofactors: true
+   dominant 2-term on the open tetrahedron 3 (weight <= at every vertex, < at some vertex for each other term)
+   at epsilon: weights [6, 6, 6, 6, -8]; the four other terms tie: true, strictly above the 2-term: true
+   at vertex 1: weights [-30, 180, -30, -30, -30]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 2: weights [-30, -30, 180, -30, -30]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 3: weights [-2, -2, -2, 12, -2]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 4: weights [18, -3, -3, -3, -3]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   the strictly larger terms at the four vertices are the four terms other than the 2-term: true
+cubic 2: 2*p12*p13*p23 - p12*p34*p56 - p13*p14*p46 + p16*p23*p45 + p23*p25*p56
+   in I over ZZ with integer cofactors: true
+   dominant 2-term on the open tetrahedron 2 (weight <= at every vertex, < at some vertex for each other term)
+   at epsilon: weights [-8, 6, 6, 6, 6]; the four other terms tie: true, strictly above the 2-term: true
+   at vertex 1: weights [-30, 180, -30, -30, -30]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 2: weights [-30, -30, -30, -30, 180]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 3: weights [-2, -2, 12, -2, -2]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 4: weights [-3, -3, -3, 18, -3]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   the strictly larger terms at the four vertices are the four terms other than the 2-term: true
+cubic 3: p12*p25*p45 - p13*p24*p56 - p13*p36*p46 + p15*p23*p46 + 2*p45*p46*p56
+   in I over ZZ with integer cofactors: true
+   dominant 2-term on the open tetrahedron 1 (weight <= at every vertex, < at some vertex for each other term)
+   at epsilon: weights [6, 6, 6, 6, -8]; the four other terms tie: true, strictly above the 2-term: true
+   at vertex 1: weights [-3, -3, 18, -3, -3]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 2: weights [12, -2, -2, -2, -2]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 3: weights [-30, 180, -30, -30, -30]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   at vertex 4: weights [-30, -30, -30, 180, -30]; 2-term minimal: true; one other term strictly larger, three tie with the 2-term: true
+   the strictly larger terms at the four vertices are the four terms other than the 2-term: true
+the census ideal over GF(2) equals <the 42 generators mod 2>: true
+new cone 1 (tetrahedron 3): |G| = 42, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 10 (tetrahedron 3): |G| = 45, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 11 (tetrahedron 3): |G| = 42, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 13 (tetrahedron 3): |G| = 42, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 14 (tetrahedron 3): |G| = 42, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 38 (tetrahedron 3): |G| = 45, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 101 (tetrahedron 1): |G| = 45, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 102 (tetrahedron 1): |G| = 47, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 103 (tetrahedron 1): |G| = 46, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 104 (tetrahedron 1): |G| = 45, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 105 (tetrahedron 1): |G| = 45, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 106 (tetrahedron 1): |G| = 46, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 120 (tetrahedron 2): |G| = 43, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 121 (tetrahedron 2): |G| = 46, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 122 (tetrahedron 2): |G| = 46, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 123 (tetrahedron 2): |G| = 43, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 124 (tetrahedron 2): |G| = 43, lin_hom = true, H = true, I = true, torus point: ones true
+new cone 125 (tetrahedron 2): |G| = 43, lin_hom = true, H = true, I = true, torus point: ones true
+done

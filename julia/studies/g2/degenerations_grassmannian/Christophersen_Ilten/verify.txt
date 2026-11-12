@@ -1,0 +1,21 @@
+T_11 from CI's rule: 11 vertices, 27 edges, 18 triangles, flag, valencies 4 4 5 5 5 5 5 5 5 5 6
+order 1 signs (1, 1, 1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+order 2 signs (1, 1, -1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+order 3 signs (1, -1, 1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere isomorphic to T_11
+order 4 signs (1, -1, -1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+order 5 signs (-1, 1, 1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+order 6 signs (-1, 1, -1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere isomorphic to T_11
+order 7 signs (-1, -1, 1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+order 8 signs (-1, -1, -1): 28 squarefree quadrics, cone over {u,v,r} of a 2-sphere
+Groebner and polyhedral tests agree on all 135 toric cells
+order 1: cells 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15), 203 (type 17)
+order 2: cells 39 (type 17), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15), 203 (type 17)
+order 3 (T_11): cells 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15)
+order 4: cells 39 (type 17), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15)
+order 5: cells 68 (type 7), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15), 177 (type 12), 181 (type 11), 203 (type 17)
+order 6 (T_11): cells 35 (type 12), 39 (type 17), 43 (type 11), 68 (type 7), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15), 177 (type 12), 181 (type 11), 203 (type 17)
+order 7: cells 68 (type 7), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15)
+order 8: cells 35 (type 12), 39 (type 17), 43 (type 11), 68 (type 7), 69 (type 7), 77 (type 10), 101 (non-toric orbit 15), 125 (type 10), 131 (non-toric orbit 15)
+toric types below some order: 7, 10, 11, 12, 17
+toric types below a T_11 order: 7, 10, 11, 12, 17
+non-toric orbits below some order: 15

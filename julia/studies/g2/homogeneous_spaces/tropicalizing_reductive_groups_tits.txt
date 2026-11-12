@@ -1,0 +1,6 @@
+lifts of rotation 4  lifts of reflection 4
+signed diagonal elements in G2: 4
+order of the group of signed permutation matrices generated: 48
+pairs (rotation lift, reflection lift) generating a copy of D12: 4
+orders of rotation lifts: [6]
+orders of reflection lifts: [2, 4]

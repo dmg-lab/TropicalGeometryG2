@@ -1,0 +1,343 @@
+"Enumerate permutations without depending on a study-specific group package."
+function all_permutations(values::AbstractVector{<:Integer})
+    result = Vector{Vector{Int}}()
+    function extend!(prefix::Vector{Int}, remaining::Vector{Int})
+        if isempty(remaining)
+            push!(result, copy(prefix))
+            return
+        end
+        for position in eachindex(remaining)
+            push!(prefix, remaining[position])
+            extend!(prefix, vcat(remaining[1:(position - 1)], remaining[(position + 1):end]))
+            pop!(prefix)
+        end
+    end
+    extend!(Int[], Int.(collect(values)))
+    return result
+end
+
+function action_orbits(actions::AbstractVector{<:AbstractVector{<:Integer}}, count::Integer)
+    # Seeds are the smallest unseen indices, in a single pass: searching a set
+    # of unseen indices for its minimum made 17 million cells take hours.
+    seen = falses(count)
+    result = Vector{Vector{Int}}()
+    for seed in 1:count
+        seen[seed] && continue
+        orbit = sort!(unique(Int(action[seed]) for action in actions))
+        seen[orbit] .= true
+        push!(result, orbit)
+    end
+    sort!(result; by=first)
+    return result
+end
+
+rational_key(value) = denominator(QQ(value)) == 1 ?
+    string(numerator(QQ(value))) :
+    "$(numerator(QQ(value)))/$(denominator(QQ(value)))"
+
+function canonical_split(side::AbstractVector{<:Integer}, ntaxa::Integer)
+    left = sort!(Int.(collect(side)))
+    right = setdiff(collect(1:ntaxa), left)
+    return (length(left), Tuple(left)) <= (length(right), Tuple(right)) ? left : right
+end
+
+"A lineality- and scale-invariant exact signature of the positive internal metric."
+function tree_signature(tree::TreeMetric, permutation=collect(1:tree.ntaxa))
+    sort(permutation) == collect(1:tree.ntaxa) ||
+        throw(ArgumentError("taxon action is not a permutation"))
+    splits = internal_splits(tree)
+    isempty(splits) && throw(ArgumentError("a fan ray has no positive internal edge"))
+    total = sum((split.length for split in splits); init=QQ(0))
+    records = [
+        (
+            Tuple(canonical_split(permutation[split.side], tree.ntaxa)),
+            QQ(split.length) / total,
+        )
+        for split in splits
+    ]
+    sort!(records; by=record -> (length(record[1]), record[1], record[2]))
+    return join((join(record[1], "") * ":" * rational_key(record[2]) for record in records), ';')
+end
+
+"Coordinate pullback for a taxon permutation in lexicographic Pluecker order."
+function coordinate_permutation(permutation::AbstractVector{<:Integer})
+    ntaxa = length(permutation)
+    sort(permutation) == collect(1:ntaxa) || throw(ArgumentError("not a permutation"))
+    pairs = pluecker_pairs(ntaxa)
+    pair_index = Dict(pair => index for (index, pair) in enumerate(pairs))
+    inverse = invperm(Int.(permutation))
+    return [
+        pair_index[(min(inverse[i], inverse[j]), max(inverse[i], inverse[j]))]
+        for (i, j) in pairs
+    ]
+end
+
+"Coordinate pullback on Pluecker coordinates, optionally preceded by leaf coordinates."
+function tropical_coordinate_permutation(permutation::AbstractVector{<:Integer}, ncoordinates::Integer)
+    ntaxa = length(permutation)
+    pair_indices = coordinate_permutation(permutation)
+    ncoordinates == binomial(ntaxa, 2) && return pair_indices
+    ncoordinates == ntaxa + binomial(ntaxa, 2) &&
+        return vcat(invperm(Int.(permutation)), ntaxa .+ pair_indices)
+    throw(ArgumentError("coordinate count does not match a Pluecker or point-Pluecker block"))
+end
+
+"""
+Coordinate pullback of a symmetry. With `action=:taxa` the permutation acts on
+taxa, hence on Pluecker coordinates; with `action=:variables` it permutes the
+coordinates directly and is its own pullback.
+"""
+function symmetry_coordinate_permutation(permutation::AbstractVector{<:Integer}, ncoordinates::Integer,
+                                         action::Symbol)
+    action == :taxa && return tropical_coordinate_permutation(permutation, ncoordinates)
+    action == :variables || throw(ArgumentError("unknown symmetry action $action"))
+    sort(permutation) == 1:ncoordinates ||
+        throw(ArgumentError("$permutation is not a permutation of the $ncoordinates coordinates"))
+    return Int.(collect(permutation))
+end
+
+"""
+    signed_permutation_group(generators, nvariables)
+
+Close gfan-style generators to their whole group, as `(permutations, signs)`.
+A generator `p` sends each variable `k` to variable `p[k]`; a generator
+`p => signs` sends it to `signs[k]` times variable `p[k]`, like gfan's
+`--symsigns`. Each permutation keeps the signs of one product of generators.
+"""
+function signed_permutation_group(generators, nvariables::Integer)
+    isempty(generators) && throw(ArgumentError("the symmetry generators are empty"))
+    signed = map(generators) do generator
+        p = Int.(collect(generator isa Pair ? first(generator) : generator))
+        sort(p) == 1:nvariables ||
+            throw(ArgumentError("$p is not a permutation of the $nvariables variables"))
+        signs = generator isa Pair ? Int.(collect(last(generator))) : ones(Int, nvariables)
+        length(signs) == nvariables && all(in((-1, 1)), signs) ||
+            throw(ArgumentError("$signs does not give a sign to each variable"))
+        (p, signs)
+    end
+    group = Dict(collect(1:nvariables) => ones(Int, nvariables))
+    queue = [collect(1:nvariables)]
+    while !isempty(queue)
+        p = popfirst!(queue)
+        for (q, t) in signed
+            # Substituting p and then q sends x_k to s[k] * t[p[k]] * x_{q[p[k]]}.
+            r = q[p]
+            haskey(group, r) && continue
+            group[r] = group[p] .* t[p]
+            push!(queue, r)
+        end
+    end
+    permutations = sort!(collect(keys(group)))
+    return (permutations=permutations, signs=[group[p] for p in permutations])
+end
+
+"""
+    monomial_support_automorphisms(polynomials; lineality=nothing)
+
+Permutations `p` of the variables mapping the set of monomials occurring in
+`polynomials` onto itself, variable `k` going to variable `p[k]`. When the
+polynomials span an ideal in their common degree, every symmetry of the ideal
+by a permutation and a torus scaling of the variables is among them. Such a
+symmetry also preserves the lineality space of the tropical variety, so the
+rows `lineality` spanning it may restrict the search to permutations
+preserving their span.
+"""
+function monomial_support_automorphisms(polynomials; lineality=nothing)
+    n = ngens(parent(first(polynomials)))
+    # A permutation preserves a subspace exactly when it preserves the entries
+    # of the orthogonal projection onto it.
+    projection = if isnothing(lineality)
+        nothing
+    else
+        rows = matrix(QQ, lineality)
+        Matrix{QQFieldElem}(transpose(rows) * inv(rows * transpose(rows)) * rows)
+    end
+    monomials = Set(Tuple(e) for f in polynomials for e in exponents(f))
+    # Assign variables in breadth-first order of co-occurrence, so that each
+    # monomial is checked as soon as all of its variables are assigned.
+    order = Int[]
+    for start in 1:n
+        start in order && continue
+        queue = [start]
+        push!(order, start)
+        while !isempty(queue)
+            k = popfirst!(queue)
+            for m in monomials, v in 1:n
+                m[k] > 0 && m[v] > 0 && !(v in order) || continue
+                push!(order, v)
+                push!(queue, v)
+            end
+        end
+    end
+    position = invperm(order)
+    checked_at = [Tuple[] for _ in 1:n]
+    for m in monomials
+        push!(checked_at[maximum(position[v] for v in 1:n if m[v] > 0)], m)
+    end
+    function image(m, p)
+        e = zeros(Int, n)
+        for v in 1:n
+            m[v] > 0 && (e[p[v]] += m[v])
+        end
+        return Tuple(e)
+    end
+    automorphisms = Vector{Int}[]
+    p, used = zeros(Int, n), falses(n)
+    function extend(depth)
+        depth > n && return push!(automorphisms, copy(p))
+        k = order[depth]
+        for v in 1:n
+            used[v] && continue
+            p[k], used[v] = v, true
+            all(m -> image(m, p) in monomials, checked_at[depth]) &&
+                (isnothing(projection) || all(projection[k, j] == projection[v, p[j]] for j in order[1:depth])) &&
+                extend(depth + 1)
+            used[v] = false
+        end
+        p[k] = 0
+    end
+    extend(1)
+    return sort!(automorphisms)
+end
+
+"The coordinate action `(p, variables) -> images` of a signed permutation group."
+function signed_coordinate_images(group)
+    signs = Dict(zip(group.permutations, group.signs))
+    return (permutation, variables) -> signs[Int.(collect(permutation))] .* variables[permutation]
+end
+
+"The permutation of `cells` induced by `ray_action`, or `nothing`; `cell_index` has tuple or vector keys."
+function induced_cell_action(ray_action, cells, cell_index)
+    tuple_keys = !(keytype(cell_index) <: AbstractVector)
+    action = Vector{Int}(undef, length(cells))
+    hit = falses(length(cells))
+    # One buffer for all images: allocating one per cell keeps threads waiting for the GC.
+    image = Int[]
+    for (position, cell) in enumerate(cells)
+        resize!(image, length(cell))
+        for (slot, ray) in enumerate(cell)
+            image[slot] = ray_action[ray]
+        end
+        sort!(image)
+        target = get(cell_index, tuple_keys ? Tuple(image) : image, 0)
+        (target == 0 || hit[target]) && return nothing
+        hit[target] = true
+        action[position] = target
+    end
+    return action
+end
+
+function quotient_ray_signature(vector, quotient)
+    projected = vec(transpose(QQ.(collect(vector))) * quotient)
+    pivot = findfirst(!iszero, projected)
+    pivot === nothing && error("a purported fan ray lies in lineality")
+    return Tuple(projected ./ abs(projected[pivot]))
+end
+
+"""
+The function `(ray, coordinates) -> signature` of the rays of `normalized_rays`
+with permuted `coordinates`: the primitive integer multiple of the projection
+modulo `lineality`. Like `quotient_ray_signature`, it identifies positive
+multiples, but computes in Int128 unless that could overflow: rational
+arithmetic took 150 microseconds per ray and permutation.
+"""
+function quotient_signature_function(normalized_rays, lineality)
+    quotient = Matrix{QQFieldElem}(kernel(matrix(QQ, lineality); side=:right))
+    # Multiplying by a common denominator keeps every direction.
+    integral(values) = (factor = foldl(lcm, (denominator(QQ(value)) for value in values); init=ZZ(1));
+                        BigInt[BigInt(numerator(QQ(value) * factor)) for value in values])
+    kernel_matrix = reshape(integral(vec(quotient)), size(quotient))
+    rows = [integral([normalized_rays[index, column] for column in 1:size(normalized_rays, 2)])
+            for index in 1:size(normalized_rays, 1)]
+    bound = maximum(abs, kernel_matrix; init=big(0)) * size(kernel_matrix, 1) *
+        maximum((maximum(abs, row; init=big(0)) for row in rows); init=big(0))
+    T = bound < big(2)^120 ? Int128 : BigInt
+    transposed = permutedims(T.(kernel_matrix))
+    typed_rows = [T.(row) for row in rows]
+    return function (ray, coordinates)
+        projected = transposed * typed_rows[ray][coordinates]
+        divisor = foldl(gcd, projected; init=zero(T))
+        iszero(divisor) && error("a purported fan ray lies in lineality")
+        return projected .÷ divisor
+    end
+end
+
+function canonical_row_span(rows)
+    rank_value, reduced = rref(matrix(QQ, rows))
+    return Matrix{QQFieldElem}(reduced)[1:rank_value, :]
+end
+
+function preserves_lineality(lineality, coordinate_indices)
+    rows = Matrix{QQFieldElem}(matrix(QQ, lineality))
+    return canonical_row_span(rows) == canonical_row_span(rows[:, coordinate_indices])
+end
+
+"""
+    taxon_symmetry(normalized_rays, maximal_cells; candidates, lineality, action=:taxa)
+
+Find the subgroup of the supplied taxon permutations that preserves both the
+quotient rays (as exact phylogenetic metrics) and the maximal cells. With
+`action=:variables` the candidates permute the coordinates directly, and the
+rays are compared modulo `lineality`, which is then required.
+"""
+function taxon_symmetry(
+    normalized_rays,
+    maximal_cells::AbstractVector;
+    candidates=all_permutations(1:number_of_taxa(size(normalized_rays, 2))),
+    lineality=nothing,
+    action::Symbol=:taxa,
+)
+    action == :taxa || !isnothing(lineality) ||
+        throw(ArgumentError("variable symmetries compare rays modulo a lineality space"))
+    trees = isnothing(lineality) ?
+        [tree_from_min_pluecker(collect(row)) for row in eachrow(normalized_rays)] : nothing
+    ncoordinates = size(normalized_rays, 2)
+    signature_of = isnothing(lineality) ? nothing : quotient_signature_function(normalized_rays, lineality)
+    signatures = isnothing(lineality) ? tree_signature.(trees) :
+        [signature_of(index, 1:ncoordinates) for index in 1:size(normalized_rays, 1)]
+    length(unique(signatures)) == length(signatures) ||
+        error("normalized rays do not have unique quotient-tree signatures")
+    signature_to_ray = Dict(signature => index for (index, signature) in enumerate(signatures))
+    cells = [sort!(Int.(collect(cell))) for cell in maximal_cells]
+    # Vector keys hash without dispatching on tuples of varying lengths.
+    cell_index = Dict{Vector{Int}, Int}(cell => index for (index, cell) in enumerate(cells))
+    length(cell_index) == length(cells) || error("duplicate maximal-cell incidence")
+
+    function candidate_action(candidate_raw)
+        candidate = Int.(collect(candidate_raw))
+        indices = symmetry_coordinate_permutation(candidate, ncoordinates, action)
+        !isnothing(lineality) && !preserves_lineality(lineality, indices) && return nothing
+        ray_action = Int[]
+        for ray_index in eachindex(signatures)
+            signature = isnothing(lineality) ?
+                tree_signature(trees[ray_index], candidate) :
+                signature_of(ray_index, indices)
+            target = get(signature_to_ray, signature, 0)
+            target == 0 && return nothing
+            push!(ray_action, target)
+        end
+        sort(ray_action) == collect(eachindex(signatures)) || return nothing
+        cell_action = induced_cell_action(ray_action, cells, cell_index)
+        return cell_action === nothing ? nothing : (candidate, ray_action, cell_action)
+    end
+    # The candidates are independent, so they run in parallel when Julia has threads.
+    progress = TaskProgress("symmetries tested on $(_count(length(cells))) cells", length(candidates))
+    tasks = [Threads.@spawn(begin
+                 result = candidate_action(candidate)
+                 advance!(progress)
+                 result
+             end) for candidate in candidates]
+    preserving = filter(!isnothing, fetch.(tasks))
+    isempty(preserving) && error("no symmetry candidate preserves the fan")
+    permutations = [first(result) for result in preserving]
+    ray_actions = [result[2] for result in preserving]
+    cell_actions = [last(result) for result in preserving]
+    return (
+        permutations=permutations,
+        ray_actions=ray_actions,
+        cell_actions=cell_actions,
+        ray_orbits=action_orbits(ray_actions, length(signatures)),
+        cell_orbits=action_orbits(cell_actions, length(cells)),
+        tested=length(candidates),
+    )
+end
