@@ -1,6 +1,7 @@
 # Mukai curve experiments
 
-This directory contains the maintained generators and a single runner for random translated intersections in genera 7--10. The canonical inputs live in `../data/mukai_curves/`; genus 10 reuses `../data/g2/grassmannian/01_variety_complex.mrdi` and `../data/fan_uniform_linear_space_16_21.mrdi`.
+This directory contains a runner for random translated intersections in genus 10 and the scripts on the Mukai model of genus 10. The intersections use `../data/g2/grassmannian/01_variety_complex.mrdi` and `../data/fan_uniform_linear_space_16_21.mrdi`.
+
 
 ## Run experiments
 
@@ -10,7 +11,8 @@ From the repository root:
 julia --project=julia julia/mukai_curves/run_experiments.jl GENUS [COUNT] [SOLVER] [OUTPUT_DIR]
 ```
 
-`GENUS` is 7, 8, 9, or 10. `SOLVER` is `highs`, `soplex`, `hybrid`, or `certified`; defaults are genus-specific. `certified` is `hybrid` without its SoPlex fallback: the pairs HiGHS cannot certify are kept, and the exact intersections discard the infeasible ones, so it is exact too. Use it where SoPlex crashes, as it did with 24 threads on hydra. Without `OUTPUT_DIR`, checkpoints are written beneath the ignored `julia/results/curves/genus_GENUS/`. Existing complete checkpoints are resumed; a folder with the `.jls` checkpoints of earlier versions is refused.
+`GENUS` is 10. `SOLVER` is `highs`, `soplex`, `hybrid`, or `certified`; defaults are genus-specific. `certified` is `hybrid` without its SoPlex fallback: the pairs HiGHS cannot certify are kept, and the exact intersections discard the infeasible ones, so it is exact too. Use it where SoPlex crashes.
+Without `OUTPUT_DIR`, checkpoints are written beneath the ignored `julia/results/curves/genus_GENUS/`. Existing complete checkpoints are resumed; a folder with the `.jls` checkpoints of earlier versions is refused.
 
 Each experiment stores its translation, graph, intersected polyhedra, and result record as Oscar `.mrdi` files. `all_results.mrdi` summarizes every completed experiment; outputs are not filtered by whether their graph has the target genus.
 
@@ -22,25 +24,12 @@ julia --project=julia julia/mukai_curves/run_experiments.jl 10 5 certified julia
 
 ## Generate inputs
 
-The committed `.mrdi` inputs make regeneration optional:
+The uniform tropical linear space of rank R on N elements:
 
 ```bash
-julia --project=julia julia/mukai_curves/generate_genus_7.jl
-julia --project=julia julia/mukai_curves/generate_genus_8.jl
-julia --project=julia julia/mukai_curves/generate_genus_9.jl
 julia --project=julia julia/mukai_curves/generate_uniform_linear_space.jl R N OUTPUT
 ```
 
-The Mukai models used by the experiments are:
-
-| Genus | Homogeneous model | Ambient projective space | Model dimension | Linear-section dimension |
-| --- | --- | ---: | ---: | ---: |
-| 7 | spinor variety $S_5$ | $\mathbf P^{15}$ | 10 | 6 |
-| 8 | $\operatorname{Gr}(2,6)$ | $\mathbf P^{14}$ | 8 | 7 |
-| 9 | $\operatorname{LGr}(3,6)$ | $\mathbf P^{13}$ | 6 | 8 |
-| 10 | $G_2/P_2$ | $\mathbf P^{12}$ | 5 | 9 |
-
-Recorded tropical f-vectors modulo lineality are `(1, 36, 280, 960, 1540, 912)` for genus 7, `(1, 25, 105, 105)` for genus 8, and `(1, 35, 155, 159)` for the genus-9 variety. Earlier notes also record prevariety f-vectors `(1, 35, 153, 155)` for genus 9 and `(1, 45, 206, 210, 2)` for genus 10.
 
 ## The Mukai model of genus 10
 
@@ -50,7 +39,7 @@ Recorded tropical f-vectors modulo lineality are `(1, 36, 280, 960, 1540, 912)` 
 julia --project=julia julia/mukai_curves/mukai_g10_degenerations.jl
 ```
 
-[`mukai_models.jl`](mukai_models.jl) sets up the Mukai models of genus 7 to 10 and computes a random linear section in $\mathbf P^{g-2}$: for genus 10 the 18 points of (d) in Section 10 of the paper, of degree 18.
+[`mukai_models.jl`](mukai_models.jl) sets up the Mukai model of genus 10 and computes a random linear section in $\mathbf P^{g-2}$: the 18 points of (d) in Section 10 of the paper, of degree 18.
 
 ## Results
 

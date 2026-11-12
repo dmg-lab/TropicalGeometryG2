@@ -3,10 +3,10 @@
 This folder is written by the scripts below, or unpacked from the Zenodo tarball
 ([10.5281/zenodo.24104003](https://doi.org/10.5281/zenodo.24104003)), which is a copy of it as the census writes
 it, with curated aliases; both give the same tree. Git keeps the inputs, which no script below rewrites: this
-README, the notes [`g2/SUMMARY.md`](g2/SUMMARY.md) (the seven `08_summary.toml` in one table) and
-`g2/grassmannian_Slong/observations.md`, the benchmark record `g2/flag/provenance/full28_benchmark.toml`, the tree
-metrics `g2/maximal_cell_tree_metrics.csv`, `chevalley/`, the inputs of the genera 7-9 and the shift basis in
-`mukai_curves/`, and `fan_uniform_linear_space_16_21.mrdi`.
+README, the notes [`g2/SUMMARY.md`](g2/SUMMARY.md) (the seven `08_summary.toml` in one table), the benchmark
+record `g2/flag/provenance/full28_benchmark.toml`, the tree metrics `g2/maximal_cell_tree_metrics.csv`,
+`chevalley/`, the shift basis `mukai_curves/genus_10_shift_basis.mrdi`, and `fan_uniform_linear_space_16_21.mrdi`.
+
 
 - `julia/make_paper_data.jl`: the single driver, which runs the census in order and writes every other file below.
   The stage `zenodo` names the census orbits as the paper does from the label tables of `julia/studies/g2/atlas/`,
@@ -61,10 +61,8 @@ Over GF(2), `census.md` is rewritten after every stage.
 - `chevalley/`: Chevalley polytopes of Spacek and Wang, as native polymake files, written by
   `generate_chevalley_polytopes.jl` and, for the 18 of G2, `g2_chevalley_study.jl`, both in
   `julia/studies/g2/degenerations_grassmannian/Spacek_Wang/`.
-- `mukai_curves/`: `genus_{7,8,9}_fan.mrdi` and `genus_{7,8,9}_linear_space.mrdi`, the inputs of
-  `julia/mukai_curves/run_experiments.jl`, written by `generate_genus_{7,8,9}.jl` and
-  `generate_uniform_linear_space.jl` there; `genus_10_shift_basis.mrdi`, written by
-  `julia/studies/g2/curves/shift_basis.jl`; and the two curves of genus ten.
+- `mukai_curves/`: `genus_10_shift_basis.mrdi`, written by `julia/studies/g2/curves/shift_basis.jl`, and the two
+  curves of genus ten.
 - `fan_uniform_linear_space_16_21.mrdi`: the uniform tropical linear space U(16,21) of the curves of genus ten,
   written by `julia/scripts/generate_uniform_tropical_linear_space.jl`.
 

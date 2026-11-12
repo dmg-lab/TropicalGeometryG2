@@ -234,13 +234,17 @@ function sA_files()
         claim("each file of the tarball but README.md is a byte-identical (SHA-256) copy of its source in the folder data/ of the tarball",
               isempty(mismatched), "$(count(name -> haskey(source, name), names)) compared" *
               (isempty(mismatched) ? "" : "; different or absent from data/: " * join(mismatched, ", ")))
-        # README.md is left out: the tarball's copy lacks the lines of the private repository.
-        local_files = [(name, data_path(name)) for name in keys(copies) if name != "README.md" && isfile(data_path(name))]
+        # A Markdown or TOML file with private blocks is left out: the tarball's copy lacks their lines.
+        private_blocks(path) = (endswith(path, ".md") || endswith(path, ".toml")) &&
+                               any(l -> strip(l) in ("<!-- private -->", "# private"), eachline(path))
+        present = [(name, data_path(name)) for name in keys(copies) if isfile(data_path(name))]
+        local_files = [(name, path) for (name, path) in present if !private_blocks(path)]
         differ = sort!([name for (name, path) in local_files if bytes2hex(open(SHA.sha256, path)) != copies[name]])
         kinds = Dict{String,Int}()
         foreach(name -> kinds[splitext(name)[2]] = get(kinds, splitext(name)[2], 0) + 1, differ)
         info("data/ against julia/data/: $(length(local_files) - length(differ)) of the $(length(local_files)) files " *
-             "identical, $(length(differ)) different, $(length(copies) - 1 - length(local_files)) absent from julia/data/" *
+             "identical, $(length(differ)) different, $(length(copies) - length(present)) absent from julia/data/" *
+             (length(present) == length(local_files) ? "" : ", $(length(present) - length(local_files)) with private blocks") *
              (isempty(differ) ? "" : length(differ) <= 5 ? ": " * join(differ, ", ") :
                                      ", by extension " * join(("$e $n" for (e, n) in sort!(collect(kinds))), ", ") *
                                      " (a computed julia/data/ has new identifiers in its .mrdi files and new times and " *

@@ -38,9 +38,7 @@
 ################################################################################
 #
 # ESTABLISHED
-#   * six validation checks pass (see genus8_warmup, genus10_setup)
-#   * genus 8: dim Aut(Sigma'_14) = 36 = dim PGL_6 + 1, confirming the mechanism
-#     predicted in Section 9 of the tex
+#   * the validation checks of genus10_setup pass
 #   * genus 10, contact grading, box of radius 3: 75 distinct initial ideals,
 #     three of which reach dim Aut = 15
 #       - c = (0,0,0,0,-3) and (-3,0,0,0,0), equivalent under -1 in W(G_2):
@@ -334,60 +332,6 @@ function graded_g2_basis(a::Vector{Int})
   return K, degs
 end
 
-################################################################################
-# 4.  Genus-8 warm-up  (tex, Section 10, "The genus-8 prediction is confirmed")
-#
-#   Gr(2,6) in P^14 is 15 Pluecker quadrics in 15 variables.  Two known values
-#   validate the machinery, then one prediction is tested:
-#     (a) dim Aut(Gr(2,6)) = dim PGL_6 = 35
-#     (b) in_w for Mukai's w = (+3^6, -2^9) must reproduce his (13) -> (16)
-#     (c) PREDICTION of the tex: dim Aut(Sigma'_14) = 36 = 35 + 1
-################################################################################
-
-function genus8_warmup()
-  println("\n", "="^78, "\n  GENUS 8 WARM-UP: Gr(2,6) in P^14\n", "="^78)
-  prs = [(i, j) for i in 1:6 for j in (i+1):6]
-  idx = Dict(p => k for (k, p) in enumerate(prs))
-  R, p = polynomial_ring(QQ, ["p$(i)$(j)" for (i, j) in prs])
-  quads = elem_type(R)[]
-  for i in 1:6, j in (i+1):6, k in (j+1):6, l in (k+1):6
-    push!(quads, p[idx[(i, j)]] * p[idx[(k, l)]] - p[idx[(i, k)]] * p[idx[(j, l)]] +
-                 p[idx[(i, l)]] * p[idx[(j, k)]])
-  end
-  println("Pluecker quadrics: ", length(quads))
-
-  V, mons, midx = quadric_matrix(quads, R)
-  println("dim I_2 = ", rank(V), "   (expected 15)")
-  d = stabiliser_dim(rref(V)[2][1:rank(V), :], mons, midx, 15)
-  println("dim Aut(Gr(2,6)) = ", d, "   (expected 35 = dim PGL_6)   ",
-          d == 35 ? "OK" : "MISMATCH")
-
-  # Mukai's weight, tex Section 9 Prop. 9.4: +3 inside a block, -2 across.
-  blk(i) = i <= 3 ? 1 : 2
-  w = [blk(i) == blk(j) ? 3 : -2 for (i, j) in prs]
-  # weight of a degree-2 monomial
-  wm = [w[a] + w[b] for (a, b) in mons]
-  W = initial_space(rref(V)[2][1:rank(V), :], wm)
-  println("dim in_w(I_2) = ", rank(W), "   (must equal 15: flatness)")
-
-  # Mukai (13)->(16): the nine "2+2" relations become 2x2 minors of the z-block,
-  # the six "3+1" relations survive unchanged.
-  nz = 0
-  for i in 1:nrows(W)
-    supp = findall(k -> !iszero(W[i, k]), 1:ncols(W))
-    crossing = all(k -> begin
-                     (a, b) = mons[k]
-                     blk(prs[a][1]) != blk(prs[a][2]) && blk(prs[b][1]) != blk(prs[b][2])
-                   end, supp)
-    crossing && (nz += 1)
-  end
-  println("initial forms supported on the z-block only: ", nz, "   (expected 9 = adj(z))")
-
-  d2 = stabiliser_dim(W, mons, midx, 15)
-  println("dim Aut(Sigma'_14) = ", d2, "   (tex predicts 36)   ",
-          d2 == 36 ? "PREDICTION CONFIRMED" : "PREDICTION FAILS")
-  return d2
-end
 
 ################################################################################
 # 5.  Genus 10: build X_{G_2} and check it
@@ -848,7 +792,6 @@ end
 # main
 ################################################################################
 
-genus8_warmup()
 R, Vr, mons, midx, degs = genus10_setup()
 res = enumerate_degenerations(Vr, mons, midx, degs)
 bad = check_degree2_generation(res, Vr, mons)

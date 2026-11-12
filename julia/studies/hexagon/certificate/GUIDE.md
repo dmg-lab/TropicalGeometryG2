@@ -37,8 +37,7 @@ dimension 12.
 - **6017 cones of Trop**: 547 faces of the raw fan of trop(linespace) times 11 cones of the tropical quadric (the sets S
   of at least two of the 4 terms of q).
 - **1506 maximal cones** (dimension 12): 251 maximal faces times 6 maximal quadric cones (the pairs S). Only these are
-  subdivided; the other cones are their faces, handled by the continuity lemma (`lem:continuity_faithful`), for which J
-  is prime on all 6017 cones.
+  subdivided; the other cones are their faces. J is prime on all 6017 cones (check (d) of `README.md`).
 - **1,632,641 cells** over all coordinates and maximal cones (about 29,000 per coordinate), stored as 1506 × 56 trees.
 - **403 representatives**, 1 to 25 per coordinate.
 
@@ -95,7 +94,7 @@ initial_form(cert.reps[i][1].g, w) in J                                   # h_1 
 r.value == tropically_faithful_representative(f, cone_setup(w); w).value  # the algorithm agrees
 ```
 
-All of these return `true` (checked on 2026-11-10). Any other path of a tree works the same way.
+All of these return `true`. Any other path of a tree works the same way.
 
 ## Use
 

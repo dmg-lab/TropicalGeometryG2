@@ -142,14 +142,6 @@ DATA_EXCLUDED='^g2/grassmannian_gf2/07_verification\.toml$'
 for file in "${DATA_FILES[@]}"; do
     put "$DATA/$file" "data/$file"
 done
-# The README of julia/data/ without the lines between <!-- private --> and
-# <!-- /private -->, if it has any.
-awk '{ line = $0; sub(/^[ \t]+/, "", line); sub(/[ \t\r]+$/, "", line) }
-     line == "<!-- private -->" { if (inside) exit 2; inside = 1; next }
-     line == "<!-- /private -->" { if (!inside) exit 2; inside = 0; next }
-     !inside { print }
-     END { if (inside) exit 2 }' "$DATA/README.md" > "$OUT/data/README.md" ||
-    { echo "unbalanced private block in $DATA/README.md" >&2; exit 1; }
 for folder in "${DATA_FOLDERS[@]}"; do
     [[ -d "$G2/$folder" ]] || { echo "missing: $G2/$folder" >&2; exit 1; }
     while IFS= read -r -d '' file; do
@@ -157,6 +149,24 @@ for folder in "${DATA_FOLDERS[@]}"; do
         [[ "$relative" =~ $DATA_EXCLUDED ]] || put "$file" "data/$relative"
     done < <(find "$G2/$folder" -type f -print0 | sort -z)
 done
+# The copies in data/ without their private blocks: the lines from <!-- private -->
+# to <!-- /private --> in Markdown, from # private to # /private in TOML.
+while IFS= read -r -d '' file; do
+    case "$file" in
+        *.md)   open='<!-- private -->'; close='<!-- /private -->' ;;
+        *.toml) open='# private';        close='# /private' ;;
+        *) continue ;;
+    esac
+    grep -q -F -- "$open" "$file" || continue
+    awk -v opener="$open" -v closer="$close" '
+        { line = $0; sub(/^[ \t]+/, "", line); sub(/[ \t\r]+$/, "", line) }
+        line == opener { if (inside) exit 2; inside = 1; next }
+        line == closer { if (!inside) exit 2; inside = 0; next }
+        !inside { print }
+        END { if (inside) exit 2 }' "$file" > "$file.public" ||
+        { echo "unbalanced private block in ${file#"$OUT/"}" >&2; exit 1; }
+    mv "$file.public" "$file"
+done < <(find "$OUT/data" -type f -print0)
 
 cat > "$OUT/README.md" <<'EOF'
 # Data for the paper on the tropical G2-Grassmannian and Mukai curves

@@ -6,30 +6,6 @@ const JULIA_DIR = normpath(joinpath(@__DIR__, ".."))
 const DATA_DIR = joinpath(JULIA_DIR, "data")
 
 const CONFIGS = Dict(
-    7 => (
-        ambient_dim=16,
-        default_count=10,
-        translation_range=-20_000:20_000,
-        default_solver=:highs,
-        grassmannian=joinpath(DATA_DIR, "mukai_curves", "genus_7_fan.mrdi"),
-        linear_space=joinpath(DATA_DIR, "mukai_curves", "genus_7_linear_space.mrdi"),
-    ),
-    8 => (
-        ambient_dim=15,
-        default_count=5,
-        translation_range=-2_000:2_000,
-        default_solver=:highs,
-        grassmannian=joinpath(DATA_DIR, "mukai_curves", "genus_8_fan.mrdi"),
-        linear_space=joinpath(DATA_DIR, "mukai_curves", "genus_8_linear_space.mrdi"),
-    ),
-    9 => (
-        ambient_dim=14,
-        default_count=10,
-        translation_range=-200_000:200_000,
-        default_solver=:highs,
-        grassmannian=joinpath(DATA_DIR, "mukai_curves", "genus_9_fan.mrdi"),
-        linear_space=joinpath(DATA_DIR, "mukai_curves", "genus_9_linear_space.mrdi"),
-    ),
     10 => (
         ambient_dim=21,
         default_count=2,
@@ -47,7 +23,7 @@ const CONFIGS = Dict(
 function usage(io::IO=stdout)
     println(io, "Usage: julia --project=julia julia/mukai_curves/run_experiments.jl GENUS [COUNT] [SOLVER] [OUTPUT_DIR]")
     println(io, "         [--shift-basis[=FILE]] [--coefficients=LOW:HIGH]")
-    println(io, "  GENUS:  7, 8, 9, or 10")
+    println(io, "  GENUS:  ", join(sort!(collect(keys(CONFIGS))), ", "))
     println(io, "  SOLVER: highs, soplex, hybrid, or certified (hybrid without SoPlex; defaults are genus-specific)")
     println(io, "  --shift-basis: translations are random integral combinations of the rows of FILE,")
     println(io, "                 by default the genus-10 basis, with coefficients in LOW:HIGH")
@@ -82,7 +58,7 @@ function parse_arguments(args)
     args = filter(arg -> !startswith(arg, "--"), args)
     isempty(args) && (usage(stderr); exit(2))
     genus = tryparse(Int, args[1])
-    genus in keys(CONFIGS) || error("GENUS must be one of 7, 8, 9, or 10")
+    genus in keys(CONFIGS) || error("GENUS must be one of ", join(sort!(collect(keys(CONFIGS))), ", "))
     config = CONFIGS[genus]
 
     count = length(args) >= 2 ? something(tryparse(Int, args[2]), 0) : config.default_count

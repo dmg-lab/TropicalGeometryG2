@@ -166,7 +166,7 @@ The tropically faithful representative f_σ = x^(-u) g of the coordinate `i` (1.
 p34_1..21) at a point `w = vcat(p, x)` of Trop, from the certificate: in the tree of a maximal cone containing `w`, the
 child of each node is one whose vertex v attains min <e, w> over the exponents e of g_j, i.e. whose cell σ ∩ N_v contains
 `w`. Returns `(j, g, u, value)` with `value` = trop(f_σ)(w) = val(f(z)) for a generic lift z of `w`. On a wall several
-cells contain `w`; their representatives are all faithful at `w` (continuity lemma lem:continuity_faithful).
+cells contain `w`; their representatives are all faithful at `w`.
 """
 function certificate_representative(i, w)
     C = hexagon_certificate()
@@ -195,11 +195,12 @@ end
 The tropicalization of Lemma lem:complete_hexagon at a tropical line `p` and a tropical point `x`: the values of tropically
 faithful representatives of all coordinates. Returns `(x2, x3, p23, p34, no_representative)`.
 
-With `method=:certificate` the representatives are those of certificate/hexagon_certificate.mrdi (`certificate_representative`),
-which are faithful on all of Trop, so `no_representative` is empty. With `method=:algorithm` they are computed at `(p, x)`
-by Algorithm alg:faithful_representative; `no_representative` lists the coordinates, as `(name, c)`, for which it finds that
-none exists. For these the value is a lower bound of the valuation at a lift, and the valuation at a generic lift depends on
-the component of V(in_w I) the lift reduces to.
+With `method=:certificate` the representatives are those of certificate/hexagon_certificate.mrdi
+(`certificate_representative`), which are faithful on all of Trop, so `no_representative` is empty. With
+`method=:algorithm` they are computed at `(p, x)` by the algorithm of tropically_faithful_representatives.jl;
+`no_representative` lists the coordinates, as `(name, c)`, for which it finds that none exists. For these the value is a
+lower bound of the valuation at a lift, and the valuation at a generic lift depends on the component of V(in_w I) the
+lift reduces to.
 """
 function tropical_path(p, x; method::Symbol=:certificate)
     w = vcat(QQ.(p), QQ.(x))

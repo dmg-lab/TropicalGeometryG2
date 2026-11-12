@@ -1,7 +1,7 @@
 using Oscar
 
-# Algorithm 2 (alg:faithful_representative) of main.tex: finding a tropically faithful representative of a homogeneous
-# polynomial f modulo a homogeneous ideal I, at a point w of trop(V(I)). Min convention throughout.
+# Finding a tropically faithful representative of a homogeneous polynomial f modulo a homogeneous ideal I, at a point
+# w of trop(V(I)). Min convention throughout.
 #
 # A representative f~ ∈ f + I is tropically faithful at w if in_w(f~) vanishes on no component of V(in_w I) in the torus
 # (Proposition prop:tropically_faithful). Then trop(f~)(w) = val(f(x)) for a generic lift x of w.

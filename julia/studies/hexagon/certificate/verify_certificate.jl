@@ -21,9 +21,8 @@ using Dates
 #       w ∈ relint σ, and at w = the sum of the rays of σ (a point of relint σ) in_w(g) ∉ J_C. Here
 #       J_C = in_w(I) : (x_1 ⋯ x_28)^∞ for w ∈ relint C, computed from a reduced Gröbner basis G of I at a point of
 #       relint C and certified to be the same on all of relint C: in_w(g) is constant on relint C for every g ∈ G.
-#   (d) J is prime on every cone of Trop (all 6017, also those that are not maximal; needed by the continuity lemma
-#       lem:continuity_faithful on the faces of the cells): J has a single minimal prime P over QQ, and P ⊆ J. The
-#       Gröbner cone of (c) is certified for every cone as well.
+#   (d) J is prime on every cone of Trop (all 6017, also those that are not maximal, for the faces of the cells): J has
+#       a single minimal prime P over QQ, and P ⊆ J. The Gröbner cone of (c) is certified for every cone as well.
 # With J_C prime over QQ, in_w(g) ∉ J_C means that in_w(g) vanishes on no geometric component of V(in_w I) in the torus:
 # these components are Galois conjugate and in_w(g) has rational coefficients.
 #

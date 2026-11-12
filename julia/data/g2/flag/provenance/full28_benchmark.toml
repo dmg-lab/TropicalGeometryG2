@@ -18,7 +18,6 @@ threads = 8
 certification_reused_initial_intersection = true
 certification_reused_initial_coarsening = true
 certification_reused_membership = false
-timing_note = "Separate warm measurements; certification includes worker setup, excludes first Oscar import, and reuses the original generator intersection and coarsening."
 fresh_native_purity_proof_seconds = 10.12845492362976
 oversized_orbits_excluded = 6
 candidate_skeleton_maximal_cones = 2729
@@ -41,17 +40,12 @@ whole_interior_proof_replayed = true
 purity_replayed = true
 canonical_targeted_assertions = 130
 canonical_initialization_assertions = 12
-existing_and_compact_regression_assertions = 399
 generic_edge_assertions = 30
 defining_ideal_sha256 = "cfd22cb8eafe264b23cf4e1fc58b8a141de48a9a3490538824925d7e086c7064"
 certified_fan_sha256 = "6d0007156152f830d0eeaf53a60fa66267e1949fc99139a0f18826157e58938c"
 canonical_fan_sha256 = "87cd985b81709ac1ebec8b3315af9459a9667bd30201a086721aece983f80c93"
 support_certificate_sha256 = "26f4d11a451e7aa4703480f586172c7331dd49bc62473506b89aeb256e718c2c"
 verified_at_utc = "2026-10-06T09:03:39.394"
-experiment_directory = "julia/tmp/flag_symmetry"
-trial_command = "JULIA_DEPOT_PATH=/tmp/mukai-flag-julia-depot:$HOME/.julia julia --startup-file=no --project=julia/tmp/flag_symmetry/package julia/tmp/flag_symmetry/run_balanced_cyclic.jl --workers=2 --threads=8 --bits=0"
-verification_command = "JULIA_DEPOT_PATH=/tmp/mukai-flag-julia-depot:$HOME/.julia julia --startup-file=no --project=julia/tmp/flag_symmetry/package julia/tmp/flag_symmetry/verify_trial.jl --balanced julia/tmp/flag_symmetry/work_balanced_cyclic"
-census_command = "JULIA_DEPOT_PATH=/tmp/mukai-flag-julia-depot:$HOME/.julia julia --startup-file=no --project=julia julia/studies/g2/run_census.jl --target=flag --stage=tropicalize --workers=2 --threads=8 --bits=0 --force"
 saturation_reference = "https://arxiv.org/pdf/1603.09241 (Proposition 3.1, Remark 3.2, Algorithm 3.3)"
 
 [source_sha256]

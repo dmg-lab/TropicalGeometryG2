@@ -1,4 +1,4 @@
-# Toric degenerations of the G2-Grassmannian: comparisons and observations
+# Toric degenerations of the G2-Grassmannian: comparisons with the literature
 
 This folder compares the Newton–Okounkov polytopes of the toric degenerations
 of the census of trop(G2/P2) (and, for FFL, of trop(G2/B)) with the
@@ -23,75 +23,44 @@ the order-12 group. 18 orbits are prime: 17 are toric (135 cells), and orbit
 31 (type 21) is prime but not binomial. The bodies are 5-dimensional with
 normalized volume 18 (the degree), except type 21, where it is 9.
 
-| Type | QQ orbit | Cells | Newton–Okounkov polytope | f-vector | Lattice points | Fiber polytope over the hexagon |
-|---:|---:|---:|---|---|---:|---|
-| 1 | 29 | 6 | 5-simplex (Chevalley, lecture hall) | 6 15 20 15 6 | 14 | 3-cube |
-| 2 | 27 | 6 | 5-simplex | 6 15 20 15 6 | 16 | 3-simplex |
-| 3 | 9 | 12 | Pyramid(Pyramid(Pyramid(4-gon))) | 7 19 26 19 7 | 14 | 3-cube |
-| 4 | 20 | 12 | Pyramid(Pyramid(Pyramid(4-gon))) | 7 19 26 19 7 | 14 | Δ1 × Δ2 |
-| 5 | 7 | 6 | Pyramid(Wedge(Pyramid(4-gon); segment)) | 9 26 35 24 8 | 14 | 3-cube |
-| 6 | 23 | 3 | Pyramid(Wedge(Pyramid(4-gon); segment)) | 9 26 35 24 8 | 15 | 3-cube |
-| 7 | 22 | 3 | Wedge(Wedge(Pyramid(4-gon); segment); 3-gon) | 13 38 48 30 9 | 14 | 3-cube |
-| 8 | 2 | 12 | Pyramid(Pyramid(M(3,5))) | 8 23 32 23 8 | 15 | 7 vertices, 6 facets |
-| 9 | 10 | 12 | Pyramid(Pyramid(M(3,5))) | 8 23 32 23 8 | 16 | 10 vertices, 8 facets |
-| 10 | 14 | 6 | Pyramid(Wedge(M(3,5); segment)) | 11 33 44 29 9 | 14 | 5-gonal prism |
-| 11 | 21 | 6 | Pyramid(Wedge(M(3,5); segment)) | 11 33 44 29 9 | 14 | 10 vertices, 7 facets |
-| 12 | 19 | 6 | Wedge(Pyramid(M(3,5)); 3-gon) | 11 33 44 29 9 | 14 | 3-cube |
-| 13 | 25 | 6 | Pyramid(Pyramid(4-gonal antiprism)) | 10 33 50 37 12 | 15 | 14 vertices, 11 facets |
-| 14 | 26 | 3 | Pyramid(Pyramid(4-gonal antiprism)) | 10 33 50 37 12 | 15 | 4-gonal antiprism |
-| 15 | 4 | 12 | Pyramid(M(4,7)) | 9 27 38 27 9 | 14 | 15 vertices, 11 facets |
-| 16 | 1 | 12 | Pyramid(4D, 8 vertices, 8 facets) | 9 27 38 27 9 | 14 | 14 vertices, 10 facets |
-| 17 | 8 | 12 | Pyramid(4D, 9 vertices, 8 facets) | 10 30 41 28 9 | 14 | 11 vertices, 8 facets |
-| 21 | 31 | 2 | 5-simplex (not toric, volume 9) | 6 15 20 15 6 | 13 | 3-simplex |
+| Type | QQ orbit | Cells | Newton–Okounkov polytope | f-vector | Lattice points |
+|---:|---:|---:|---|---|---:|
+| 1 | 29 | 6 | 5-simplex (Chevalley, lecture hall) | 6 15 20 15 6 | 14 |
+| 2 | 27 | 6 | 5-simplex | 6 15 20 15 6 | 16 |
+| 3 | 9 | 12 | Pyramid(Pyramid(Pyramid(4-gon))) | 7 19 26 19 7 | 14 |
+| 4 | 20 | 12 | Pyramid(Pyramid(Pyramid(4-gon))) | 7 19 26 19 7 | 14 |
+| 5 | 7 | 6 | Pyramid(Wedge(Pyramid(4-gon); segment)) | 9 26 35 24 8 | 14 |
+| 6 | 23 | 3 | Pyramid(Wedge(Pyramid(4-gon); segment)) | 9 26 35 24 8 | 15 |
+| 7 | 22 | 3 | Wedge(Wedge(Pyramid(4-gon); segment); 3-gon) | 13 38 48 30 9 | 14 |
+| 8 | 2 | 12 | Pyramid(Pyramid(M(3,5))) | 8 23 32 23 8 | 15 |
+| 9 | 10 | 12 | Pyramid(Pyramid(M(3,5))) | 8 23 32 23 8 | 16 |
+| 10 | 14 | 6 | Pyramid(Wedge(M(3,5); segment)) | 11 33 44 29 9 | 14 |
+| 11 | 21 | 6 | Pyramid(Wedge(M(3,5); segment)) | 11 33 44 29 9 | 14 |
+| 12 | 19 | 6 | Wedge(Pyramid(M(3,5)); 3-gon) | 11 33 44 29 9 | 14 |
+| 13 | 25 | 6 | Pyramid(Pyramid(4-gonal antiprism)) | 10 33 50 37 12 | 15 |
+| 14 | 26 | 3 | Pyramid(Pyramid(4-gonal antiprism)) | 10 33 50 37 12 | 15 |
+| 15 | 4 | 12 | Pyramid(M(4,7)) | 9 27 38 27 9 | 14 |
+| 16 | 1 | 12 | Pyramid(4D, 8 vertices, 8 facets) | 9 27 38 27 9 | 14 |
+| 17 | 8 | 12 | Pyramid(4D, 9 vertices, 8 facets) | 10 30 41 28 9 | 14 |
+| 21 | 31 | 2 | 5-simplex (not toric, volume 9) | 6 15 20 15 6 | 13 |
 
 M(d,n) is the multiplex; "segment" and "3-gon" are the faces of the wedges.
-The last column is from OBSERVATIONS.md, with type 14 updated (see the
-caveats below).
 Types 18–20 are toric over GF(2) only: GF(2) orbits 9, 20 and 1. The
 non-prime QQ orbits are 3, 5, 6, 11, 12, 13, 15, 16, 17, 18, 24, 28 and 30,
 which are types 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33 and 34.
 
-## Top-level files: polytope types and the hexagon
+## Top-level files: polytope types
 
-[`OBSERVATIONS.md`](OBSERVATIONS.md) (2026-10-06):
-
-- The lineality space of trop(G2/P2) is 2-dimensional. Each of its 21
-  columns is 0 or a root of G2, with α short and β long
-  ([`roots.png`](roots.png)). Their convex hull is a hexagon H whose
-  G2-lattice points are exactly the roots and 0.
-- For every prime cell C, the projection π45 of P(C) onto the two lineality
-  coordinates is onto H. The table above gives the Billera–Sturmfels fiber
-  polytope of π45 (3-dimensional).
-
-How the tables were made:
+How the table was made:
 
 - [`check_types.jl`](check_types.jl) classifies every stored body with
   `RecursivePolytopeTypes`.
-- [`check_fiber_type.jl`](check_fiber_type.jl) does the same for the fiber
-  polytope of the projection onto coordinates 4 and 5.
-- Both scripts save the parts they cannot name to [`unrecognized/`](unrecognized/)
-  through `save_unrecognized` in [`utils.jl`](utils.jl). `utils.jl` also has
-  `fiber_polytope` and a catalog test for 3-polytopes (Platonic, Archimedean,
-  Catalan, pyramids, prisms, bipyramids, Johnson).
-- They use the relative path `julia/data/...`, so run them from the
+- When run, `check_types.jl` saves the parts it cannot name to
+  `unrecognized/` through `save_unrecognized` in [`utils.jl`](utils.jl).
+  `utils.jl` also has `fiber_polytope` and a catalog test for 3-polytopes
+  (Platonic, Archimedean, Catalan, pyramids, prisms, bipyramids, Johnson).
+- The scripts use the relative path `julia/data/...`, so run them from the
   repository root.
-
-Caveats, checked 2026-10-20:
-
-- OBSERVATIONS.md was made when the census stored a polytope for all 31
-  orbits. Its rows for the 13 non-prime orbits are value polytopes, not
-  Newton–Okounkov bodies. Since 2026-10-09 only the 18 prime orbits have a
-  `.poly` file.
-- The stored bodies now use intrinsic lattice coordinates. There,
-  coordinates 4 and 5 no longer project onto the hexagon: the images are
-  triangles and quadrilaterals.
-- Rerunning the fiber classification on these files gives the same types as
-  the table, except orbit 26 (type 14). OBSERVATIONS.md left it unrecognized
-  (8 vertices, 10 facets); the current recognizer finds the 4-gonal
-  antiprism.
-- `unrecognized/` (2026-10-07) holds the bases of the unrecognized bodies of
-  orbits 1, 3, 5, 8, 11 and 13. It also holds the unrecognized fibers of
-  orbits 1, 2, 4, 5, 8, 10, 11, 21 and 25.
 
 ## Spacek_Wang: Chevalley polytopes
 
@@ -108,8 +77,6 @@ the hull.
   - **Results:** 32 checks pass, 0 fail. The checks are degrees
     (Borel–Hirzebruch), volumes, IDP, vertex sets, and the Minkowski
     decompositions of A.1.
-  - **Two published volumes are not reproduced:** F4/P4 with s_2 gives 48
-    (the paper says 63), and SG(2,8) with s_2 gives 112 (the paper says 105).
   - **Agreement with the paper:** the cases F4 s_2 and C4 s_1, s_2 have
     volume below the degree, so they are not Newton–Okounkov bodies, as the
     paper states.
@@ -127,8 +94,7 @@ the hull.
   them flag (equivalently quadratic). The 4-dimensional facet x_1 = 1 has the
   same counts.
 - [`g2_chevalley_study.jl`](Spacek_Wang/g2_chevalley_study.jl) writes the G2
-  polytopes for twelve weights to `julia/data/chevalley/`. Its printed table
-  was not saved. From the stored files (2026-10-20):
+  polytopes for twelve weights to `julia/data/chevalley/`. In the stored files:
   - Every polytope has volume equal to the degree and exactly dim V_ϖ
     lattice points.
   - G2/P1 and G2/P2 give 5-simplices; G2/B gives polytopes with f-vector
@@ -175,9 +141,6 @@ degree 18).
   Δ2 = {u, v, r} and K is a flag 2-sphere with 11 vertices and 27 edges.
 - **T11:** K is T11 for exactly two of the eight. T11 has valencies
   4 4 5 5 5 5 5 5 5 5 6.
-- **The starring rule:** read literally, CI's rule fails at the step T5 → T6
-  (it gives valencies 3 3 4 4 5 5, not the octahedron). Starting from the
-  octahedron, the rule works as stated.
 - **Cells below each order:** a cell is below an order when its canonical
   weight lies in the closed Gröbner cone. 12 of the 248 cells are below at
   least one order:
@@ -248,6 +211,7 @@ in [`flag_census.jl`](flag_census.jl), shared with
   cells, two flag cells over each). The type 7 tree is the caterpillar
   12 – 3 – 7 – 6 – 45 (cell 59), with inner edges 1, 3, 3, 1. Orbit 64
   puts the apple on a cherry edge, 12|34567 or 45|12367 (atlas
-  `(:edge, 8, 9)` and `(:edge, 11, 12)`). The apple position was read from
-  the canonical weight through d_k8 = −val(x_k); `verify.jl` does not compute
-  it. Orbit 67 puts the apple on the pendant edges of leaves 3 and 6.
+  `(:edge, 8, 9)` and `(:edge, 11, 12)`), as
+  [`julia/paper_results/section_7.jl`](../../../paper_results/section_7.jl)
+  checks.
+  Orbit 67 puts the apple on the pendant edges of leaves 3 and 6.

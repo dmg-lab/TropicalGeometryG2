@@ -1,9 +1,9 @@
 # Functions in `TropicalCensus` to use instead of Oscar
 
-This package was written for the tropical census of G2 and B3 homogeneous
-spaces, but several of its functions are general. Each one below either
-replaces an Oscar function that is too slow or too restrictive, or fills a gap
-that Oscar 1.8 leaves. All arithmetic is exact over `QQ`.
+This package was written for the tropical census of G2 homogeneous spaces, but
+several of its functions are general. Each one below either replaces an Oscar
+function that is too slow or too restrictive, or fills a gap that Oscar 1.8
+leaves. All arithmetic is exact over `QQ`.
 
 ```julia
 # from the repository root
@@ -140,10 +140,8 @@ problem = TropicalProblem(
   every element preserves the ideal.
 - `gfan_symmetry=true` also gives the group to gfan (`--symmetry`). Gfan then
   computes one cone per orbit, and the orbits are expanded before the checks.
-  On the hexagon path A-B-C this cut the prevariety from 71 to 15 minutes.
 - `coarsen_prevariety=false` checks the orbits of gfan's cones without merging
-  them first. With the default certification the merge only orders the checks,
-  and for the 69,876 cones of that path it needed more than 7 GB.
+  them first. With the default certification the merge only orders the checks.
 - The default `symmetry_action=:taxa` instead takes the whole
   group of permutations of the taxa `1:n`, acting on Plücker coordinates
   `p_ij`, with signed images. The G2 and flag censuses use it.
@@ -183,9 +181,7 @@ changing the support or the lineality space.
   are connected through open walls, so it checks every set of at least two
   cones connected through them; when no such union is convex, no coarsening
   exists. It gives up (inconclusive) past `max_unions=100_000` sets in a
-  component. On the prevariety of the 84 Pfaffians in `Equation_ab_surfaces`,
-  the 216 open walls of the 5,640 coarsened cones form 72 triangles, and the
-  288 unions checked certify it coarsest.
+  component.
 - `coarsen_prevariety_fan(fan; symmetry=generators)` takes coordinate
   permutations `p`, acting by `v -> v[p]`, of a group preserving the fan. The
   cones with a common linear span are coarsened together; with a symmetry, only

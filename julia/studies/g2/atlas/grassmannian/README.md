@@ -6,10 +6,12 @@ The shared G2-tree renderer is in [`julia/to_tex/`](../../../../to_tex/).
 
 Run Julia commands from the repository root with `--project=julia`.
 Inputs come from `julia/data/g2/grassmannian/`,
-`julia/data/g2/grassmannian_gf2/`, and
-`julia/data/g2/reference/fine_groebner/`. TeX sources stay in this directory;
-PDF outputs go to `output/pdf/`. The field atlas uses `julia/work/tex/` for
-compilation files.
+`julia/data/g2/grassmannian_gf2/`, and the fine fan
+`julia/data/g2/reference/fine_groebner/normalized_fine_{fan,rays}.mrdi`,
+written by
+[`build_balanced_fan_and_atlas.jl --no-pdf`](../../reference/fine_groebner/build_balanced_fan_and_atlas.jl).
+TeX sources stay in this directory; PDF outputs go to `output/pdf/`. The
+field atlas uses `julia/work/tex/` for compilation files.
 
 ## Scripts
 
@@ -20,7 +22,7 @@ compilation files.
 | [`julia/to_tex/render_maximal_cell_tree.jl`](../../../../to_tex/render_maximal_cell_tree.jl) | Render the tree of a cone over QQ or GF(2), or a supplied G2 tree through the Julia API. |
 | [`julia/to_tex/build_styled_ray_orbit_tables.jl`](../../../../to_tex/build_styled_ray_orbit_tables.jl) | Build the paper ray catalog with the shared renderer. |
 | [`export_maximal_cell_tree_metrics.jl`](export_maximal_cell_tree_metrics.jl) | Write the distances `d_ij` of the trees of the 35 maximal-cell orbits of both fields, numbered as in the paper tables, to `julia/data/g2/maximal_cell_tree_metrics.csv`. |
-| [`compute_label_orbits.jl`](compute_label_orbits.jl) | Compute the W(G2) label action and write the orbit CSVs and [`REPORT.md`](REPORT.md). |
+| [`compute_label_orbits.jl`](compute_label_orbits.jl) | Compute the W(G2) label action and write the orbit CSVs. |
 | [`atlas_common.jl`](atlas_common.jl) | Shared definitions only: orbit CSV readers, rooted tree signatures, the 248 coarsest support cells, and the censuses of both fields in atlas rays. |
 
 ### Code layout
@@ -124,9 +126,7 @@ described in [`julia/to_tex/README.md`](../../../../to_tex/README.md).
 of taxa `1,...,6` on the exact balanced ray trees of the historical
 251-triangle fan and writes
 [`label_permutation_group.csv`](label_permutation_group.csv),
-[`ray_label_orbits.csv`](ray_label_orbits.csv),
-[`triangle_label_orbits.csv`](triangle_label_orbits.csv), and
-[`REPORT.md`](REPORT.md). The paper catalog and the flag atlas read these
-files. The report describes the finer 251-triangle fan with 32 triangle
-orbits; the current QQ census has 248 coarsest cells and 31 orbits. The
-maintained census symmetry stage does not read these CSVs.
+[`ray_label_orbits.csv`](ray_label_orbits.csv), and
+[`triangle_label_orbits.csv`](triangle_label_orbits.csv). The paper catalog
+and the flag atlas read these files. The maintained census symmetry stage
+does not read these CSVs.

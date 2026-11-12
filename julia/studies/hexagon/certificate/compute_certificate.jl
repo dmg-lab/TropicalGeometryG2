@@ -5,8 +5,8 @@ using LinearAlgebra
 # Computes the certificate hexagon_certificate.mrdi of Theorem thm:completing_hexagons (README.md): for each of the 56
 # coordinates f of Lemma lem:complete_hexagon, a subdivision of every maximal cone C of Trop = trop(linespace) ×
 # trop(pointspace) into closed cells σ, each with a tropically faithful representative f_σ = x^(-u) g ∈ f + I. Uses only
-# the definitions (polynomial_expressions.jl, tropical_complete_hexagon.jl) and Algorithm alg:faithful_representative of
-# tropicalizing morphisms (tropically_faithful_representatives.jl). Min convention throughout.
+# the definitions (polynomial_expressions.jl, tropical_complete_hexagon.jl) and the algorithm for tropically faithful
+# representatives (tropically_faithful_representatives.jl). Min convention throughout.
 #
 # Stages, each resumable (a rerun continues), writing below the work folder (--work=DIR, default certificate/work/):
 #

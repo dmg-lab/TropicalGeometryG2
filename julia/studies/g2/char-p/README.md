@@ -112,8 +112,8 @@ chunks (`for c in 1..10: julia compute.jl c 10`).  Logs in `logs/` (not tracked)
   `scan-FIELD.csv` for QQ, GF2, GF3, GF5, GF7, GF11, GF13.  Over GF2 exactly the 12
   boundary triangles of the tetrahedra (cells 70, 71, 100, 102, 120, 132, 133, 134, 135,
   140, 159, 160) fail; over QQ and every odd p all 248 cells are in trop.
-- `supplementary/tetrahedra/`: Bernd's witness and points inside the tetrahedra over QQ,
-  GF2, GF3, GF5 (`g2check.jl`, `g2tet.jl`), results in `RESULTS-2026-10-01.md`.
+- `supplementary/tetrahedra/`: the cubic f and points inside the tetrahedra over QQ, GF2,
+  GF3, GF5 (`g2check.jl`, `g2tet.jl`).
 - `supplementary/flag/`: checks for Theorem thm:flag.
   - `projection.jl`, `rays.jl`, `linrays.jl` (outputs `*.txt`): maximal cells and rays of
     the coarsest flag fan over the coarsest Grassmannian fan (decorated G2-trees).

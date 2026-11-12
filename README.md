@@ -118,7 +118,7 @@ julia/
     curves/                     the curves of genus ten (Section 10)
     supplemental/, reports/     further checks and their reports
   studies/hexagon/              Section 9: completion of hexagons and the certificate of Theorem 9.1
-  mukai_curves/, intersection_lib.jl   intersections with translated tropical linear spaces (genera 7-10)
+  mukai_curves/, intersection_lib.jl   intersections with translated tropical linear spaces (genus 10)
   curves_g10/overnight_20261028/       the runs of the two curves of the paper (shift vector q of Method 1)
   to_tex/                       the scripts that draw the figures and tables
 figures/, tables/               the figure and table files of the paper; figures/generate_figures.sh redraws them

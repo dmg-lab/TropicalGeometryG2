@@ -19,10 +19,9 @@ const TRIANGLE_ORBITS_CSV = joinpath(@__DIR__, "triangle_label_orbits.csv")
 const PREVARIETY_FAN_PATH =
     TropicalCensus.data_path("g2", "dressian", "01_prevariety_fan.mrdi")
 
-# These are written in the ray indexing of the tropical variety, as in
-# observations.md. The prevariety's raw ray order and scaling are recovered
-# and certified by prevariety_only_cone_data. The first member is the
-# representative.
+# These are written in the ray indexing of the tropical variety. The
+# prevariety's raw ray order and scaling are recovered and certified by
+# prevariety_only_cone_data. The first member is the representative.
 const EXPECTED_PREVARIETY_ONLY_CONE_ORBITS = (
     (
         kind=:tetrahedron,

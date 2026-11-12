@@ -52,14 +52,14 @@ not the flag Dressian, which is in `../../data/g2/flag_dressian/`.
 `run_census.jl` is the maintained entry point for the G2/P2 Grassmannian
 (`--target=base`) and G2/B flag (`--target=flag`). Both targets participate in
 stage 6, which classifies the initial ideal at one canonical interior weight
-per maximal-cell orbit. The flag's previously verified prime cone also remains
-in `supplemental/`.
+per maximal-cell orbit.
 
 The flag tropicalizer uses all **28 original coordinates and 78 equations**.
-As in the compact G2 census, it checks the higher-dimensional cells first,
-proves whole-relative-interior exclusions, and then tests one representative
-per orbit of the verified order-12 signed G2 action. An exact prime-initial
-certificate proves purity in dimension 8 before balanced support selection.
+It checks the higher-dimensional cells first, proves whole-relative-interior
+exclusions, and then tests one representative per orbit of the verified
+order-12 signed G2 action.
+An exact prime-initial certificate proves purity in dimension 8 before
+balanced support selection.
 The actual four-dimensional lineality is retained throughout. Its checkpoint
 directory is `../../work/g2/flag/tropicalize_symmetry_full28/`.
 The output is a coarsened tropical support fan; stage 6 computes initial
@@ -78,13 +78,8 @@ ring; its exactness is [Bohm--Keicher--Ren, Proposition 3.1 and Algorithm
 3.3](https://arxiv.org/pdf/1603.09241). General product saturation remains the
 fallback for nonhomogeneous ideals or unavailable cyclic support.
 
-The full-coordinate experiment (2026-10-06, scratch output not kept) took 173.06 s
-for the generator intersection and 102.95 s for the completed certification
-using the cached intersection and coarsening (including two-worker setup).
-It excluded six oversized orbits, then checked all 274 dimension-8 candidate
-orbits and retained 2714 cells in 270 orbits. These are separate warm timings,
-not a single cold-start measurement. Exact support comparisons and benchmark
-hashes are recorded in [`full28_benchmark.toml`](../../data/g2/flag/provenance/full28_benchmark.toml).
+Exact support comparisons and benchmark hashes are recorded in
+[`full28_benchmark.toml`](../../data/g2/flag/provenance/full28_benchmark.toml).
 
 Canonical data are in `../../data/g2/`. The stage-2 and stage-3 base fans have
 the same quotient support and incidence, but remain separate artifacts because
@@ -112,9 +107,8 @@ nonbinomial components over `CC`. See
 [`supplemental/geometric_toric_report.md`](supplemental/geometric_toric_report.md)
 for the check and its command.
 
-The exact dihedral representation and the finite twisted-affine `D4^(3)` root
-window outside lineality are analyzed in [`fan_symmetries/`](fan_symmetries/).
-
+The exact dihedral representation of the order-12 taxon group is analyzed in
+[`fan_symmetries/`](fan_symmetries/).
 
 ## Multiplicities of the Grassmannian
 

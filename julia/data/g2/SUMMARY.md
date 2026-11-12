@@ -1,9 +1,9 @@
 # G2 census: what the paper states
 
-Computed 2026-10-15 by the census stage `summarize` from the stored census
-artifacts. Each row links to the `08_summary.toml` of its target, which has
-all the numbers below and more: the polygons among the 2-faces, the counts of
-prime and binomial orbits, and the size of the stage-1 fan.
+Each row links to the `08_summary.toml` of its target, which the census stage
+`summarize` writes. It has all the numbers below and more: the polygons among
+the 2-faces, the counts of prime and binomial orbits, and the size of the
+stage-1 fan.
 
 All counts are modulo lineality, where the fan is a polyhedral complex: a
 vertex is a ray and a face of dimension k is a cone of dimension k + 1. The

@@ -357,10 +357,10 @@ function section_10()
           ([("p12", "p67"), ("p13", "p57"), ("p17", "p56"), ("p23", "p47"), ("p27", "p46"), ("p37", "p45")], 15),
           (equal, rank_of(vcat(grays, glin))))
     claim("Method 1: at most 15 × 18 = 270 rays", length(M1.graph.rays) <= 270, "$(length(M1.graph.rays)) rays")
-    notes = read(repository("julia", "curves_g10", "overnight_20261028", "wpart_2722", "wpart_2722_k3_surface.md"), String)
-    row = match(r"\| X17, wpart 2722 \(fig:planar_curve\) \| (\d+) \| (\d+) \| ([^|]+) \|", notes)
+    record = TOML.parsefile(repository("julia", "curves_g10", "overnight_20261028", "wpart_2722", "wpart_2722_record.toml"))
+    row = record["rays"]
     stored("Method 1: rays, rays with multiplicity (the bound 270 is reached), multiplicities (curve_rays.jl, 94 s on " *
-           "8 threads; wpart_2722_k3_surface.md)", "$(row[1]), $(row[2]), $(strip(row[3]))")
+           "8 threads; wpart_2722_record.toml)", "$(row["rays"]), $(row["rays_with_multiplicity"]), $(row["multiplicities"])")
     directions = Dict{Vector{ZZRingElem},Int}()
     foreach(((_, r),) -> directions[s10_direction(r)] = get(directions, s10_direction(r), 0) + 1, M1.graph.rays)
     order(u) = (count(>(0), u), findall(>(0), u))
@@ -495,17 +495,13 @@ function section_10()
               result.pieces == result.faces && result.polytope_graph, "$(result.pieces) pieces, $(result.faces) faces")
     else
         # wpart_2722_x18.mrdi is written by k3_surface_polygons.jl into the git-ignored julia/results/; without it, the
-        # result of k3_fins.jl as recorded in the kept notes.
-        text = replace(notes, r"\s+" => " ")
-        found(r) = (hit = match(r, text)) === nothing ? error("wpart_2722_k3_surface.md: no match for $r") : hit
-        sphere = found(r"These (\d+) polygons form a 2-sphere: (\d+) vertices, (\d+) edges")
-        fins = found(r"The other (\d+) bounded polygons are fins")
-        discs = found(r"which they cut into (\d+) discs, the faces of the planar core")
-        found(r"is simple and 3-connected, so by Steinitz's theorem it is the edge graph of a simple 3-polytope")
+        # result of k3_fins.jl as recorded in wpart_2722_record.toml.
+        k3 = record["k3_surface"]
+        k3["core_simple_and_3_connected"] || error("wpart_2722_record.toml: the core is not recorded simple and 3-connected")
         stored("the K3 surface of Method 1: a 2-sphere with fins, cut by the core into its E - V + 2 faces; the core is " *
-               "the edge graph of a simple 3-polytope (k3_fins.jl, wpart_2722_k3_surface.md; julia/results/curves/" *
+               "the edge graph of a simple 3-polytope (k3_fins.jl, wpart_2722_record.toml; julia/results/curves/" *
                "genus_10/k3/wpart_2722_x18.mrdi of k3_surface_polygons.jl is absent)",
-               "a sphere of $(sphere[1]) polygons ($(sphere[2]) vertices, $(sphere[3]) edges), $(fins[1]) fins, " *
-               "$(discs[1]) discs; the core simple and 3-connected")
+               "a sphere of $(k3["sphere_polygons"]) polygons ($(k3["sphere_vertices"]) vertices, $(k3["sphere_edges"]) " *
+               "edges), $(k3["fins"]) fins, $(k3["core_discs"]) discs; the core simple and 3-connected")
     end
 end

@@ -9,9 +9,6 @@
 /julia/data/g2/*
 !/julia/data/g2/SUMMARY.md
 !/julia/data/g2/maximal_cell_tree_metrics.csv
-!/julia/data/g2/grassmannian_Slong/
-/julia/data/g2/grassmannian_Slong/*
-!/julia/data/g2/grassmannian_Slong/observations.md
 !/julia/data/g2/flag/
 /julia/data/g2/flag/*
 !/julia/data/g2/flag/provenance/
