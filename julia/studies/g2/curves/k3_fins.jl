@@ -7,7 +7,9 @@
 # is spanned by one cycle z. The polygons off the support of z are the fins.
 # The script checks that the support of z is a 2-sphere: every edge lies in
 # exactly two of its polygons, the link of every vertex is one circle, and the
-# Euler characteristic is 2. It then checks that the core of the curve X17 runs
+# Euler characteristic is 2, and that the bounded part collapses onto it: greedy
+# elementary collapses through free edges, then through free vertices, remove all
+# fins and leave exactly the sphere. It then checks that the core of the curve X17 runs
 # on the sphere, and that the core cuts the sphere into as many discs as the
 # planar core has faces, E - V + 2, so that the core is the edge graph of the
 # sphere, cut into these faces. Last, the core without its vertices of valence
@@ -17,7 +19,9 @@
 #   julia --project=. studies/g2/curves/k3_fins.jl DIR [K] [--input=FILE]
 #
 # DIR and K as for k3_surface_polygons.jl, whose output FILE is read, by
-# default results/curves/genus_10/k3/DIR_x18.mrdi. The polygons are
+# default results/curves/genus_10/k3/DIR_x18.mrdi. For wpart_2722 the stage
+# zenodo writes it to data/mukai_curves/genus_10_method_1_k3.mrdi, which
+# paper_results.jl reads. The polygons are
 # exact; only the cyclic order of the vertices of a polygon is found in
 # floating point, and the edges it gives are checked against the exact edge
 # keys of the polygon.
@@ -72,6 +76,41 @@ function n_classes(n, pairs)
     parent = collect(1:n)
     foreach(((a, b),) -> parent[find_root!(parent, a)] = find_root!(parent, b), pairs)
     return count(x -> find_root!(parent, x) == x, 1:n)
+end
+
+"""
+Greedy elementary collapses of the 2-complex with `nv` vertices, edges `ends[e] = (i, j)` and polygons with
+boundary edges `boundaries[f]`: first remove a polygon together with an edge in no other remaining polygon,
+until none is left, then an edge in no polygon together with an end on no other remaining edge. Returns the
+numbers of both kinds of collapses and the vertices, edges and polygons left. Greedy collapsing can get stuck
+on a collapsible complex, so only a rest equal to the expected subcomplex proves something.
+"""
+function greedy_collapse(nv, ends, polygons_of_edge, boundaries)
+    ne, nf = length(polygons_of_edge), length(boundaries)
+    polygon_alive, edge_alive, vertex_alive = trues(nf), trues(ne), trues(nv)
+    polygon_count = length.(polygons_of_edge)
+    edges_at = [Int[] for _ in 1:nv]
+    foreach(e -> foreach(v -> push!(edges_at[v], e), ends[e]), 1:ne)
+    edge_count = length.(edges_at)
+    polygon_collapses = edge_collapses = 0
+    while (e = findfirst(e -> edge_alive[e] && polygon_count[e] == 1, 1:ne)) !== nothing
+        f = only(filter(f -> polygon_alive[f], polygons_of_edge[e]))
+        polygon_alive[f] = false
+        foreach(((d, _),) -> polygon_count[d] -= 1, boundaries[f])
+        edge_alive[e] = false
+        foreach(v -> edge_count[v] -= 1, ends[e])
+        polygon_collapses += 1
+    end
+    # A vertex of a polygon lies on two of its edges, so an edge with a free end lies in no polygon.
+    while (v = findfirst(v -> vertex_alive[v] && edge_count[v] == 1, 1:nv)) !== nothing
+        e = only(filter(e -> edge_alive[e], edges_at[v]))
+        edge_alive[e] = false
+        vertex_alive[v] = false
+        foreach(w -> edge_count[w] -= 1, ends[e])
+        edge_collapses += 1
+    end
+    return (; polygon_collapses, edge_collapses, vertices=findall(vertex_alive), edges=findall(edge_alive),
+            polygons=findall(polygon_alive))
 end
 
 function k3_fins(x18, G)
@@ -154,6 +193,14 @@ function k3_fins(x18, G)
     sphere = surface && connected && χ == 2
     sphere && println("the support of z is a connected closed surface with Euler characteristic 2: a 2-sphere")
 
+    # The fins collapse away: an edge of the sphere lies in two of its polygons, so it never becomes free and the
+    # greedy collapse never removes a polygon of the sphere.
+    rest = greedy_collapse(nv, ends, polygons_of_edge, boundaries)
+    collapses = rest.vertices == sphere_vertices && rest.edges == sphere_edges && rest.polygons == support
+    println("greedy collapse: $(rest.polygon_collapses) polygons through a free edge, then $(rest.edge_collapses) ",
+            "edges through a free vertex; left $(length(rest.vertices)) vertices, $(length(rest.edges)) edges, ",
+            "$(length(rest.polygons)) polygons, ", collapses ? "the sphere" : "NOT the sphere")
+
     # The core of the curve on the sphere, and the pieces of the sphere cut along it.
     core_indices = core_edges(G)
     core_keys = Set(x18.curve_keys[k] for k in core_indices)
@@ -189,7 +236,7 @@ function k3_fins(x18, G)
     end
     println("the core: $n vertices of valences ", histogram(valences), ", $(length(ends_of_core)) edges, ",
             simple ? "simple" : "NOT simple", ", ", three_connected ? "3-connected" : "NOT 3-connected")
-    return (; sphere, pieces, faces, core_on_sphere=core_keys ⊆ sphere_keys,
+    return (; sphere, collapses, pieces, faces, core_on_sphere=core_keys ⊆ sphere_keys,
             polytope_graph=simple && all(==(3), valences) && three_connected)
 end
 
@@ -203,7 +250,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
                              only(given)
     G = load_decorated_graphs(joinpath(dir, "decorated_graph_$k.mrdi")).subdivided
     result = k3_fins(load_k3_polygons(input), G)
-    result.sphere && result.core_on_sphere && result.pieces == result.faces && result.polytope_graph ||
+    result.sphere && result.collapses && result.core_on_sphere && result.pieces == result.faces &&
+        result.polytope_graph ||
         error("the core is not the edge graph of a 2-sphere of X18: $result")
-    println("the core is the edge graph of the 2-sphere left by removing the fins, and of a simple 3-polytope")
+    println("the bounded part collapses onto a 2-sphere; the core is the edge graph of this sphere and of a simple 3-polytope")
 end

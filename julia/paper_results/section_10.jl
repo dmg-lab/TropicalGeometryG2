@@ -474,8 +474,14 @@ function section_10()
           "$(join(sort(unique(M2.valence[crossings])), ", ")) in the curve")
 
     subheading("The K3 surface (b) of Method 1: trop(G) ∩ L_3")
-    x18 = project_path("results", "curves", "genus_10", "k3", "wpart_2722_x18.mrdi")
-    if isfile(x18)
+    statement = "the K3 surface of Method 1: its bounded part collapses onto a 2-sphere, cut by the core into its " *
+                "E - V + 2 faces; the core is the edge graph of a simple 3-polytope"
+    # The polygons of k3_surface_polygons.jl, written by the stage zenodo, or by the script into results/.
+    candidates = [data_path("mukai_curves", "genus_10_method_1_k3.mrdi"),
+                  project_path("results", "curves", "genus_10", "k3", "wpart_2722_x18.mrdi")]
+    found = findfirst(isfile, candidates)
+    if !isnothing(found)
+        x18 = candidates[found]
         m = run_in_module(study_path("g2", "curves", "k3_fins.jl"); name=:K3Fins)
         G = call(m, :load_decorated_graphs,
                  project_path("curves_g10", "overnight_20261028", "wpart_2722", "decorated_graph_1.mrdi")).subdivided
@@ -484,18 +490,16 @@ function section_10()
         result = redirect_stdout(devnull) do
             call(m, :k3_fins, polygons, G)
         end
-        claim("the K3 surface of Method 1: a 2-sphere with fins, cut by the core into its E - V + 2 faces; the core is " *
-              "the edge graph of a simple 3-polytope", result.sphere && result.core_on_sphere &&
+        claim(statement, result.sphere && result.collapses && result.core_on_sphere &&
               result.pieces == result.faces && result.polytope_graph, "$(result.pieces) pieces, $(result.faces) faces")
     else
-        # wpart_2722_x18.mrdi is written by k3_surface_polygons.jl into the git-ignored results/; without it, the
-        # result of k3_fins.jl as recorded in wpart_2722_record.toml.
+        # Without the polygons, the result of k3_fins.jl as recorded in wpart_2722_record.toml.
         k3 = record["k3_surface"]
         k3["core_simple_and_3_connected"] || error("wpart_2722_record.toml: the core is not recorded simple and 3-connected")
-        stored("the K3 surface of Method 1: a 2-sphere with fins, cut by the core into its E - V + 2 faces; the core is " *
-               "the edge graph of a simple 3-polytope (k3_fins.jl, wpart_2722_record.toml; results/curves/" *
-               "genus_10/k3/wpart_2722_x18.mrdi of k3_surface_polygons.jl is absent)",
+        stored(statement * " (k3_fins.jl, wpart_2722_record.toml; data/mukai_curves/genus_10_method_1_k3.mrdi of " *
+               "the stage zenodo is absent)",
                "a sphere of $(k3["sphere_polygons"]) polygons ($(k3["sphere_vertices"]) vertices, $(k3["sphere_edges"]) " *
-               "edges), $(k3["fins"]) fins, $(k3["core_discs"]) discs; the core simple and 3-connected")
+               "edges), $(k3["fins"]) fins removed by $(k3["polygon_collapses"]) + $(k3["edge_collapses"]) " *
+               "collapses, $(k3["core_discs"]) discs; the core simple and 3-connected")
     end
 end

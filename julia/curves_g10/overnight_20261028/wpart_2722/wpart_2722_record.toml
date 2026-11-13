@@ -8,10 +8,13 @@ multiplicities = "1^208 2^31"
 
 [k3_surface]
 # The K3 surface X18, by studies/g2/curves/k3_fins.jl on the polygons of k3_surface_polygons.jl
-# (read from results/curves/genus_10/k3/wpart_2722_x18.mrdi when that file is present).
+# (read from data/mukai_curves/genus_10_method_1_k3.mrdi of the stage zenodo when that file is present).
 sphere_polygons = 27
 sphere_vertices = 33
 sphere_edges = 58
 fins = 686
+# Greedy elementary collapses: the fins through a free edge, then the edges left through a free vertex.
+polygon_collapses = 686
+edge_collapses = 421
 core_discs = 11
 core_simple_and_3_connected = true

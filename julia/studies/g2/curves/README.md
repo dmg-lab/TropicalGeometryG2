@@ -68,6 +68,7 @@ julia --project=. studies/g2/curves/run_experiments.jl 10 5 certified results/cu
 - [`shifted_bergman_cells.jl`](shifted_bergman_cells.jl), [`bounded_cell_valences.jl`](bounded_cell_valences.jl): the
   cells whose part of the curve is a polytope, and the valences there.
 - [`k3_surface_polygons.jl`](k3_surface_polygons.jl), [`k3_fins.jl`](k3_fins.jl),
-  [`k3_core_regions.jl`](k3_core_regions.jl): the tropical K3 surface X18 that contains the curve of Method 1, its fins
-  and the 2-sphere left without them, and its match with the region atlas.
+  [`k3_core_regions.jl`](k3_core_regions.jl): the tropical K3 surface X18 that contains the curve of Method 1 (written
+  by the stage zenodo to `data/mukai_curves/genus_10_method_1_k3.mrdi`), its fins, which collapse away onto a 2-sphere,
+  and its match with the region atlas.
 

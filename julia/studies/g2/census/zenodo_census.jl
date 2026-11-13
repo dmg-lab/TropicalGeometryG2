@@ -24,6 +24,13 @@
 #            to genus_10_method_1_pieces.mrdi; Method 2 is the stored curve of
 #            curves_g10/overnight_20261028/experiment_100128; both complexes
 #            by studies/g2/curves/curve_complex.jl
+#   K3 surface of Method 1
+#            data/mukai_curves/genus_10_method_1_k3.mrdi: the tropical K3
+#            surface trop(G) ∩ (U(18,21) + t) of the curve of Method 1, polygon
+#            by polygon, by studies/g2/curves/k3_surface_polygons.jl from the
+#            stored graph and shift of wpart_2722 and the coarsest fan of the
+#            census (about 7 min on one thread); paper_results.jl checks with
+#            studies/g2/curves/k3_fins.jl that it collapses onto a 2-sphere
 #
 # A part whose files all exist is skipped unless --force, even when its inputs
 # are missing, and its stored files are checked (the hexagon against main.tex,
@@ -48,6 +55,10 @@ end
 
 module Method1Curve
 include(joinpath(@__DIR__, "..", "curves", "method_1_curve.jl"))
+end
+
+module K3Surface
+include(joinpath(@__DIR__, "..", "curves", "k3_surface_polygons.jl"))
 end
 
 using .CurveComplex: write_curve, bounded_betti_number
@@ -80,6 +91,10 @@ const METHOD_1_PIECES = data_path("mukai_curves", "genus_10_method_1_pieces.mrdi
 const METHOD_1_OUTPUT = data_path("mukai_curves", "genus_10_method_1.mrdi")
 const METHOD_2_SOURCE = joinpath(CURVES_G10, "experiment_100128", "curve.mrdi")
 const METHOD_2_OUTPUT = data_path("mukai_curves", "genus_10_method_2.mrdi")
+# The K3 surface of Method 1, from the subdivided graph and the shift of its run.
+const K3_GRAPH = joinpath(CURVES_G10, "wpart_2722", "decorated_graph_1.mrdi")
+const K3_INPUTS = [K3_GRAPH, Method1Curve.METHOD_1_SHIFT, census_path("grassmannian", "02_coarsest_fan.mrdi")]
+const K3_OUTPUT = data_path("mukai_curves", "genus_10_method_1_k3.mrdi")
 
 table_inputs() = vcat(
     [census_path(target, name) for target in TABLE_TARGETS
@@ -103,6 +118,7 @@ zenodo_parts() = (
      inputs=METHOD_1_INPUTS, outputs=[METHOD_1_PIECES, METHOD_1_OUTPUT]),
     (name="curve of Method 2", run=export_method_2, check=() -> check_stored_curve(METHOD_2_OUTPUT),
      inputs=[METHOD_2_SOURCE], outputs=[METHOD_2_OUTPUT]),
+    (name="K3 surface of Method 1", run=export_k3, check=check_stored_k3, inputs=K3_INPUTS, outputs=[K3_OUTPUT]),
 )
 
 zenodo_outputs() = reduce(vcat, [part.outputs for part in zenodo_parts()])
@@ -270,6 +286,26 @@ function check_stored_method_1()
     all(P -> dim(P) == 1, pieces) || error("a piece of $METHOD_1_PIECES is not one-dimensional")
     println("  $(basename(METHOD_1_PIECES)): $(length(pieces)) one-dimensional pieces")
     check_stored_curve(METHOD_1_OUTPUT)
+end
+
+function export_k3()
+    G = K3Surface.load_decorated_graphs(K3_GRAPH).subdivided
+    t = QQ.(load(Method1Curve.METHOD_1_SHIFT))
+    seconds = @elapsed x18 = K3Surface.k3_polygons(G, t)
+    println("  the polygons of trop(G) ∩ (U(18,21) + t) in $(round(seconds; digits=1)) s")
+    mkpath(dirname(K3_OUTPUT))
+    K3Surface.save_k3_polygons(K3_OUTPUT, (; x18..., t))
+    println("  wrote $K3_OUTPUT")
+    check_stored_k3()
+end
+
+"""Check that the stored K3 surface is that of the shift of Method 1, and print its numbers of polygons."""
+function check_stored_k3()
+    x18 = K3Surface.load_k3_polygons(K3_OUTPUT)
+    x18.t == QQ.(load(Method1Curve.METHOD_1_SHIFT)) ||
+        error("$K3_OUTPUT is not the K3 surface of the shift of Method 1")
+    println("  $(basename(K3_OUTPUT)): $(length(x18.polygons)) polygons, ",
+            "$(count(((_, p),) -> p.bounded, x18.polygons)) bounded")
 end
 
 ###############################################################################
@@ -565,6 +601,8 @@ function stage_zenodo(target, options)
             "hexagon" => "tropical_complete_hexagon from flags 1 and 4, equal to the Example of Section 9",
             "curves" => "Method 1 cut from the raw fan by B + q, q of wpart 2722, by curves/method_1_curve.jl; " *
                         "Method 2 the stored curve of experiment 100128",
+            "k3_surface" => "trop(G) ∩ (U(18,21) + t) of the curve of Method 1, polygon by polygon, by " *
+                            "curves/k3_surface_polygons.jl",
         ),
     )
 end

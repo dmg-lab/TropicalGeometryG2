@@ -33,7 +33,7 @@ The scripts read the data from `data/`. Fill it in one of two ways; both give th
    ```
 
 2. **Compute** it: the census, from the ideals, the shift vector of the first curve of genus ten and the run of the
-   second, about 1.5 hours and at most 6 GB on a laptop. The tables that name the census orbits as the paper does are
+   second, about 1 h 40 min and at most 6 GB on a laptop. The tables that name the census orbits as the paper does are
    kept in git (`studies/g2/atlas/`).
 
    ```sh

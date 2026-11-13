@@ -20,7 +20,7 @@ Usage, from julia/:
     --threads=N   Julia threads of the step zenodo, the only threaded one (default: min(8, number of CPU threads));
                   the other steps run on one thread, since polymake must not be called from two threads at once
 
-A full run takes about 1.5 hours on a laptop with 16 GB (Intel i7-12700H); no step needs more than 6 GB. It needs
+A full run takes about 1 h 40 min on a laptop with 16 GB (Intel i7-12700H); no step needs more than 6 GB. It needs
 gfan 0.8 (bash scripts/install_gfan.sh). Besides data/, the steps write checkpoints to work/. Then paper_results.jl
 checks every statement of the paper, and ../production/make_zenodo_tarball.sh packs data/ into the Zenodo tarball.
 The label tables are computed by the scripts of studies/g2/atlas/ (see the README there), and the checks of the
@@ -89,8 +89,10 @@ const STEPS = [
           "Section 8: the long roots, stage $stage")
      for stage in SLONG_STAGES]...,
     step("zenodo", CENSUS, ["--target=zenodo", "--stage=zenodo"],
-         [provenance(".", "zenodo"), data("mukai_curves", "genus_10_method_1_pieces.mrdi")], 5,
-         "point-space ideals, orbit tables, tropicalized hexagon, curve of Method 1 from q, curve of Method 2";
+         [provenance(".", "zenodo"), data("mukai_curves", "genus_10_method_1_pieces.mrdi"),
+          data("mukai_curves", "genus_10_method_1_k3.mrdi")], 13,
+         "point-space ideals, orbit tables, tropicalized hexagon, curve of Method 1 from q, curve of Method 2, " *
+         "K3 surface of Method 1 (7 min)";
          threaded=true),
 ]
 

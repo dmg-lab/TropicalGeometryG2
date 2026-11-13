@@ -131,6 +131,7 @@ DATA_FILES=(
     fan_uniform_linear_space_16_21.mrdi
     mukai_curves/genus_10_method_1.mrdi
     mukai_curves/genus_10_method_1_pieces.mrdi
+    mukai_curves/genus_10_method_1_k3.mrdi
     mukai_curves/genus_10_method_2.mrdi
     g2/SUMMARY.md
     g2/grassmannian_orbits.csv

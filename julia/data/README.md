@@ -50,8 +50,10 @@ Over GF(2), `census.md` is rewritten after every stage.
   `g2/flag_dressian/flag_dressian_orbits.csv`, and the two curves of genus ten
   `mukai_curves/genus_10_method_{1,2}.mrdi`: that of Method 1 with its pieces `genus_10_method_1_pieces.mrdi`,
   computed from its shift vector `curves_g10/overnight_20261028/wpart_2722/translation_1.mrdi`, and that of
-  Method 2 from its run `curves_g10/overnight_20261028/experiment_100128/curve.mrdi`. Provenance in
-  `g2/provenance/zenodo.toml`.
+  Method 2 from its run `curves_g10/overnight_20261028/experiment_100128/curve.mrdi`; and the tropical K3 surface
+  of Method 1, `mukai_curves/genus_10_method_1_k3.mrdi`, polygon by polygon (`studies/g2/curves/k3_surface_polygons.jl`,
+  7 min), whose bounded part `paper_results.jl` checks to collapse onto a 2-sphere (`studies/g2/curves/k3_fins.jl`).
+  Provenance in `g2/provenance/zenodo.toml`.
 - `g2/maximal_cell_tree_metrics.csv`: the 35 orbits of maximal cells of `g2/grassmannian/` and
   `g2/grassmannian_gf2/` together, numbered as in the two tables of maximal trees of the paper, with their census
   orbits, the rays of the cell drawn there, and the 21 distances `d_ij` of its tree. Kept in git, and written again
@@ -62,8 +64,8 @@ Over GF(2), `census.md` is rewritten after every stage.
 - `chevalley/`: Chevalley polytopes of Spacek and Wang, as native polymake files, written by
   `generate_chevalley_polytopes.jl` and, for the 18 of G2, `g2_chevalley_study.jl`, both in
   `studies/g2/degenerations_grassmannian/Spacek_Wang/`.
-- `mukai_curves/`: `genus_10_shift_basis.mrdi`, written by `studies/g2/curves/shift_basis.jl`, and the two
-  curves of genus ten.
+- `mukai_curves/`: `genus_10_shift_basis.mrdi`, written by `studies/g2/curves/shift_basis.jl`, the two
+  curves of genus ten and the K3 surface of Method 1.
 - `fan_uniform_linear_space_16_21.mrdi`: the Bergman fan B_4 of the uniform matroid of rank 17 on 21 elements (16 unit
   vectors per maximal cone, min convention) of the curves of genus ten, written by
   `studies/g2/curves/uniform_bergman_fan.jl`.
