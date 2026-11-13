@@ -19,18 +19,16 @@ const FIELD_ASSET_DIR = joinpath(@__DIR__, "field_comparison_assets")
 const FIELD_ATLAS_DATA = joinpath(FIELD_ASSET_DIR, "atlas_data.toml")
 
 field_row(matrix, index) = QQ.(collect(matrix[index, :]))
-field_rational(value) = denominator(QQ(value)) == 1 ? string(numerator(QQ(value))) :
-    "$(numerator(QQ(value)))/$(denominator(QQ(value)))"
 
 function field_load_source(target)
-    directory = TropicalCensus.data_path("g2", target)
+    directory = TropicalGeometryG2.data_path("g2", target)
     fan = load(joinpath(directory, "03_normalized_coarsest_fan.mrdi"))
     rays = Matrix{QQFieldElem}(load(joinpath(directory, "03_normalized_rays.mrdi")))
     weights = Matrix{QQFieldElem}(load(joinpath(directory, "04_canonical_cell_weights.mrdi")))
     incidence = Matrix{Bool}(maximal_cones(IncidenceMatrix, fan))
     cells = [findall(identity, collect(row)) for row in eachrow(incidence)]
     actions = Matrix{ZZRingElem}(load(joinpath(directory, "05_symmetry_ray_actions.mrdi")))
-    ray_orbits = TropicalCensus.action_orbits([Int.(collect(row)) for row in eachrow(actions)], size(rays, 1))
+    ray_orbits = TropicalGeometryG2.action_orbits([Int.(collect(row)) for row in eachrow(actions)], size(rays, 1))
     cell_orbits = Dict{Int,Dict{String,Any}}()
     for line in readlines(joinpath(directory, "05_symmetry_cell_orbits.csv"))[2:end]
         fields = split(line, ','; limit=4)
@@ -87,10 +85,10 @@ function field_tree_metadata(tree, weight)
     splits = internal_splits(tree)
     internal = sort!([vertex for vertex in keys(tree.adjacency) if vertex > tree.ntaxa])
     return Dict{String,Any}(
-        "weight" => field_rational.(weight),
-        "pendant_lengths" => field_rational.(pendant_lengths(tree)),
+        "weight" => rational_key.(weight),
+        "pendant_lengths" => rational_key.(pendant_lengths(tree)),
         "internal_splits" => [join(split.side, ",") * "|" * join(split.complement, ",") *
-            ":" * field_rational(split.length) for split in splits],
+            ":" * rational_key(split.length) for split in splits],
         "internal_vertices" => internal,
         "internal_letters" => [string(Char(Int('A') + index - 1)) for index in eachindex(internal)],
     )
@@ -112,7 +110,7 @@ end
 function build_field_atlas_assets(; force=false)
     if !force && isfile(FIELD_ATLAS_DATA)
         result = TOML.parsefile(FIELD_ATLAS_DATA)
-        repository = TropicalCensus.project_path("..")
+        repository = TropicalGeometryG2.project_path("..")
         inputs_match = haskey(result, "input_sha256") && all(
             isfile(joinpath(repository, path)) &&
                 bytes2hex(sha256(read(joinpath(repository, path)))) == digest
@@ -137,8 +135,8 @@ function build_field_atlas_assets(; force=false)
     @assert (size(gf2.rays, 1), length(gf2.cells), length(gf2.ray_orbits), length(gf2.cell_orbits)) == (54, 254, 12, 32)
 
     quotient = Matrix{QQFieldElem}(kernel(matrix(QQ, balanced_lineality_basis()); side=:right))
-    qkeys = [TropicalCensus.quotient_ray_signature(row, quotient) for row in eachrow(qq.rays)]
-    fkeys = [TropicalCensus.quotient_ray_signature(row, quotient) for row in eachrow(gf2.rays)]
+    qkeys = [TropicalGeometryG2.quotient_ray_signature(row, quotient) for row in eachrow(qq.rays)]
+    fkeys = [TropicalGeometryG2.quotient_ray_signature(row, quotient) for row in eachrow(gf2.rays)]
     flut = Dict(key => index for (index, key) in enumerate(fkeys))
     ray_map = [flut[key] for key in qkeys]
     @assert ray_map == [Int(comparison["qq_to_gf2_ray_indices"][string(index)]) for index in 1:51]
@@ -265,9 +263,9 @@ function build_field_atlas_assets(; force=false)
         "03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi", "04_canonical_cell_weights.mrdi",
         "04_normalized_cell_trees.mrdi", "05_symmetry_ray_actions.mrdi", "05_symmetry_cell_orbits.csv")
         path = joinpath(source.directory, name)
-        provenance[relpath(path, TropicalCensus.project_path(".."))] = bytes2hex(sha256(read(path)))
+        provenance[relpath(path, TropicalGeometryG2.project_path(".."))] = bytes2hex(sha256(read(path)))
     end
-    provenance[relpath(comparison_path, TropicalCensus.project_path(".."))] = bytes2hex(sha256(read(comparison_path)))
+    provenance[relpath(comparison_path, TropicalGeometryG2.project_path(".."))] = bytes2hex(sha256(read(comparison_path)))
     metadata["input_sha256"] = provenance
     metadata["exporter_sha256"] = bytes2hex(sha256(read(@__FILE__)))
     metadata["renderer_sha256"] = bytes2hex(sha256(read(FIELD_TREE_RENDERER)))

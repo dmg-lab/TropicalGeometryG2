@@ -2,7 +2,7 @@
 paper_results.jl
 
 The computational statements of the paper "Tropical Geometry of G2" (Joswig, Kuehn, Sturmfels, Vallée), in the order
-in which they appear, computed from the data stored in julia/data/ and from the certificates and reports stored next to
+in which they appear, computed from the data stored in data/ and from the certificates and reports stored next to
 the scripts. For each statement the script prints what it computes and compares it with the paper:
 
     [ ok   ]  computed here, equal to the paper
@@ -15,12 +15,12 @@ the scripts. For each statement the script prints what it computes and compares 
 Tables that the paper describes in words only (for instance the toric degenerations of the flag variety) are printed
 as well. A summary ends the output; the exit status is 1 when a statement fails.
 
-The helpers are in this file; the statements of each section are in julia/paper_results/section_N.jl (a function
+The helpers are in this file; the statements of each section are in paper_results/section_N.jl (a function
 section_N()), loaded only when the section is run.
 
-Usage, from the repository root:
+Usage, from julia/:
 
-    julia --project=julia julia/paper_results.jl [--sections=1,2,...,10,A] [--quick]
+    julia --project=. paper_results.jl [--sections=1,2,...,10,A] [--quick]
 
 --quick skips the slower checks: in_{w0}(J) recomputed (Section 3); the ±1 coefficients of the stored Gröbner bases
 and the quadrilaterals that are two Gröbner cones (Section 4); in_C(G) at a second point of every prime cone and the
@@ -29,13 +29,13 @@ Table tab:local_flag_complex (Section 7); the random lifts over QQ(t) and the co
 the Betti table (Section 10). The full run takes about 7 minutes and 4.5 GB, --quick about 5 minutes and 3.6 GB.
 =#
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 using Printf
 using Random
 import Combinatorics
 using TOML
-import TropicalCensus: csv_fields, cell_faces, fan_cells, load_symmetry_artifacts
+import TropicalGeometryG2: cell_faces, fan_cells, load_symmetry_artifacts
 
 const QUICK = "--quick" in ARGS
 const SECTION_OPTION = [String(split(a, '='; limit=2)[2]) for a in ARGS if startswith(a, "--sections=")]
@@ -50,7 +50,6 @@ all(in(ALL_SECTIONS), SECTIONS) ||
 const REPOSITORY = normpath(joinpath(@__DIR__, ".."))
 repository(parts...) = joinpath(REPOSITORY, parts...)
 g2(parts...) = data_path("g2", parts...)
-studies(parts...) = repository("julia", "studies", parts...)
 
 ###############################################################################
 # Output and bookkeeping
@@ -125,6 +124,20 @@ function skipped(statement, reason)
     println("  [skip  ] ", statement, " (", reason, ")")
 end
 
+"""
+Whether the repository has the figure and table files `files` of the paper (paths from the repository root, the parent
+of julia/, such as "figures/ray_tree.tex"); if not, print `statement`, the checks that read them, as skipped. The
+public repository has no figures and no tables.
+"""
+function drawings(statement, files...)
+    absent = [file for file in files if !isfile(repository(file))]
+    isempty(absent) || skipped(statement, "$(join(absent, ", ")): the figures and tables are not in this repository")
+    return isempty(absent)
+end
+
+"The text of a figure file of the paper, figures/`name`.tex."
+figure_text(name) = read(repository("figures", "$name.tex"), String)
+
 info(text) = (println("           ", text); flush(stdout))
 
 "Run one section (`f` loads and runs it), timing it, and report an error without stopping the others."
@@ -149,17 +162,8 @@ end
 # Stored data
 ###############################################################################
 
-"The rows of a CSV file as dictionaries; fields in double quotes may contain commas, and lines from # on are skipped."
-function rows(path)
-    lines = filter(line -> !isempty(line) && !startswith(line, '#'), readlines(path))
-    header = csv_fields(first(lines))
-    return map(lines[2:end]) do line
-        fields = csv_fields(line)
-        length(fields) == length(header) ||
-            error("$path: a line with $(length(fields)) fields, the header has $(length(header)): $line")
-        Dict(zip(header, fields))
-    end
-end
+"The rows of a CSV file as dictionaries (`csv_rows`); fields in double quotes may contain commas, and lines starting with # are skipped."
+rows(path) = csv_rows(path; comments=true)
 
 const TARGET_DIRECTORIES = Dict(
     "dressian" => g2("dressian"), "flag_dressian" => g2("flag_dressian"),
@@ -196,23 +200,8 @@ All faces of a fan modulo lineality, by orbits under its symmetry group: a dicti
 sorted list of rays) to its dimension and the size of its orbit. As in `census_summary`, only one maximal cell per
 orbit is examined.
 """
-function face_orbits(target)
-    directory = TARGET_DIRECTORIES[target]
-    F = fan(target)
-    symmetry = load_symmetry_artifacts(joinpath(directory, "05_symmetry"))
-    rays, lineality = fan_rays(F)
-    cells = fan_cells(F)
-    images(face) = unique(sort!([action[r] for r in face]) for action in symmetry.ray_actions)
-    orbits = Dict{Vector{Int},Tuple{Int,Int}}()
-    for orbit in symmetry.cell_orbits
-        faces, _ = cell_faces(cells[first(orbit)], rays, matrix(QQ, reduce(vcat, permutedims.(lineality))))
-        for (level, list) in enumerate(faces), face in list
-            face_images = images(face)
-            get!(orbits, minimum(face_images), (level - 1, length(face_images)))
-        end
-    end
-    return orbits
-end
+face_orbits(target) = first(TropicalGeometryG2.face_orbits(fan(target),
+    load_symmetry_artifacts(joinpath(TARGET_DIRECTORIES[target], "05_symmetry"))))
 
 "The number of faces of dimension `d` with `n` vertices, from `face_orbits`."
 face_count(orbits, d, n) = sum((size for (face, (k, size)) in orbits if k == d && length(face) == n); init=0)
@@ -270,9 +259,6 @@ const PAIRS = [(i, j) for i in 1:7 for j in i+1:7]
 const PAIR_INDEX = Dict(p => k for (k, p) in enumerate(PAIRS))
 pair_name(k) = "p$(PAIRS[k][1])$(PAIRS[k][2])"
 
-"The coefficient vector of a linear form in the variables of its ring."
-linear_vector(f, n) = [coeff(f, gen(parent(f), k)) for k in 1:n]
-
 rank_of(vectors) = isempty(vectors) ? 0 : rank(matrix(QQ, reduce(vcat, permutedims.(vectors))))
 
 "A name of a module defined by `run_in_module`, read in the latest world."
@@ -303,6 +289,156 @@ function toric_orbits(target, field)
 end
 
 body(target, row) = load(joinpath(g2(target), row["newton_okounkov_body"]))
+
+const PROJECTIONS = Dict{String,Bool}()
+
+"""
+Whether the exact projection certificate 07_projection_certificate.toml of a flag census target (flag or flag_gf2) is
+valid: the images in trop(G) of the same field of its rays and maximal cells, and their D12-transport. Verified once per
+target, for Sections 3, 4 and A; a verification that raises an error is invalid.
+"""
+function projection_certificate_valid(target)
+    get!(PROJECTIONS, target) do
+        grassmannian = replace(target, "flag" => "grassmannian")
+        try
+            verify_ray_projection_certificate(TOML.parsefile(g2(target, "07_projection_certificate.toml")),
+                fan(target), load(g2(target, "03_normalized_rays.mrdi")),
+                fan(grassmannian), load(g2(grassmannian, "03_normalized_rays.mrdi")),
+                load_symmetry_artifacts(g2(target, "05_symmetry")), load_symmetry_artifacts(g2(grassmannian, "05_symmetry"));
+                projection_columns=8:28, source_coordinate_indices=p -> tropical_coordinate_permutation(p, 28),
+                target_coordinate_indices=coordinate_permutation)
+        catch error
+            info("the verification raised: " * sprint(showerror, error))
+            false
+        end
+    end
+end
+
+"The curve of a stored complex: vertices, bounded edges and rays."
+function curve_graph(complex)
+    vertex = Dict{Vector{QQFieldElem},Int}()
+    index(v) = get!(vertex, v, length(vertex) + 1)
+    edges, rays = Tuple{Int,Int}[], Tuple{Int,Vector{QQFieldElem}}[]
+    for P in maximal_polyhedra(complex)
+        V = [QQ.(collect(v)) for v in vertices(P)]
+        if is_bounded(P)
+            push!(edges, (index(V[1]), index(V[2])))
+        else
+            push!(rays, (index(V[1]), QQ.(collect(first(Oscar.rays(P))))))
+        end
+    end
+    points = Vector{Vector{QQFieldElem}}(undef, length(vertex))
+    foreach(((v, k),) -> points[k] = v, vertex)
+    return (; points, edges, rays)
+end
+
+"""
+The tropical hexagon displayed in Section 9, in the max convention: the apples a^(1), ..., a^(6) and the trees d^(12),
+..., d^(61). Sections 9 and A compare the stored hexagon with them.
+"""
+const HEXAGON_POINTS = [[11, 12, 4, 15, 0, 14, 13], [0, 3, 3, 6, 1, 5, 4], [2, 5, 3, 4, 1, 0, 0],
+                        [9, 12, 5, 15, 12, 11, 0], [0, 3, 3, 6, 3, 2, 0], [2, 5, 3, 4, 1, 0, 2]]
+const HEXAGON_LINES = [[9, 9, 12, 7, 11, 10, 10, 5, 8, 0, 7, 13, 0, 12, 11, 11, 7, 10, 10, 9, 9],
+                       [3, 3, 6, 1, 5, 4, 6, 9, 4, 8, 7, 7, 0, 6, 5, 5, 7, 6, 4, 3, 3],
+                       [6, 7, 12, 9, 8, 4, 10, 15, 12, 11, 7, 13, 10, 9, 0, 0, 7, 10, 4, 7, 6],
+                       [11, 12, 14, 11, 10, 9, 15, 5, 0, 9, 12, 18, 15, 14, 5, 5, 12, 15, 9, 12, 11],
+                       [2, 3, 6, 3, 2, 0, 6, 9, 6, 5, 3, 7, 4, 3, 3, 3, 3, 6, 0, 3, 2],
+                       [11, 9, 12, 7, 11, 10, 10, 15, 8, 14, 13, 13, 0, 12, 11, 11, 13, 10, 10, 9, 11]]
+
+###############################################################################
+# G2-trees: the rows of 04_trees.csv and the trees drawn in the figures
+###############################################################################
+
+"The side of a split without taxon 7, sorted."
+side_without_7(A) = sort!(collect(7 in A ? setdiff(Set(1:7), A) : A))
+
+"The internal splits of a row of a 04_trees.csv: the side without taxon 7 (sorted) => length."
+function tree_splits(r)
+    lengths = Dict{Vector{Int},Int}()
+    for s in split(r["internal_splits"], ';'; keepempty=false)
+        side, len = split(s, ':')
+        lengths[side_without_7(Set(c - '0' for c in first(split(side, '|'))))] = parse(Int, len)
+    end
+    return lengths
+end
+
+"The tree of a row of a 04_trees.csv: the pendant lengths of the taxa 1-7, and the internal splits of `tree_splits`."
+tree_row(r) = (pendant=parse.(Int, split(r["pendant_lengths"], ';')), lengths=tree_splits(r))
+
+"The tree metric d_ij, in the order of PAIRS, of the pendant lengths of 1-7 and the internal splits (side => length)."
+tree_metric(pendant, lengths) =
+    [pendant[i] + pendant[j] + sum((l for (S, l) in lengths if (i in S) != (j in S)); init=0) for (i, j) in PAIRS]
+
+"The tree metric d_ij, in the order of PAIRS, of a row of a 04_trees.csv."
+tree_metric(r::AbstractDict) = tree_metric(tree_row(r)...)
+
+"""
+The G2-trees drawn in a TikZ text, in their order, as name => block: a tree starts at its vertex v1 (v1-v7 are the taxa)
+and its block runs to the start of the next. The name is the first capture of the last match of `label` before the tree
+(nothing if there is none, or no `label`).
+"""
+function tree_blocks(tex, label=nothing)
+    marks = label === nothing ? Tuple{Int,String}[] :
+            [(m.offset, String(something(m.captures...))) for m in eachmatch(label, tex)]
+    starts = [m.offset for m in eachmatch(r"\\coordinate \(v1\) at", tex)]
+    return map(eachindex(starts)) do n
+        mark = findlast(m -> first(m) < starts[n], marks)
+        (mark === nothing ? nothing : marks[mark][2]) =>
+            SubString(tex, starts[n], n < length(starts) ? prevind(tex, starts[n+1]) : lastindex(tex))
+    end
+end
+
+"""
+The G2-tree drawn in a block of `tree_blocks`, or nothing if it draws no edge: its internal splits (sides without 7,
+sorted) and, when weights are drawn, the pendant lengths of 1-7 and the internal splits => length (else both nothing).
+Each weight goes to its nearest edge, since some figures draw it beside its edge, or with `nearest=false` to the edges it
+lies on, away from their ends. Every edge must get exactly one weight.
+"""
+function drawn_tree(block; nearest=true)
+    point = Dict(parse(Int, m[1]) => parse.(Float64, (m[2], m[3]))
+                 for m in eachmatch(r"\\coordinate \(v(\d+)\) at \(([-0-9.]+),([-0-9.]+)\)", block))
+    edges = [(String(m[1]), parse(Int, m[2]), parse(Int, m[3]))
+             for m in eachmatch(r"\\draw\[g2tree (internal|pendant)[^\]]*\] \(v(\d+)\)--\(v(\d+)\)", block)]
+    isempty(edges) && return nothing
+    # The position t of the foot of p along the edge a-b (0 at a, 1 at b), and the distance from p to the segment.
+    function foot(p, (_, a, b))
+        (x, y), (u, v) = point[a], point[b]
+        t = ((p[1] - x) * (u - x) + (p[2] - y) * (v - y)) / ((u - x)^2 + (v - y)^2)
+        s = clamp(t, 0.0, 1.0)
+        return t, hypot(p[1] - x - s * (u - x), p[2] - y - s * (v - y))
+    end
+    on = [Int[] for _ in edges]
+    for m in eachmatch(r"\\node\[g2tree weight[^\]]*\] at \(([-0-9.]+),([-0-9.]+)\) \{(\d+)\}", block)
+        p, w = parse.(Float64, (m[1], m[2])), parse(Int, m[3])
+        if nearest
+            push!(on[argmin(k -> last(foot(p, edges[k])), eachindex(edges))], w)
+        else
+            for k in eachindex(edges)
+                t, distance = foot(p, edges[k])
+                0.1 < t < 0.9 && distance < 1e-3 && push!(on[k], w)
+            end
+        end
+    end
+    # The split of the edge a-b: the taxa reached from a without crossing it, or the others if 7 is among them.
+    function split_of(a, b)
+        seen, todo = Set([a]), [a]
+        while !isempty(todo)
+            v = pop!(todo)
+            for (_, x, y) in edges, (s, w) in ((x, y), (y, x))
+                s == v && !(w in seen) && Set([s, w]) != Set([a, b]) && (push!(seen, w); push!(todo, w))
+            end
+        end
+        return side_without_7(Set(v for v in seen if v <= 7))
+    end
+    internal = [(k, a, b) for (k, (kind, a, b)) in enumerate(edges) if kind == "internal"]
+    splits = sort([split_of(a, b) for (_, a, b) in internal])
+    # One length per split: an internal edge drawn in two segments would lose one.
+    allunique(splits) || error("a drawn tree with an internal edge drawn in two segments")
+    all(isempty, on) && return (; splits, pendant=nothing, lengths=nothing)
+    all(ws -> length(ws) == 1, on) || error("a drawn tree with an edge without exactly one weight")
+    pendant = [only(on[only(k for (k, (kind, a, b)) in enumerate(edges) if kind == "pendant" && i in (a, b))]) for i in 1:7]
+    return (; splits, pendant, lengths=Dict(split_of(a, b) => only(on[k]) for (k, a, b) in internal))
+end
 
 ###############################################################################
 # The trilinear form Φ, the quadric q and the linear forms
@@ -342,19 +478,6 @@ end
 "The polar form of q = x1x4 + x2x5 + x3x6 - x7^2 as a symmetric matrix."
 const POLAR = [(i <= 3 && j == i + 3) || (j <= 3 && i == j + 3) ? 1 : (i == j == 7 ? -2 : 0) for i in 1:7, j in 1:7]
 
-"The Pfaffian of a skew-symmetric matrix of even size, by expansion along the first row."
-function pfaffian_of(M)
-    n = size(M, 1)
-    n == 2 && return M[1, 2]
-    total = zero(M[1, 1])
-    for j in 2:n
-        iszero(M[1, j]) && continue
-        rest = [k for k in 2:n if k != j]
-        total += (iseven(j) ? 1 : -1) * M[1, j] * pfaffian_of(M[rest, rest])
-    end
-    return total
-end
-
 "The seven linear forms L_i(p) = sum_{j<k} Φ(e_i, e_j, e_k) p_jk, the coefficients of Φ(x, ., .) as a linear form in x."
 phi_linear_forms() = [[QQ(phi(i, j, k)) for (j, k) in PAIRS] for i in 1:7]
 
@@ -362,7 +485,7 @@ phi_linear_forms() = [[QQ(phi(i, j, k)) for (j, k) in PAIRS] for i in 1:7]
 # The paper, section by section
 ###############################################################################
 
-# The sections live in julia/paper_results/section_N.jl, one function section_N() each; only the requested ones are
+# The sections live in paper_results/section_N.jl, one function section_N() each; only the requested ones are
 # loaded, so that a section can be run on its own.
 const SECTION_TITLES = [("1", "Introduction"), ("2", "Trees and Dressians"), ("3", "Grassmannian and Flag Variety"),
                         ("4", "Characteristic Two"), ("5", "The G2-forest"), ("6", "Toric Degenerations"),

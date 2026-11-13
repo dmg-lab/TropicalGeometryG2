@@ -8,15 +8,19 @@ degenerations in the literature. The census data are in
 `06_canonical_interior_degenerations.csv`, gives one initial ideal per orbit of
 maximal cells and its Newton–Okounkov body when the initial ideal is prime.
 
-Run every script from the repository root with `julia --project=julia <path>`.
+Run every script from `julia/` with `julia --project=. <path>`.
 
 ## Orbits and types
 
 The scripts print census orbit numbers, but the paper uses the types \celltype{n}.
-Types 1–20 are the toric types of
-[`tables/toric_degeneration_table.tex`](../../../../tables/toric_degeneration_table.tex);
+Types 1–20 are the toric types of Table 2 of the paper
+(`../tables/toric_degeneration_table.tex`);
 types 21–35 are the other atlas pages
 ([`../atlas/flag/local_flag_cell_atlas.csv`](../atlas/flag/local_flag_cell_atlas.csv)).
+The comparison scripts read the types of the toric orbits from
+[`grassmannian_orbits.csv`](../../../data/g2/grassmannian_orbits.csv) and the
+stage-6 census, through [`common.jl`](common.jl), which also opens their
+output files.
 
 The tropical G2-Grassmannian over QQ has 248 maximal cells in 31 orbits of
 the order-12 group. 18 orbits are prime: 17 are toric (135 cells), and orbit
@@ -59,17 +63,14 @@ How the table was made:
   `unrecognized/` through `save_unrecognized` in [`utils.jl`](utils.jl).
   `utils.jl` also has `fiber_polytope` and a catalog test for 3-polytopes
   (Platonic, Archimedean, Catalan, pyramids, prisms, bipyramids, Johnson).
-- The scripts use the relative path `julia/data/...`, so run them from the
-  repository root.
 
 ## Spacek_Wang: Chevalley polytopes
 
-This folder implements the Chevalley polytopes of Spacek and Wang
-(arXiv:2411.10276) from scratch. The implementation is
-[`chevalley_polytopes.jl`](Spacek_Wang/chevalley_polytopes.jl), which
-`TropicalCensus` includes. It computes the root system, the minimal coset
-representative, V_ϖ, the torus expansion of u_-·v_ϖ, the minimal terms and
-the hull.
+This folder checks the Chevalley polytopes of Spacek and Wang
+(arXiv:2411.10276), which the package implements from scratch in
+[`src/chevalley_polytopes.jl`](../../../src/chevalley_polytopes.jl): the
+root system, the minimal coset representative, V_ϖ, the torus expansion of
+u_-·v_ϖ, the minimal terms and the hull.
 
 - [`appendix_chevalley.jl`](Spacek_Wang/appendix_chevalley.jl) checks every
   numerical claim of their Appendix A; the output is in
@@ -86,7 +87,7 @@ the hull.
   `chevalley_equivalent`).
 - [`generate_chevalley_polytopes.jl`](Spacek_Wang/generate_chevalley_polytopes.jl)
   writes one polymake file per commutation class for the five spaces of
-  Appendix A to `julia/data/chevalley/`. Its run log is
+  Appendix A to `data/chevalley/`. Its run log is
   [`appendix_summary.txt`](Spacek_Wang/appendix_summary.txt).
 - [`test_chevalley_triangulations.jl`](Spacek_Wang/test_chevalley_triangulations.jl)
   needs UniTriSat, which is not a project dependency. It checks that the G2
@@ -94,7 +95,7 @@ the hull.
   them flag (equivalently quadratic). The 4-dimensional facet x_1 = 1 has the
   same counts.
 - [`g2_chevalley_study.jl`](Spacek_Wang/g2_chevalley_study.jl) writes the G2
-  polytopes for twelve weights to `julia/data/chevalley/`. In the stored files:
+  polytopes for twelve weights to `data/chevalley/`. In the stored files:
   - Every polytope has volume equal to the degree and exactly dim V_ϖ
     lattice points.
   - G2/P1 and G2/P2 give 5-simplices; G2/B gives polytopes with f-vector
@@ -212,6 +213,6 @@ in [`flag_census.jl`](flag_census.jl), shared with
   12 – 3 – 7 – 6 – 45 (cell 59), with inner edges 1, 3, 3, 1. Orbit 64
   puts the apple on a cherry edge, 12|34567 or 45|12367 (atlas
   `(:edge, 8, 9)` and `(:edge, 11, 12)`), as
-  [`julia/paper_results/section_7.jl`](../../../paper_results/section_7.jl)
+  [`paper_results/section_7.jl`](../../../paper_results/section_7.jl)
   checks.
   Orbit 67 puts the apple on the pendant edges of leaves 3 and 6.

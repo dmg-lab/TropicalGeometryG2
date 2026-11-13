@@ -1,18 +1,10 @@
-# Section 6 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 6 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 """
 The tree of a row of 04_trees.csv, as `s6_drawn_trees` gives a drawn tree: its internal splits (sides without 7, sorted),
 the pendant lengths of 1-7 and the splits => length.
 """
-function s6_tree(r)
-    lengths = Dict{Vector{Int},Int}()
-    for s in split(r["internal_splits"], ';'; keepempty=false)
-        side, len = split(s, ':')
-        A = Set(c - '0' for c in first(split(side, '|')))
-        lengths[sort(collect(7 in A ? setdiff(Set(1:7), A) : A))] = parse(Int, len)
-    end
-    return (; splits=sort(collect(keys(lengths))), pendant=parse.(Int, split(r["pendant_lengths"], ';')), lengths)
-end
+s6_tree(r) = (t = tree_row(r); (; splits=sort(collect(keys(t.lengths))), t.pendant, t.lengths))
 
 "A tree of `s6_tree` or `s6_drawn_trees` as text: the pendant lengths of 1-7, then the splits (side without 7) with their lengths."
 s6_tree_text(t) = (t.pendant === nothing ? "" : "pendant " * join(t.pendant, ";") * ", ") * "splits " *
@@ -20,57 +12,20 @@ s6_tree_text(t) = (t.pendant === nothing ? "" : "pendant " * join(t.pendant, ";"
 
 """
 The G2-trees drawn in a figure, in their order, each named by the first capture of the last match of `label` before it
-(a tree starts at its leaf v1; v1-v7 are the taxa): its internal splits (sides without 7, sorted) and, when weights are
-drawn, the pendant lengths of 1-7 and the splits => length, without length 0. Each weight goes to its nearest edge, since
-some are drawn beside it.
+(`tree_blocks`; a tree with no such match is left out): `drawn_tree`, each weight on its nearest edge, since some are
+drawn beside it, without the splits of length 0. A block that draws no edge (and no weight) is a tree without splits.
 """
 function s6_drawn_trees(tex, label)
-    marks = [(m.offset, String(m[1])) for m in eachmatch(label, tex)]
-    starts = [m.offset for m in eachmatch(r"\\coordinate \(v1\) at", tex)]
     trees = Pair{String,Any}[]
-    for (n, start) in enumerate(starts)
-        mark = findlast(m -> first(m) < start, marks)
-        mark === nothing && continue
-        name = marks[mark][2]
-        block = SubString(tex, start, n < length(starts) ? prevind(tex, starts[n+1]) : lastindex(tex))
-        point = Dict(parse(Int, m[1]) => parse.(Float64, (m[2], m[3]))
-                     for m in eachmatch(r"\\coordinate \(v(\d+)\) at \(([-0-9.]+),([-0-9.]+)\)", block))
-        edges = [(String(m[1]), parse(Int, m[2]), parse(Int, m[3]))
-                 for m in eachmatch(r"\\draw\[g2tree (internal|pendant)[^\]]*\] \(v(\d+)\)--\(v(\d+)\)", block)]
-        function distance(p, (_, a, b))
-            (x, y), (u, v) = point[a], point[b]
-            t = clamp(((p[1] - x) * (u - x) + (p[2] - y) * (v - y)) / ((u - x)^2 + (v - y)^2), 0.0, 1.0)
-            return hypot(p[1] - x - t * (u - x), p[2] - y - t * (v - y))
+    for (name, block) in tree_blocks(tex, label)
+        name === nothing && continue
+        t = drawn_tree(block)
+        if t === nothing
+            occursin(r"\\node\[g2tree weight[^\]]*\] at \(([-0-9.]+),([-0-9.]+)\) \{(\d+)\}", block) &&
+                error("$name: a weight drawn on a tree without edges")
+            t = (; splits=Vector{Int}[], pendant=nothing, lengths=nothing)
         end
-        weight = Dict{Int,Int}()
-        for m in eachmatch(r"\\node\[g2tree weight[^\]]*\] at \(([-0-9.]+),([-0-9.]+)\) \{(\d+)\}", block)
-            p = parse.(Float64, (m[1], m[2]))
-            e = argmin(k -> distance(p, edges[k]), eachindex(edges))
-            haskey(weight, e) && error("$name: two weights nearest to one edge")
-            weight[e] = parse(Int, m[3])
-        end
-        # The taxa reached from a without crossing the edge a-b.
-        function side(a, b)
-            seen, todo = Set([a]), [a]
-            while !isempty(todo)
-                v = pop!(todo)
-                for (_, x, y) in edges, (s, w) in ((x, y), (y, x))
-                    s == v && !(w in seen) && Set([s, w]) != Set([a, b]) && (push!(seen, w); push!(todo, w))
-                end
-            end
-            return sort([v for v in seen if v <= 7])
-        end
-        split_of(a, b) = (S = side(a, b); 7 in S ? setdiff(1:7, S) : S)
-        internal = [(k, a, b) for (k, (kind, a, b)) in enumerate(edges) if kind == "internal"]
-        splits = sort([split_of(a, b) for (_, a, b) in internal])
-        if isempty(weight)
-            push!(trees, name => (; splits, pendant=nothing, lengths=nothing))
-            continue
-        end
-        length(weight) == length(edges) || error("$name: $(length(weight)) weights on $(length(edges)) edges")
-        pendant = [weight[only(k for (k, (kind, a, b)) in enumerate(edges) if kind == "pendant" && i in (a, b))] for i in 1:7]
-        lengths = Dict(split_of(a, b) => weight[k] for (k, a, b) in internal if weight[k] != 0)
-        push!(trees, name => (; splits, pendant, lengths))
+        push!(trees, name => (t.pendant === nothing ? t : (; t.splits, t.pendant, lengths=filter(p -> last(p) != 0, t.lengths))))
     end
     return trees
 end
@@ -86,14 +41,15 @@ function section_6()
     qq_orbit_of(type) = only(r["qq_orbit"] for r in orbit_rows if r["orbit_type"] == type)
     # The rows of Table tab:g2-grassmannian-newton-okounkov: type => (orbit size, f-vector, N, Char).
     paper_rows = Dict{String,NTuple{4,String}}()
-    for line in readlines(repository("tables", "toric_degeneration_table.tex"))
+    table_file = "tables/toric_degeneration_table.tex"
+    for line in (isfile(repository(table_file)) ? readlines(repository(table_file)) : String[])
         m = match(r"oldstylenums\{(\d+)\}\}\((\d+)\)\} & \$\(([\d,]+)\)\$ & .* & (\d+) & (all|\$2\$) \\tabularnewline", line)
         m === nothing || (paper_rows[String(m[1])] = (String(m[2]), String(m[3]), String(m[4]), m[5] == "all" ? "all" : "2"))
     end
 
     subheading("Prime cones and their Newton-Okounkov polytopes P_C")
     cited("Kaveh and Manon: the toric degenerations correspond to the maximal cones of the tropical variety with prime initial ideal")
-    prime_report = studies("g2", "reports", "prime_cone.txt")
+    prime_report = study_path("g2", "reports", "prime_cone.txt")
     if isfile(prime_report)
         stored("type 1: in_d(G) at four points of relint(C) (supplemental/g2_prime_cone.jl)",
                strip(only(l for l in readlines(prime_report) if occursin("all four initial ideals are equal", l))))
@@ -131,13 +87,16 @@ function section_6()
     type_of_cell = Dict(c => r["orbit_type"] for r in orbit_rows for c in parse.(Int, split(r["qq_members"], ';'; keepempty=false)))
     tree_rows = Dict(parse(Int, r["index"]) => r for r in rows(g2("grassmannian", "04_trees.csv")) if r["kind"] == "cell")
     panel = r"\\oldstylenums\{(\d+)\}\}\{\\large"
-    first_prime = first(s6_drawn_trees(read(repository("figures", "toric_degeneration_prime_edge_trees.tex"), String), panel))
-    rightmost = only(s6_drawn_trees(read(repository("figures", "triangle_tree.tex"), String), r"^% Coarsest G2 Grassmannian cell (\d+)"))
-    cell1 = parse(Int, first(rightmost))
-    check("the first tree of Figure atlas_toric_cells_prime (its type) equals the rightmost tree in Figure ex_G2_trees " *
-          "(figures/triangle_tree.tex)", ("1", s6_tree_text(last(rightmost))), (first(first_prime), s6_tree_text(last(first_prime))))
-    check("it is the tree of cell $cell1 (header of figures/triangle_tree.tex), a cell of type 1 (04_trees.csv)",
-          (s6_tree_text(last(first_prime)), "1"), (s6_tree_text(s6_tree(tree_rows[cell1])), type_of_cell[cell1]))
+    if drawings("the first tree of Figure atlas_toric_cells_prime, the rightmost of Figure ex_G2_trees, and its cell",
+                "figures/toric_degeneration_prime_edge_trees.tex", "figures/triangle_tree.tex")
+        first_prime = first(s6_drawn_trees(figure_text("toric_degeneration_prime_edge_trees"), panel))
+        rightmost = only(s6_drawn_trees(figure_text("triangle_tree"), r"^% Coarsest G2 Grassmannian cell (\d+)"))
+        cell1 = parse(Int, first(rightmost))
+        check("the first tree of Figure atlas_toric_cells_prime (its type) equals the rightmost tree in Figure ex_G2_trees " *
+              "(figures/triangle_tree.tex)", ("1", s6_tree_text(last(rightmost))), (first(first_prime), s6_tree_text(last(first_prime))))
+        check("it is the tree of cell $cell1 (header of figures/triangle_tree.tex), a cell of type 1 (04_trees.csv)",
+              (s6_tree_text(last(first_prime)), "1"), (s6_tree_text(s6_tree(tree_rows[cell1])), type_of_cell[cell1]))
+    end
     qq = toric_orbits("grassmannian", "qq")
     type1 = only(o for o in qq if o.type == "1")
     # d of Example ex:fivetrees (max convention); the census computes initial ideals in the min convention.
@@ -187,25 +146,32 @@ function section_6()
     claim("P_C is affinely unimodularly equivalent to the lecture hall simplex P_(1,3,2,3,1) (Table, row 1)",
           affine_unimodular_equivalent(P1, lecture_hall))
     stored("Spacek and Wang's G2 polytope (Spacek_Wang/appendix_chevalley.jl)",
-           strip(only(l for l in readlines(studies("g2", "degenerations_grassmannian", "Spacek_Wang", "test_summary.txt"))
+           strip(only(l for l in readlines(study_path("g2", "degenerations_grassmannian", "Spacek_Wang", "test_summary.txt"))
                       if occursin("lecture-hall simplex", l))))
 
     subheading("Example ex:twentyone: type 21")
     metrics = Dict(parse(Int, r["number"]) => r for r in rows(g2("maximal_cell_tree_metrics.csv")))
     orbit21 = qq_orbit_of("21")
     cellsqq = fan_cells(fan("grassmannian"))
-    triangle_tex = read(repository("figures", "triangle_cell.tex"), String)
-    triangle_header = match(r"cell (\d+): rays ([\d,]+), orbit", triangle_tex)
-    cell21, rays21 = parse(Int, triangle_header[1]), replace(triangle_header[2], ',' => ';')
-    printed = match(r"\n% The cell\n\\node\[g2square cell name[^\n]*\\oldstylenums\{(\d+)\}", triangle_tex)[1]
-    check("Figure triangle_cell (figures/triangle_cell.tex: cell $cell21, rays $(triangle_header[2])): the type printed on the triangle; " *
-          "its rays in trop(G), those of the census cell (QQ orbit $orbit21), the support of the tree metric of type 21",
-          (printed, rays21, rays21, rays21), (type_of_cell[cell21], join(cellsqq[cell21], ';'), census[orbit21]["rays"], metrics[21]["support"]))
-    first_nontoric = first(s6_drawn_trees(read(repository("figures", "non_toric_cell_trees.tex"), String), panel))
-    on_triangle = only(t for (name, t) in s6_drawn_trees(triangle_tex, r"\n% (The cell)\n") if name == "The cell")
-    check("the first tree in Figure atlas_toric_cells_nontoric (its type) equals that on the triangle in Figure triangle_cell " *
-          "(drawn without lengths)", ("21", s6_tree_text(on_triangle)), (first(first_nontoric), "splits " * join(join.(last(first_nontoric).splits), " ")))
-    check("it is the tree of cell $cell21 (04_trees.csv)", s6_tree_text(last(first_nontoric)), s6_tree_text(s6_tree(tree_rows[cell21])))
+    cell21 = findfirst(c -> join(c, ';') == metrics[21]["support"], cellsqq)   # the cell of the tree metric of type 21
+    if drawings("Figure triangle_cell and the first tree of Figure atlas_toric_cells_nontoric: the cell of type 21 and its tree",
+                "figures/triangle_cell.tex", "figures/non_toric_cell_trees.tex")
+        triangle_tex = figure_text("triangle_cell")
+        triangle_header = match(r"cell (\d+): rays ([\d,]+), orbit", triangle_tex)
+        figure21, rays21 = parse(Int, triangle_header[1]), replace(triangle_header[2], ',' => ';')
+        printed = match(r"\n% The cell\n\\node\[g2square cell name[^\n]*\\oldstylenums\{(\d+)\}", triangle_tex)[1]
+        check("Figure triangle_cell (figures/triangle_cell.tex: cell $figure21, rays $(triangle_header[2])): the type printed on the triangle; " *
+              "its rays in trop(G), those of the census cell (QQ orbit $orbit21), the support of the tree metric of type 21",
+              (printed, rays21, rays21, rays21), (type_of_cell[figure21], join(cellsqq[figure21], ';'), census[orbit21]["rays"], metrics[21]["support"]))
+        first_nontoric = first(s6_drawn_trees(figure_text("non_toric_cell_trees"), panel))
+        on_triangle = only(t for (name, t) in s6_drawn_trees(triangle_tex, r"\n% (The cell)\n") if name == "The cell")
+        check("the first tree in Figure atlas_toric_cells_nontoric (its type) equals that on the triangle in Figure triangle_cell " *
+              "(drawn without lengths)", ("21", s6_tree_text(on_triangle)), (first(first_nontoric), "splits " * join(join.(last(first_nontoric).splits), " ")))
+        check("it is the tree of cell $cell21 (04_trees.csv)", s6_tree_text(last(first_nontoric)), s6_tree_text(s6_tree(tree_rows[cell21])))
+    else
+        check("the cell $cell21 of the tree metric of type 21 (maximal_cell_tree_metrics.csv): its type, and the rays of the " *
+              "census cell (QQ orbit $orbit21)", ("21", metrics[21]["support"]), (type_of_cell[cell21], census[orbit21]["rays"]))
+    end
     d21 = [parse(Int, metrics[21]["d$(i)$(j)"]) for (i, j) in PAIRS]
     zero_pairs = [PAIRS[k] for k in 1:21 if d21[k] == 0]
     check("its metric: d15 = d26 = d34 = 0 and d_ij = 2 otherwise", ([(1, 5), (2, 6), (3, 4)], [2]),
@@ -218,7 +184,7 @@ function section_6()
     claim("neither factor x - ωy, x - ω²y of x² + xy + y² (x = p12² p13, y = p14² p16) lies in in_d(G) ⊗ C: " *
           "NF(x), NF(y) are not both 0 (a QQ Gröbner basis stays one over Q(ω))",
           !(iszero(normal_form(x, initial21)) && iszero(normal_form(y, initial21))))
-    report = replace(join(readlines(studies("g2", "supplemental", "geometric_toric_report.md")), " "), r"\s+" => " ")
+    report = replace(join(readlines(study_path("g2", "supplemental", "geometric_toric_report.md")), " "), r"\s+" => " ")
     stored("over CC (supplemental/verify_geometric_toric.jl)",
            replace(match(r"Thus the ideal has .*? coordinates\.", report).match, "**" => "", "`" => ""))
 
@@ -259,7 +225,9 @@ function section_6()
     claim("G: the $n toric orbits over QQ are toric orbits of the same size over GF(2)", stays)
     check("G in characteristic 2: further (degenerations, orbits)", (12, 3), toric("grassmannian_gf2") .- toric("grassmannian"))
     check("G in characteristic 2: the further types and their orbit sizes (Table, Char 2)", [("18", 6), ("19", 3), ("20", 3)], extra)
-    check("all 20 orbits are listed in Table tab:g2-grassmannian-newton-okounkov: its rows", 20, length(paper_rows))
+    if drawings("all 20 orbits are listed in Table tab:g2-grassmannian-newton-okounkov", table_file)
+        check("all 20 orbits are listed in Table tab:g2-grassmannian-newton-okounkov: its rows", 20, length(paper_rows))
+    end
     check("F in any characteristic: (degenerations, orbits)", (807, 81), toric("flag"))
     n, stays, extra = in_any_characteristic("flag", "flag_orbits.csv")
     claim("F: the $n toric orbits over QQ are toric orbits of the same size over GF(2)", stays)
@@ -271,7 +239,7 @@ function section_6()
 
     subheading("Table tab:g2-grassmannian-newton-okounkov, recomputed")
     gf2 = toric_orbits("grassmannian_gf2", "gf2")
-    T = run_in_module(repository("julia", "to_tex", "toric_degeneration_table.jl"); name=:ToricTable)
+    T = run_in_module(project_path("to_tex", "toric_degeneration_table.jl"); name=:ToricTable)
     plain(tex) = replace(replace(tex, r"\^\{([^}]*)\}" => s"^(\1)"), r"[${}]" => "")
     println("           type  size  f-vector            N  volume  normal  char  Newton-Okounkov polytope")
     seen = Dict{String,Any}()
@@ -295,19 +263,22 @@ function section_6()
                 o.row["body_normalized_volume"], normal, char, plain(polytope))
     end
     computed_rows = Dict(t => (v.size, v.f, string(v.N), v.char) for (t, v) in seen)
-    differ = sort([t for t in union(keys(paper_rows), keys(computed_rows)) if get(paper_rows, t, nothing) != get(computed_rows, t, nothing)];
-                  by=t -> parse(Int, t))
-    claim("its rows agree with the census: type, orbit size, f-vector, N and Char", isempty(differ),
-          isempty(differ) ? "$(length(paper_rows)) rows" : "rows that differ: $(join(differ, ", "))")
-    check("caption: the orbit sizes of the 20 rows (Char all and 2) sum to 147", 147,
-          sum(parse(Int, v[1]) for v in values(paper_rows)))
-    info("the 17 rows with Char all sum to $(sum(parse(Int, v[1]) for v in values(paper_rows) if v[4] == "all")), " *
-         "the 3 rows with Char 2 to $(sum(parse(Int, v[1]) for v in values(paper_rows) if v[4] == "2"))")
-    claim("tables/toric_degeneration_table.tex is the current output of julia/to_tex/toric_degeneration_table.jl (with the polytope column)",
-          call(T, :toric_degeneration_table_tex) == read(repository("tables", "toric_degeneration_table.tex"), String))
+    if drawings("the rows of Table tab:g2-grassmannian-newton-okounkov against the census, the sum 147 of its caption, " *
+                "its file as the output of to_tex/toric_degeneration_table.jl", table_file)
+        differ = sort([t for t in union(keys(paper_rows), keys(computed_rows)) if get(paper_rows, t, nothing) != get(computed_rows, t, nothing)];
+                      by=t -> parse(Int, t))
+        claim("its rows agree with the census: type, orbit size, f-vector, N and Char", isempty(differ),
+              isempty(differ) ? "$(length(paper_rows)) rows" : "rows that differ: $(join(differ, ", "))")
+        check("caption: the orbit sizes of the 20 rows (Char all and 2) sum to 147", 147,
+              sum(parse(Int, v[1]) for v in values(paper_rows)))
+        info("the 17 rows with Char all sum to $(sum(parse(Int, v[1]) for v in values(paper_rows) if v[4] == "all")), " *
+             "the 3 rows with Char 2 to $(sum(parse(Int, v[1]) for v in values(paper_rows) if v[4] == "2"))")
+        claim("tables/toric_degeneration_table.tex is the current output of to_tex/toric_degeneration_table.jl (with the polytope column)",
+              call(T, :toric_degeneration_table_tex) == read(repository(table_file), String))
+    end
     if QUICK
         skipped("types 1-17: the polytopes over QQ and over GF(2) are affinely unimodularly equivalent", "--quick")
-        line = only(l for l in readlines(studies("g2", "reports", "toric_body_equivalence.txt")) if startswith(l, "equivalent pairs"))
+        line = only(l for l in readlines(study_path("g2", "reports", "toric_body_equivalence.txt")) if startswith(l, "equivalent pairs"))
         m = match(r"orbits (\d+) and (\d+)", line)
         type_of_qq = Dict(r["qq_orbit"] => r["orbit_type"] for r in orbit_rows if !isempty(r["qq_orbit"]))
         stored("pairs of the 17 polytopes over QQ that are affinely unimodularly equivalent (supplemental/toric_body_equivalence.jl)",
@@ -397,7 +368,7 @@ function section_6()
          "the toric types " * join(holds, ", ") * " (all $(length(initials)) cells of the toric types over QQ)")
 
     subheading("Comparison with the literature (stored reports of degenerations_grassmannian/)")
-    D = studies("g2", "degenerations_grassmannian")
+    D = study_path("g2", "degenerations_grassmannian")
     sw = first(l for l in readlines(joinpath(D, "Spacek_Wang", "compare_flag.txt")) if occursin("summand [0, 1]", l))
     stored("type 1 and the Chevalley polytope of Spacek-Wang [Section A.4] (Spacek_Wang/compare_flag.jl)", strip(sw))
     cited("Christophersen and Ilten [Theorem 3.1]: G degenerates to P(K * Δ2) for a 2-sphere K with 11 vertices, one for each term order")

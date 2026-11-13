@@ -19,15 +19,15 @@
 # experiment K of DIR, the regions those of `portrait_region_pieces`. Areas
 # and lengths on X18 are Euclidean, in the slice sum(x) = 0.
 #
-#   julia --project=julia julia/studies/g2/curves/k3_core_regions.jl DIR [K] [--polygons=FILE]
+#   julia --project=. studies/g2/curves/k3_core_regions.jl DIR [K] [--polygons=FILE]
 #     [--outer-face=F] [--seed=S]
 #
 # FILE is the output of k3_surface_polygons.jl, by default where it writes it.
 # Prints the two checks in Markdown.
 ###############################################################################
 
-include(joinpath(@__DIR__, "decorated_curve_graph.jl"))
-include(joinpath(@__DIR__, "curve_portraits.jl"))
+include(joinpath(@__DIR__, "k3_surface_polygons.jl"))
+include(joinpath(@__DIR__, "..", "..", "..", "to_tex", "curve_portraits.jl"))
 using LinearAlgebra
 
 "The area of the convex polygon with the vertices `verts`, in floating point."

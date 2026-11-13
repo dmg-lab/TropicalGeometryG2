@@ -5,75 +5,22 @@
 # exactly when its exponent-difference lattice is saturated.
 
 using Oscar
+using TropicalGeometryG2: csv_rows, binomial_lattice_index
 
 const DATA = normpath(joinpath(@__DIR__, "..", "..", "..", "data", "g2"))
 
-# Split one CSV line, honouring double-quoted fields such as `body_type`.
-function csv_fields(line)
-    characters = collect(line)
-    fields = String[]
-    buffer = IOBuffer()
-    quoted = false
-    index = 1
-    while index <= length(characters)
-        character = characters[index]
-        if character == '"'
-            if quoted && index < length(characters) && characters[index + 1] == '"'
-                print(buffer, '"')
-                index += 1
-            else
-                quoted = !quoted
-            end
-        elseif character == ',' && !quoted
-            push!(fields, String(take!(buffer)))
-        else
-            print(buffer, character)
-        end
-        index += 1
-    end
-    quoted && error("unterminated CSV quote")
-    push!(fields, String(take!(buffer)))
-    return fields
-end
-
+"The stage-6 census of `target`, one dictionary per orbit."
 function census_rows(target)
     path = joinpath(DATA, target, "06_canonical_interior_degenerations.csv")
-    lines = readlines(path)
-    isempty(lines) && error("empty census: $path")
-    header = split(first(lines), ',')
-    columns = Dict(name => index for (index, name) in enumerate(header))
+    rows = csv_rows(path)
     needed = ("orbit", "initial_ideal", "prime", "binomial", "monomial_free", "toric")
-    all(haskey(columns, name) for name in needed) || error("unexpected census header: $path")
-    return [
-        begin
-            fields = csv_fields(line)
-            length(fields) == length(header) || error("unexpected CSV column count in $path")
-            Dict(name => fields[index] for (name, index) in columns)
-        end
-        for line in lines[2:end]
-    ]
+    all(haskey(row, name) for row in rows for name in needed) || error("unexpected census header: $path")
+    return rows
 end
 
-function exponent_lattice_torsion(ideal_value)
-    basis = gens(groebner_basis(ideal_value; complete_reduction=true))
-    all(length(polynomial) == 2 for polynomial in basis) ||
-        error("a purported binomial prime has a nonbinomial reduced Groebner basis")
-    differences = [
-        let exponents_of_terms = collect(exponents(polynomial))
-            exponents_of_terms[1] - exponents_of_terms[2]
-        end
-        for polynomial in basis
-    ]
-    nvariables = ngens(base_ring(ideal_value))
-    lattice = matrix(ZZ, length(differences), nvariables, reduce(vcat, differences))
-    smith = snf(lattice)
-    nontrivial = [
-        smith[index, index]
-        for index in 1:min(nrows(smith), ncols(smith))
-        if !iszero(smith[index, index]) && abs(smith[index, index]) != 1
-    ]
-    return nontrivial
-end
+"Index of the exponent-difference lattice of the reduced Groebner basis in its saturation."
+lattice_index(ideal_value) =
+    binomial_lattice_index(gens(groebner_basis(ideal_value; complete_reduction=true)))
 
 for target in ("grassmannian", "flag")
     rows = census_rows(target)
@@ -86,9 +33,9 @@ for target in ("grassmannian", "flag")
         row["prime"] == "true" && row["binomial"] == "true" ||
             error("inconsistent toric label for $target orbit $(row["orbit"])")
         ideal_path = joinpath(DATA, target, row["initial_ideal"])
-        torsion = exponent_lattice_torsion(load(ideal_path))
-        isempty(torsion) ||
-            error("$target orbit $(row["orbit"]) splits over CC: Smith factors $torsion")
+        index = lattice_index(load(ideal_path))
+        index == 1 ||
+            error("$target orbit $(row["orbit"]) splits over CC: lattice index $index")
     end
     println("$target: $(length(toric)) geometrically prime binomial ideals / $(length(rows)) orbits")
 end

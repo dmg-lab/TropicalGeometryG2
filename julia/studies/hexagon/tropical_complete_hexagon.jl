@@ -11,7 +11,7 @@ using Random
 # (tropically_faithful_representatives.jl).
 #
 # Steps 1-3 of Algorithm 2 only depend on the Gröbner cone of w, so they are done once per Gröbner cone. These cones are
-# the products of a face of the raw fan of trop(linespace), julia/data/g2/grassmannian/01_raw_fan.mrdi, which is
+# the products of a face of the raw fan of trop(linespace), data/g2/grassmannian/01_raw_fan.mrdi, which is
 # the Gröbner fan restricted to the tropical variety, and a cone of the tropical quadric. The Gröbner bases are
 # computed for a small representative weight of the cone, as Singular cannot handle large weights.
 #

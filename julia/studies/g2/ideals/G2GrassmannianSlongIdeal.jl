@@ -4,33 +4,15 @@ using Oscar
 
 include(joinpath(@__DIR__, "G2GrassmannianIdeal.jl"))
 using .G2GrassmannianIdeal
+include(joinpath(@__DIR__, "G2Symmetry.jl"))
+using .G2Symmetry: g2_leaf_signs
 
 export build_g2_grassmannian_slong_ideal, SLONG_POSITIONS, slong_substitution,
-    SLONG_WEYL_GENERATORS, slong_coordinate_images, slong_signed_permutation, g2_leaf_signs,
+    SLONG_WEYL_GENERATORS, slong_coordinate_images, slong_signed_permutation,
     build_g2_grassmannian_short_long_ideal, SHORT_LONG_WEYL_GENERATORS, short_long_signed_permutation
 
 const PAIRS = [(i, j) for i in 1:6 for j in (i + 1):7]
 const PAIR_INDEX = Dict(pair => k for (k, pair) in enumerate(PAIRS))
-
-# The support of the three-form Phi = e123 + e456 + e147 + e257 + e367.
-const FORM_SUPPORT = Set([(1, 2, 3), (4, 5, 6), (1, 4, 7), (2, 5, 7), (3, 6, 7)])
-
-orientation(values) = isodd(count(values[i] > values[j] for i in eachindex(values) for j in eachindex(values) if i < j)) ? -1 : 1
-
-"Signs s such that e_i -> s_i e_pi(i) maps Phi to a multiple of itself, as in run_census.jl."
-function g2_leaf_signs(permutation)
-    for mask in 0:(2^7 - 1)
-        signs = [iszero(mask & (1 << (index - 1))) ? 1 : -1 for index in 1:7]
-        coefficients = Dict{NTuple{3, Int}, Int}()
-        for triple in FORM_SUPPORT
-            image = [permutation[index] for index in triple]
-            coefficients[Tuple(sort(image))] = orientation(image) * prod(signs[index] for index in triple)
-        end
-        Set(keys(coefficients)) == FORM_SUPPORT || continue
-        length(unique(values(coefficients))) == 1 && return signs
-    end
-    error("taxon permutation has no signed lift preserving the G2 three-form")
-end
 
 """
 Positions of the zero-weight coordinates u = p25 - p36, v = p36 - p14 and

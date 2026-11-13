@@ -20,42 +20,22 @@
 #   Everything is in the split setting and the min convention, matching
 #   ../main.tex and data/g2/grassmannian/00_ideal.mrdi (read only).
 #
-#   Run with:  julia g2_prime_cone.jl
+#   Run from julia/ with:  julia --project=. studies/g2/supplemental/g2_prime_cone.jl
 #
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
-const CP = TropicalCensus.ChevalleyPolytopes
+include(joinpath(@__DIR__, "g2_chevalley_valuation.jl"))
 const DATA = data_path("g2", "grassmannian")
 
 # --- the Chevalley valuation, in ../main.tex's Pluecker labels -------------
-L = lie_algebra(QQ, :G, 2); V7 = simple_module(L, [1,0]); W = exterior_power(V7,2)[1]
-pos, neg, hs = chevalley_basis(L)
-wt(V,j) = [Int(numerator(QQ(collect(coefficients(hs[i]*basis(V,j)))[j]))) for i in 1:2]
-prs = [(i,j) for i in 1:7 for j in (i+1):7]
-hw = only([t for t in 1:21 if wt(W,t)==[0,1] &&
-           iszero(pos[1]*basis(W,t)) && iszero(pos[2]*basis(W,t))])
-r = [2,1,2,1,2]; l = 5
-Fcol = CP._lowering_columns(L, W, 2)
-Ra, gs = polynomial_ring(QQ, ["a$k" for k in l:-1:1])
-a = Any[gs[l+1-k] for k in 1:l]; o = degrevlex(Ra)
-v = Any[zero(Ra) for _ in 1:21]; v[hw] = one(Ra)
-for k in 1:l
-    global v = CP._exp_f(Fcol[r[k]], a[k], v, Ra)
-end
-nu = Dict(prs[t] => CP._min_exponent(v[t], o) for t in 1:21)
-# WHY: Oscar's weight basis of V_7 is a split basis but not ../main.tex's -- its
-# invariant 3-form is e147+e156+e237+e246+e345, so the distinguished index is 4
-# where ../main.tex has 7.  The signed permutation below is the fixed dictionary
-# between the two; it is derived and checked in g2_oscar_notation.jl.  Applying it
-# here means every index printed by this script is ../main.tex's.
-sigma = [1,5,6,7,3,2,4]                    # Oscar's labels -> ../main.tex's
-num = Dict{Tuple{Int,Int},Vector{Int}}()
-for (p,e) in nu; num[Tuple(sort([sigma[p[1]], sigma[p[2]]]))] = e; end
-ringorder(e) = reverse(e); B = 8; Kb = 30_000
-lam(e) = Kb*sum(e) - sum(B^(j-1)*ringorder(e)[j] for j in 1:l)
-w = [lam(num[p]) for p in prs]; w = w .- minimum(w)
+# Relabelled through SIGMA (g2_chevalley_valuation.jl), so that every index
+# printed by this script is ../main.tex's.
+r = [2,1,2,1,2]
+_, nu = chevalley_valuations(W, [0, 1], r)
+num = Dict(relabel(prs[t]) => nu[t] for t in 1:21)
+w = [lam(num[p], 8, 30_000) for p in prs]; w = w .- minimum(w)
 
 # --- the initial ideal -----------------------------------------------------
 I = load(joinpath(DATA, "00_ideal.mrdi"))
@@ -73,14 +53,8 @@ println("(1) IS PRIME                : ", is_prime(inI))
 
 # --- and it is the toric variety of the lecture-hall simplex ---------------
 A = [vcat(1, num[prs[t]]) for t in 1:21]
-function Adeg(m)
-    e = first(AbstractAlgebra.exponent_vectors(m))
-    d = zeros(Int, 6)
-    for t in 1:21; d .+= e[t] .* A[t]; end
-    return d
-end
 allhom = all(G) do g
-    ds = [Adeg(m) for m in monomials(g)]
+    ds = [Adeg(m, A) for m in monomials(g)]
     all(==(ds[1]), ds)
 end
 P = chevalley_polytope(chevalley_data(:G, 2, [0,1]; word = r))
@@ -96,12 +70,9 @@ println("    normalised volume of P_(1,3,2,3,1) = ", normalised_volume_of(P))
 # and so independent of the valuation altogether.
 DATAF = load(joinpath(DATA, "01_raw_fan.mrdi"))
 C = collect(maximal_cones(DATAF))[139]
-prim(x) = (d = lcm([denominator(t) for t in x]); y = [numerator(t*d) for t in x];
-           g = reduce(gcd, y); g > 0 ? div.(y, g) : y)
-raysum = sum([QQ.(prim(Vector{QQFieldElem}(rr)))
+raysum = sum([primitive_integer(Vector{QQFieldElem}(rr))
               for rr in rays_modulo_lineality(C)[:rays_modulo_lineality]])
-mkw(Bv, Kv) = (f(e) = Kv*sum(e) - sum(Bv^(j-1)*ringorder(e)[j] for j in 1:l);
-               u = [f(num[q]) for q in prs]; QQ.(u .- minimum(u)))
+mkw(B, K) = (u = [lam(num[q], B, K) for q in prs]; QQ.(u .- minimum(u)))
 pts = ["lambda B=8" => mkw(8,30_000), "lambda B=10" => mkw(10,50_000),
        "lambda B=12" => mkw(12,100_000), "sum of the cone's rays" => raysum]
 println("\n--- the same initial ideal at four points of the relative interior ---")

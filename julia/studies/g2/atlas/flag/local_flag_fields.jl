@@ -5,10 +5,10 @@
 
 using TOML
 
-const GF2_GRASS_SYMMETRY = TropicalCensus.data_path("g2", "grassmannian_gf2", "05_symmetry")
-const GF2_FLAG_FAN = TropicalCensus.data_path("g2", "flag_gf2", "02_coarsest_fan.mrdi")
+const GF2_GRASS_SYMMETRY = TropicalGeometryG2.data_path("g2", "grassmannian_gf2", "05_symmetry")
+const GF2_FLAG_FAN = TropicalGeometryG2.data_path("g2", "flag_gf2", "02_coarsest_fan.mrdi")
 const GF2_FLAG_COARSEN_PROVENANCE =
-    TropicalCensus.data_path("g2", "flag_gf2", "provenance", "coarsen.toml")
+    TropicalGeometryG2.data_path("g2", "flag_gf2", "provenance", "coarsen.toml")
 const QQ_FLAG_FVECTOR = [1, 141, 1352, 3584, 2714]
 
 field_tex(field::Symbol) = field == :qq ? "\\mathbb{Q}" : "\\mathbb{F}_2"
@@ -25,7 +25,7 @@ function gf2_support_data(balanced_rays, qq_specs, qq_ray_orbits)
     rays, ray_index = census.rays, census.ray_index
     first_new_ray = nrows(balanced_rays) + 1
 
-    symmetry = TropicalCensus.load_symmetry_artifacts(GF2_GRASS_SYMMETRY)
+    symmetry = TropicalGeometryG2.load_symmetry_artifacts(GF2_GRASS_SYMMETRY)
     known = Dict(Set(orbit) => number for (number, orbit) in enumerate(qq_ray_orbits))
     ray_orbits = [collect(orbit) for orbit in qq_ray_orbits]
     for orbit in symmetry.ray_orbits

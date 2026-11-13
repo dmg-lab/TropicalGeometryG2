@@ -5,17 +5,17 @@
 
 import Polymake
 
-const CENSUS_TYPES = TropicalCensus.RecursivePolytopeTypes
+const CENSUS_TYPES = TropicalGeometryG2.RecursivePolytopeTypes
 const CENSUS_DEGENERATIONS = "06_canonical_interior_degenerations.csv"
 
 "The Grassmannian census of a field, `:qq` or `:gf2`."
-census_grassmannian_csv(field::Symbol) = TropicalCensus.data_path(
+census_grassmannian_csv(field::Symbol) = TropicalGeometryG2.data_path(
     "g2", field == :qq ? "grassmannian" : "grassmannian_gf2", CENSUS_DEGENERATIONS,
 )
 
 # The atlas reads stage-2 flag cell indices; stage 3 keeps their incidence.
 "The flag census of a field, `:qq` or `:gf2`."
-census_flag_csv(field::Symbol) = TropicalCensus.data_path(
+census_flag_csv(field::Symbol) = TropicalGeometryG2.data_path(
     "g2", field == :qq ? "flag" : "flag_gf2", CENSUS_DEGENERATIONS,
 )
 
@@ -59,47 +59,8 @@ const CENSUS_FACET_COLORS = Dict(3 => "A9CADB", 4 => "E3A15A")
 const CENSUS_OTHER_FACET_COLOR = "8CC7B9"
 const CENSUS_EDGE_COLOR = "205B7A"
 
-"""Split one census CSV line, honouring the double quotes of `csv_escape`."""
-function census_csv_fields(line)
-    characters = collect(line)
-    fields = String[]
-    buffer = IOBuffer()
-    quoted = false
-    index = 1
-    while index <= length(characters)
-        character = characters[index]
-        if character == '"'
-            if quoted && index < length(characters) && characters[index + 1] == '"'
-                print(buffer, '"')
-                index += 1
-            else
-                quoted = !quoted
-            end
-        elseif character == ',' && !quoted
-            push!(fields, String(take!(buffer)))
-        else
-            print(buffer, character)
-        end
-        index += 1
-    end
-    quoted && error("unterminated CSV quote")
-    push!(fields, String(take!(buffer)))
-    return fields
-end
-
-function census_csv_rows(path)
-    lines = readlines(path)
-    isempty(lines) && error("empty census CSV: $path")
-    header = census_csv_fields(first(lines))
-    header == TropicalCensus.DEGENERATION_COLUMNS || error("unexpected census header: $path")
-    rows = Dict{String,String}[]
-    for line in lines[2:end]
-        fields = census_csv_fields(line)
-        length(fields) == length(header) || error("unexpected census column count: $path")
-        push!(rows, Dict(zip(header, fields)))
-    end
-    return rows
-end
+"""The rows of a stage-6 census, by `TropicalGeometryG2.csv_rows` with its columns checked."""
+census_csv_rows(path) = TropicalGeometryG2.csv_rows(path; header=TropicalGeometryG2.DEGENERATION_COLUMNS)
 
 """Classify a census polytope and certify the description stored in the census."""
 function census_classified_polytope(path, expected_type)
@@ -466,7 +427,7 @@ function census_field_data(field::Symbol, specs, flag_data, pieces; ray_index=no
                 joinpath(dirname(grassmannian_csv), row["newton_okounkov_body"]),
                 row["body_type"],
             )
-            support.chevalley && !TropicalCensus.affine_unimodular_equivalent(
+            support.chevalley && !TropicalGeometryG2.affine_unimodular_equivalent(
                 body.polytope, census_lecture_hall_simplex(CENSUS_LECTURE_HALL_SEQUENCE),
             ) && error(
                 "the Chevalley polytope of $field support orbit $orbit_number is not the " *
@@ -520,7 +481,7 @@ function census_field_data(field::Symbol, specs, flag_data, pieces; ray_index=no
             for slice in slices
                 census_record_piece!(pieces, slice.polytope, slice.type, :flag, (field, orbit))
             end
-            haskey(bodies, support) && TropicalCensus.affine_unimodular_equivalent(
+            haskey(bodies, support) && TropicalGeometryG2.affine_unimodular_equivalent(
                 slices[2].polytope, bodies[support],
             ) || error(
                 "the Pluecker summand of $field flag orbit $orbit is not the polytope of " *
@@ -540,7 +501,7 @@ function census_verify_common_polytopes(pages, qq, gf2)
     for page in pages
         (page.qq === nothing || page.gf2 === nothing) && continue
         haskey(qq.bodies, page.qq) && haskey(gf2.bodies, page.gf2) || continue
-        TropicalCensus.affine_unimodular_equivalent(qq.bodies[page.qq], gf2.bodies[page.gf2]) ||
+        TropicalGeometryG2.affine_unimodular_equivalent(qq.bodies[page.qq], gf2.bodies[page.gf2]) ||
             error("support orbit $(page.label) has different polytopes over QQ and over GF(2)")
     end
     return true

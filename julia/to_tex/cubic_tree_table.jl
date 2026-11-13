@@ -3,9 +3,9 @@
 # two rows for each cubic, its five monomials and, under each monomial, the
 # simple G2-tree of the ray over GF(2) that belongs to it.
 #
-#   julia --project=julia julia/to_tex/cubic_tree_table.jl [--edge-length=LENGTH] [--standalone] [--output=FILE]
+#   julia --project=. to_tex/cubic_tree_table.jl [--edge-length=LENGTH] [--standalone] [--output=FILE]
 #
-# (or sh julia/to_tex/cubic_tree_table.sh with the same options). With
+# (or sh to_tex/cubic_tree_table.sh with the same options). With
 # --standalone, the table is the document of standalone_figure.jl.
 #
 # Each cubic belongs to one of the three tetrahedra of the G2-Dressian. Its
@@ -117,7 +117,7 @@ function cubic_tree_table_tex(; edge_length::Real=0.4, standalone::Bool=false)
 end
 
 function cubic_tree_table_main(args=ARGS)
-    usage = "Usage: julia --project=julia julia/to_tex/cubic_tree_table.jl " *
+    usage = "Usage: julia --project=. to_tex/cubic_tree_table.jl " *
             "[--edge-length=LENGTH] [--standalone] [--output=FILE]"
     if "--help" in args
         println(usage)

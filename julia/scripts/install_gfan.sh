@@ -2,12 +2,13 @@
 # Build gfan 0.8 beta without root, from the source and bug-fix patches of the
 # Fedora 44 package. The compiler, GMP, cddlib and TBB come from conda-forge
 # through micromamba. Installs into ~/opt/gfan and links gfan and
-# gfan_tropicalprevariety into ~/bin; PREFIX, BINDIR and JOBS override these.
+# gfan_tropicalprevariety into ~/bin; PREFIX, BINDIR and JOBS override these
+# (PREFIX and BINDIR may be relative to the current directory). From julia/:
 #   bash scripts/install_gfan.sh
 set -euo pipefail
 
-PREFIX=${PREFIX:-$HOME/opt/gfan}
-BINDIR=${BINDIR:-$HOME/bin}
+PREFIX=$(realpath -m "${PREFIX:-$HOME/opt/gfan}")
+BINDIR=$(realpath -m "${BINDIR:-$HOME/bin}")
 JOBS=${JOBS:-16}
 DEPS=$PREFIX/deps
 SOURCE=https://math.au.dk/~jensen/software/gfan/gfan0.8beta.tar.gz

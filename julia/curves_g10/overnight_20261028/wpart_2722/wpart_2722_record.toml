@@ -1,14 +1,14 @@
-# Method 1 of Section 10 (wpart 2722): the numbers that julia/paper_results/section_10.jl reports as stored.
+# Method 1 of Section 10 (wpart 2722): the numbers that paper_results/section_10.jl reports as stored.
 
 [rays]
-# The rays of the curve X17, by julia/studies/g2/curves/curve_rays.jl (94 s on 8 threads).
+# The rays of the curve X17, by studies/g2/curves/curve_rays.jl (94 s on 8 threads).
 rays = 239
 rays_with_multiplicity = 270
 multiplicities = "1^208 2^31"
 
 [k3_surface]
-# The K3 surface X18, by julia/studies/g2/curves/k3_fins.jl on the polygons of k3_surface_polygons.jl
-# (read from julia/results/curves/genus_10/k3/wpart_2722_x18.mrdi when that file is present).
+# The K3 surface X18, by studies/g2/curves/k3_fins.jl on the polygons of k3_surface_polygons.jl
+# (read from results/curves/genus_10/k3/wpart_2722_x18.mrdi when that file is present).
 sphere_polygons = 27
 sphere_vertices = 33
 sphere_edges = 58

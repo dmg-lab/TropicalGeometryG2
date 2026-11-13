@@ -18,11 +18,12 @@
 #   reduced expression in the two maximal-parabolic cases and exactly two for
 #   the Borel (the two alternating words of length 6).
 #
-#   Run with:   julia g2_chevalley_study.jl [outdir]
+#   Run from julia/ with:
+#       julia --project=. studies/g2/degenerations_grassmannian/Spacek_Wang/g2_chevalley_study.jl [outdir]
 #
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 
 const OUTDIR = length(ARGS) >= 1 ? ARGS[1] : data_path("chevalley")

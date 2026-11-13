@@ -7,6 +7,8 @@ and the stage provenance `provenance/<stage>.toml`. The directories are
 `flag_dressian` for [the two Dressians](#the-two-dressians), which are the
 same over every field and are stored once.
 
+Run the commands of this file from `julia/`.
+
 The independent characteristic-two census uses
 [`run_census_gf2.jl`](run_census_gf2.jl) and stores all canonical artifacts,
 certificates, reports, and provenance in
@@ -20,19 +22,19 @@ orbit counts.
 
 ```bash
 # Status only.
-julia --project=julia julia/studies/g2/run_census_gf2.jl
+julia --project=. studies/g2/run_census_gf2.jl
 # Complete census; use --resume after an interrupted computation.
-julia --project=julia julia/studies/g2/run_census_gf2.jl --target=base --from=tropicalize --through=degenerations --bits=0
+julia --project=. studies/g2/run_census_gf2.jl --target=base --from=tropicalize --through=degenerations --bits=0
 # Independently verify the saved certificates and census artifacts.
-julia --project=julia julia/studies/g2/supplemental/verify_gf2_census.jl
+julia --project=. studies/g2/supplemental/verify_gf2_census.jl
 ```
 
 The same script runs the G2/B flag over GF(2) with `--target=flag`; its
 artifacts are in [`../../data/g2/flag_gf2/`](../../data/g2/flag_gf2/).
 
 ```bash
-julia --project=julia julia/studies/g2/run_census_gf2.jl --target=flag --stage=tropicalize --workers=2 --threads=8 --bits=0
-julia --project=julia julia/studies/g2/run_census_gf2.jl --target=flag --from=coarsen --through=projections --resume
+julia --project=. studies/g2/run_census_gf2.jl --target=flag --stage=tropicalize --workers=2 --threads=8 --bits=0
+julia --project=. studies/g2/run_census_gf2.jl --target=flag --from=coarsen --through=projections --resume
 ```
 
 As over QQ, the flag is tropicalized by balanced support. An exact prime
@@ -67,7 +69,7 @@ ideals at its stored canonical interior weights.
 
 ```bash
 JULIA_DEPOT_PATH=/tmp/mukai-flag-julia-depot:$HOME/.julia \
-  julia --startup-file=no --project=julia julia/studies/g2/run_census.jl \
+  julia --startup-file=no --project=. studies/g2/run_census.jl \
   --target=flag --stage=tropicalize --workers=2 --threads=8 --bits=0 --force
 ```
 
@@ -79,7 +81,7 @@ ring; its exactness is [Bohm--Keicher--Ren, Proposition 3.1 and Algorithm
 fallback for nonhomogeneous ideals or unavailable cyclic support.
 
 Exact support comparisons and benchmark hashes are recorded in
-[`full28_benchmark.toml`](../../data/g2/flag/provenance/full28_benchmark.toml).
+[`full28_benchmark.toml`](supplemental/full28_benchmark.toml).
 
 Canonical data are in `../../data/g2/`. The stage-2 and stage-3 base fans have
 the same quotient support and incidence, but remain separate artifacts because
@@ -125,7 +127,7 @@ of `in_w(I)` at its minimal primes `P`. Over QQbar each QQ-prime contributes
 once per conjugate geometric prime (`absolute_primary_decomposition`).
 
 ```bash
-julia --project=julia julia/studies/g2/weights/weights.jl --absolute
+julia --project=. studies/g2/weights/weights.jl --absolute
 ```
 
 It treats the 251 maximal cones of `../../data/g2/grassmannian/01_raw_fan.mrdi`
@@ -148,7 +150,7 @@ where four maximal cones meet. So the multiplicities over the algebraically
 closed field are the right ones, as in MS15.
 
 ```bash
-julia --project=julia julia/studies/g2/weights/balancing.jl
+julia --project=. studies/g2/weights/balancing.jl
 ```
 
 [`weights/saturation_primality.jl`](weights/saturation_primality.jl) checks,
@@ -158,7 +160,7 @@ QQbar (`absolute_primary_decomposition`: one component, reduced, one conjugate).
 It also checks the 11 initial forms of the quadric q.
 
 ```bash
-julia --project=julia julia/studies/g2/weights/saturation_primality.jl
+julia --project=. studies/g2/weights/saturation_primality.jl
 ```
 
 Result, in `weights/saturation_primality.csv` (one row per face):
@@ -185,15 +187,15 @@ are computed once, as the targets `dressian` and `flag_dressian` of
 and over GF(2), keep no copy of them.
 
 ```bash
-julia --project=julia julia/studies/g2/run_census.jl --target=dressian --from=tropicalize --through=symmetry
+julia --project=. studies/g2/run_census.jl --target=dressian --from=tropicalize --through=symmetry
 for stage in tropicalize coarsen normalize trees symmetry; do
-  julia --project=julia julia/studies/g2/run_census.jl --target=flag_dressian --stage=$stage --threads=8
+  julia --project=. studies/g2/run_census.jl --target=flag_dressian --stage=$stage --threads=8
 done
 ```
 
 Stage 1 writes `01_prevariety_fan.mrdi` after checking the coefficients. For
 the Grassmannian it calls Oscar. For the flag it is
-[`supplemental/compute_flag_prevariety.jl`](supplemental/compute_flag_prevariety.jl),
+[`census/compute_flag_prevariety.jl`](census/compute_flag_prevariety.jl),
 which can also be run alone: it uses the census's Gfan intersection and
 coordinate-lifting routines, in the min convention with all 28 flag
 coordinates. It checks that eliminating the six binomial equations preserves
@@ -237,7 +239,7 @@ certificate from the flag Dressian onto the G2-Dressian is computed.
 ## Maximal-cell projection certificates
 
 ```bash
-julia --project=julia julia/studies/g2/run_census.jl --target=flag --stage=projections
+julia --project=. studies/g2/run_census.jl --target=flag --stage=projections
 ```
 
 This seventh stage uses the normalized coarsest fans and symmetry data of both
@@ -295,12 +297,12 @@ u, v, w, and writes to `../../data/g2/grassmannian_Slong/short_long/`.
 
 ```bash
 for stage in tropicalize coarsen normalize symmetry degenerations summarize; do
-  julia --project=julia julia/studies/g2/run_census_slong.jl --target=slong --stage=$stage --workers=1
+  julia --project=. studies/g2/run_census_slong.jl --target=slong --stage=$stage --workers=1
 done
 for stage in tropicalize coarsen normalize symmetry; do
-  julia --project=julia julia/studies/g2/run_census_slong.jl --target=short_long --stage=$stage --workers=1
+  julia --project=. studies/g2/run_census_slong.jl --target=short_long --stage=$stage --workers=1
 done
-julia --project=julia julia/studies/g2/run_census_slong.jl --target=slong --stage=projections
+julia --project=. studies/g2/run_census_slong.jl --target=slong --stage=projections
 ```
 
 Both use `run_tropicalization` with Gfan, with the Weyl group as signed
@@ -314,8 +316,8 @@ trop_S_long, and checks that the pieces over a subdivided cell cover it
 ## Summaries for the paper
 
 ```bash
-julia --project=julia julia/studies/g2/run_census.jl --target=all --stage=summarize
-julia --project=julia julia/studies/g2/run_census_gf2.jl --target=all --stage=summarize
+julia --project=. studies/g2/run_census.jl --target=all --stage=summarize
+julia --project=. studies/g2/run_census_gf2.jl --target=all --stage=summarize
 ```
 
 The last stage writes `08_summary.toml` in each of the six target directories
@@ -337,14 +339,14 @@ fields and of only one.
 ## Files for Zenodo
 
 ```bash
-julia --project=julia julia/studies/g2/run_census.jl --target=zenodo --stage=zenodo
-bash production/make_zenodo_tarball.sh
+julia --project=. studies/g2/run_census.jl --target=zenodo --stage=zenodo
+bash ../production/make_zenodo_tarball.sh
 ```
 
 The target `zenodo` of `run_census.jl` has the single stage `zenodo`, which
 runs after both censuses, over QQ and over GF(2). It writes in
 `../../data/g2/` the files of the Zenodo tarball that no other stage writes,
-from the artifacts of the six targets ([`zenodo_census.jl`](zenodo_census.jl)):
+from the artifacts of the six targets ([`census/zenodo_census.jl`](census/zenodo_census.jl)):
 
 - `pointspace{,_gf2}/00_ideal.mrdi`: the quadric Q, the one generator of the
   flag ideal in x1, ..., x7 alone.
@@ -353,16 +355,19 @@ from the artifacts of the six targets ([`zenodo_census.jl`](zenodo_census.jl)):
   2.5 GB) and checked against the table of `main.tex`.
 - `grassmannian_orbits.csv`, `flag_orbits.csv`, `dressian/dressian_orbits.csv`
   and `flag_dressian/flag_dressian_orbits.csv`: the labels of `main.tex` of
-  the ray and cell orbits. They also read `atlas/grassmannian/ray_label_orbits.csv`
-  and `atlas/flag/local_flag_cell_atlas.csv` here, and
+  the ray and cell orbits. They also read `atlas/grassmannian/ray_label_orbits.csv`,
+  `atlas/grassmannian/ray_orbit_labels.csv` and
+  `atlas/flag/local_flag_cell_atlas.csv` here, and
   `../../data/g2/maximal_cell_tree_metrics.csv`.
 - `../mukai_curves/genus_10_method_{1,2}.mrdi`: the two genus-10 curves of
   Section 10 as polyhedral complexes. That of Method 1 is cut from the raw fan
   by B + q, from its shift q in
   `../../curves_g10/overnight_20261028/wpart_2722/translation_1.mrdi`, by
-  `curves/method_1_curve.jl` (about 1 min), which also writes its 454 pieces to
+  `curves/method_1_curve.jl` (about 1 min, cell by cell by
+  `curves/bergman_curve.jl`), which also writes its 454 pieces to
   `genus_10_method_1_pieces.mrdi`; that of Method 2 is the stored curve of
-  `../../curves_g10/overnight_20261028/experiment_100128/`.
+  `../../curves_g10/overnight_20261028/experiment_100128/`. Both become Oscar
+  complexes by `curves/curve_complex.jl`.
 
 A part whose files all exist is skipped unless `--force`, even when its inputs
 are missing, and its stored files are checked again. The provenance is `../../data/g2/provenance/zenodo.toml`.

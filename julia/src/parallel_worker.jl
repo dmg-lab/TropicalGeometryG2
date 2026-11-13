@@ -60,8 +60,8 @@ end
 "Signed images of the variables under the group generated gfan-style by `generators`."
 function _parallel_trop_variable_group(state, generators)
     variables = gens(state.ring)
-    group = Main.TropicalCensus.signed_permutation_group(generators, length(variables))
-    images = Main.TropicalCensus.signed_coordinate_images(group)
+    group = Main.TropicalGeometryG2.signed_permutation_group(generators, length(variables))
+    images = Main.TropicalGeometryG2.signed_coordinate_images(group)
     return group.permutations, [images(p, variables) for p in group.permutations]
 end
 
@@ -91,16 +91,16 @@ function initialize_parallel_trop_worker(
             isnothing(coordinate_images_name) ||
                 error("variable symmetries take their signs as generators `p => signs`")
             candidates, images = _parallel_trop_variable_group(state, generators)
-            Main.TropicalCensus.validate_tropical_permutation_group(candidates)
+            Main.TropicalGeometryG2.validate_tropical_permutation_group(candidates)
         else
             isnothing(coordinate_images_name) && error("taxon symmetry requires a signed coordinate action")
             candidates = [Int.(collect(permutation)) for permutation in generators]
             coordinate_images = Base.invokelatest(getfield, provider, coordinate_images_name)
-            Main.TropicalCensus.validate_tropical_permutation_group(candidates)
+            Main.TropicalGeometryG2.validate_tropical_permutation_group(candidates)
             images = [Base.invokelatest(coordinate_images, permutation, gens(state.ring))
                       for permutation in candidates]
             for (permutation, image) in zip(candidates, images)
-                indices = Main.TropicalCensus.tropical_coordinate_permutation(invperm(permutation), ngens(state.ring))
+                indices = Main.TropicalGeometryG2.tropical_coordinate_permutation(invperm(permutation), ngens(state.ring))
                 _parallel_trop_signs(image, gens(state.ring)[indices])
             end
         end
@@ -120,7 +120,7 @@ function initialize_parallel_trop_worker(
         isnothing(purity_verifier_name) && error("balanced support requires an exact provider purity verifier")
         verifier = Base.invokelatest(getfield, provider, purity_verifier_name)
         certificate = Base.invokelatest(verifier, PARALLEL_TROP_STATE[])
-        Main.TropicalCensus.validate_support_purity_certificate(certificate, dim(PARALLEL_TROP_STATE[].ideal))
+        Main.TropicalGeometryG2.validate_support_purity_certificate(certificate, dim(PARALLEL_TROP_STATE[].ideal))
         PARALLEL_TROP_PURITY[] = certificate
     end
     return nothing
@@ -135,50 +135,8 @@ function parallel_trop_state()
 end
 
 
-"""Render an Oscar polynomial in the syntax accepted by gfan."""
-function parallel_trop_gfan_polynomial(f)
-    iszero(f) && return "0"
-    names = string.(symbols(parent(f)))
-    coefficient_field = coefficient_ring(f)
-    finite_coefficients = coefficient_field isa FinField
-    finite_coefficients && degree(coefficient_field) != 1 &&
-        throw(ArgumentError("gfan support export requires a prime coefficient field"))
-    pieces = String[]
-
-    for (coefficient, exponent) in zip(coefficients(f), exponents(f))
-        # gfan computes the trivial-valuation prevariety from polynomial
-        # supports. Integer lifts preserve those supports; every algebraic
-        # check and round-trip parse still uses the worker's coefficient field.
-        representative = finite_coefficients ? lift(ZZ, coefficient) : coefficient
-        negative = representative < 0
-        absolute = abs(representative)
-        numerator_string = string(numerator(absolute))
-        denominator_value = denominator(absolute)
-        coefficient_string = isone(denominator_value) ?
-            numerator_string : numerator_string * "/" * string(denominator_value)
-
-        factors = String[]
-        for (name, power) in zip(names, exponent)
-            iszero(power) && continue
-            push!(factors, power == 1 ? name : name * "^" * string(power))
-        end
-        monomial = join(factors, "*")
-        body = if isempty(monomial)
-            coefficient_string
-        elseif isone(absolute)
-            monomial
-        else
-            coefficient_string * "*" * monomial
-        end
-
-        if isempty(pieces)
-            push!(pieces, negative ? "-" * body : body)
-        else
-            push!(pieces, negative ? " - " * body : " + " * body)
-        end
-    end
-    return join(pieces)
-end
+"Render an Oscar polynomial in the syntax accepted by gfan, by `TropicalGeometryG2.gfan_polynomial`."
+parallel_trop_gfan_polynomial(f) = TropicalGeometryG2.gfan_polynomial(f)
 
 
 function parallel_trop_export_data()

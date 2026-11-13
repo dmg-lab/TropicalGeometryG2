@@ -21,19 +21,16 @@
 #    (P(omega_1), P(omega_2)) under one lattice map, via Cayley polytopes
 #    (../flag_census.jl).
 #
-# Run with julia --project=julia from any directory; writes verify.txt next
-# to this file. Characteristic 0 only.
+# Run from julia/ with
+#   julia --project=. studies/g2/degenerations_grassmannian/Feigin_Fourier_Littelmann/verify.jl
+# It writes verify.txt next to this file. Characteristic 0 only.
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 include(joinpath(@__DIR__, "..", "flag_census.jl"))
 
-const DATA = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "data", "g2"))
-const TORIC_TABLE = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "..", "tables",
-                                      "toric_degeneration_table.tex"))
-const OUTPUT = open(joinpath(@__DIR__, "verify.txt"), "w")
-say(parts...) = (println(parts...); println(OUTPUT, parts...))
+say, OUTPUT = output_file(@__DIR__, "verify.txt")
 
 # ------------------------------------------------------------------ the adjoint module
 L = lie_algebra(QQ, :G, 2)
@@ -121,16 +118,13 @@ say("FFL polytope: dimension ", dim(FFL), ", f-vector ", Int.(f_vector(FFL)), ",
     normalized_volume(FFL), ", lattice polytope: ", is_lattice_polytope(FFL))
 
 # ------------------------------------------------------------------ the census bodies
-body_path(field, orbit) = joinpath(DATA, field == "QQ" ? "grassmannian" : "grassmannian_gf2",
+body_path(field, orbit) = joinpath(grassmannian_census(field),
     "06_canonical_interior_degenerations_objects",
     "orbit_$(lpad(orbit, 3, '0'))_newton_okounkov_body.poly")
-types = Tuple{Int, String, Int}[]
-for line in readlines(TORIC_TABLE)
-    m = match(r"\\oldstylenums\{(\d+)\}.*% (?:QQ orbit (\d+), )?GF\(2\) orbit (\d+)", line)
-    isnothing(m) && continue
-    field, orbit = isnothing(m.captures[2]) ? ("GF(2)", m.captures[3]) : ("QQ", m.captures[2])
-    push!(types, (parse(Int, m.captures[1]), field, parse(Int, orbit)))
-end
+# Each toric type with its QQ orbit, or its GF(2) orbit if it is toric over GF(2) only.
+qq, gf2 = (Dict(type => orbit for (orbit, type) in toric_types(field)) for field in ("QQ", "GF(2)"))
+types = [haskey(qq, type) ? (type, "QQ", qq[type]) : (type, "GF(2)", gf2[type])
+         for type in sort!(collect(union(keys(qq), keys(gf2))))]
 @assert first.(types) == 1:20
 
 matches = Int[]

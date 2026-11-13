@@ -17,4 +17,4 @@ The data orbit numbers 1 to 11 are the `orbit` values in [`ray_label_orbits.csv`
 | $\delta$ | 11 | 1 | 37 | Snowflake |
 | $\epsilon$ | 12 | 3 | 52 | Snowflake, taxon 7 on an arm; characteristic 2 only |
 
-The catalog order is **$\alpha_1,\ldots,\alpha_5$, $\beta_1,\beta_2$, $\gamma_1,\gamma_2,\gamma_3$, $\delta$, $\epsilon$**. The canonical order and labels used by the catalog builder are `PAPER_RAY_CATALOG_ORDER` and `PAPER_RAY_ARTICLE_LABELS` in [`build_styled_ray_orbit_tables.jl`](../../../../to_tex/build_styled_ray_orbit_tables.jl).
+The catalog order is **$\alpha_1,\ldots,\alpha_5$, $\beta_1,\beta_2$, $\gamma_1,\gamma_2,\gamma_3$, $\delta$, $\epsilon$**. The labels and this order are stored once, in [`ray_orbit_labels.csv`](ray_orbit_labels.csv) (`orbit,label,catalog_position`), which the catalog builder [`build_styled_ray_orbit_tables.jl`](../../../../to_tex/build_styled_ray_orbit_tables.jl) and the stage zenodo ([`zenodo_census.jl`](../../census/zenodo_census.jl), the column `orbit_type` of `grassmannian_orbits.csv`) read. The table above repeats them with the sizes, representatives and tree types.

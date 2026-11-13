@@ -17,7 +17,7 @@
 # all 5 cuts and every object stored, and its row goes to DIR/verified.csv.
 # Its target column requires the degree 18 as well.
 #
-#   julia --project=julia -t 2 julia/studies/g2/curves/sample_genus_10.jl \
+#   julia --project=. -t 2 studies/g2/curves/sample_genus_10.jl \
 #     --first=K --experiments=N [--stride=S] [--task=T] [--output=DIR] [--solver=float] [--max-rss=M]
 #
 # runs experiments K, K+S, ..., N of them (S defaults to 1), but stops after
@@ -25,8 +25,8 @@
 # default): polymake memory is not returned, and on hydra processes of 10G
 # were killed after 1 to 5 experiments, whereas no experiment has yet
 # needed 9 GB in a fresh process (2026-10-27).
-# julia/studies/g2/curves/sample_genus_10.slurm runs it as a Slurm array on
-# hydra. DIR defaults to julia/results/curves/genus_10_sampling.
+# studies/g2/curves/sample_genus_10.slurm runs it as a Slurm array on
+# hydra. DIR defaults to results/curves/genus_10_sampling.
 ###############################################################################
 
 include(joinpath(@__DIR__, "hyperplane_intersection_census.jl"))
@@ -34,30 +34,9 @@ include(joinpath(@__DIR__, "hyperplane_intersection_census.jl"))
 const SAMPLE_HEADER = "experiment,status,supports,cells,genus,core_vertices,core_edges,core_valences," *
                       "multiplicities,balanced,target,verified,seconds"
 
-"The hyperplanes of experiment `k` of the census, drawn as in `experiment_hyperplanes`, without storing them."
-function census_hyperplanes(k, n; shift=1 << 20, coordinates=1:n, support_sizes=2:n)
-    rng = Xoshiro(k)
-    sizes(s) = s < N_HYPERPLANES ? support_sizes : (length(coordinates):length(coordinates))
-    return [random_shifted_tropical_hyperplane(n; rng, shift, coordinates, support_sizes=sizes(s)) for s in 1:N_HYPERPLANES]
-end
-
-"The graph of the segments and rays `list`, as in `decorated_graph` but without the cells containing them."
-function bare_graph(list)
-    points, index = Vector{QQFieldElem}[], Dict{Vector{QQFieldElem},Int}()
-    vertex!(v) = get!(() -> (push!(points, v); length(points)), index, v)
-    edges = DecoratedEdge[]
-    for k in [findall(is_bounded, list); findall(!is_bounded, list)]
-        P = list[k]
-        @req dim(P) == 1 && lineality_dim(P) == 0 "polyhedron $k is neither a segment nor a ray"
-        ends = [vertex!(collect(v)) for v in vertices(P)]
-        push!(edges, DecoratedEdge((ends[1], is_bounded(P) ? ends[2] : 0, Int[], [k])))
-    end
-    return DecoratedGraph((points, edges))
-end
-
 "The cuts 1 to 4 of experiment `k` by `solver`, and its row of the samples."
 function sample_experiment(k, grassmannian, weights; solver)
-    hyperplanes = census_hyperplanes(k, ambient_dim(grassmannian))
+    hyperplanes = draw_hyperplanes(k, ambient_dim(grassmannian))
     row = Dict{String,Any}("experiment" => k, "supports" => join((count(!iszero, h.normal) for h in hyperplanes[1:CURVE_STAGE]), ';'))
     complex, multiplicities, cells = grassmannian, weights, Int[]
     for s in 1:CURVE_STAGE
@@ -71,14 +50,14 @@ function sample_experiment(k, grassmannian, weights; solver)
     L = lineality_dim(complex)
     L == 1 || (row["status"] = "lineality of dimension $L"; return row)
     list = modulo_lineality(complex)
-    G = bare_graph(list)
+    G = decorated_graph(list, nothing)
     C = desubdivide(core(G))
-    core_valences = valences(C)
+    core_valences = graph_valences(C)
     g = genus(G)
     balanced = is_balanced(list, multiplicities)
     trivalent = !isempty(core_valences) && all(==(3), core_valences)
     merge!(row, Dict("status" => "curve", "genus" => g, "core_vertices" => length(C.points), "core_edges" => length(C.edges),
-                     "core_valences" => valence_profile(core_valences), "multiplicities" => valence_profile(multiplicities),
+                     "core_valences" => histogram(core_valences), "multiplicities" => histogram(multiplicities),
                      "balanced" => balanced, "target" => g == TARGET_GENUS && trivalent && balanced,
                      "candidate" => g == TARGET_GENUS && trivalent))
     return row
@@ -89,8 +68,8 @@ function verify_experiment(output, k, grassmannian, weights, cells, labels)
     directory = joinpath(output, "verified", "experiment_$k")
     start = time()
     row = is_summarized(directory) ? summary_row(directory) :
-          run_experiment(directory, k, grassmannian, weights, cells, labels; shift=1 << 20, solver=:certified,
-                         coordinates=1:ambient_dim(grassmannian), support_sizes=2:ambient_dim(grassmannian))
+          run_census_experiment(directory, k, grassmannian, weights, cells, labels; shift=1 << 20, solver=:certified,
+                                coordinates=1:ambient_dim(grassmannian), support_sizes=2:ambient_dim(grassmannian))
     haskey(row, "seconds") || (row["seconds"] = round(Int, time() - start))
     write(joinpath(directory, "summary.csv"), CENSUS_HEADER * '\n' * census_line(row) * '\n')
     path = joinpath(output, "verified.csv")

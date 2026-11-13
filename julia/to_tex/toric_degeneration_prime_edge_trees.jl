@@ -1,5 +1,5 @@
 ###############################################################################
-# A standalone copy of figures/toric_degeneration_trees.tex, the figure
+# A standalone copy of ../figures/toric_degeneration_trees.tex, the figure
 # fig:atlas_toric_cells_prime of main.tex, in which an edge and its length are
 # green when the edge has a prime cone over it in the tropical G2 flag variety,
 # the edges with an apple in toric_degeneration_apple_trees.jl, and red when it
@@ -8,21 +8,21 @@
 #
 # The panels are drawn with the options of the figure in main.tex, and the
 # script checks that, without these colors, they are
-# figures/toric_degeneration_trees.tex.
+# ../figures/toric_degeneration_trees.tex.
 #
-#   julia --project=julia julia/to_tex/toric_degeneration_prime_edge_trees.jl \
+#   julia --project=. to_tex/toric_degeneration_prime_edge_trees.jl \
 #     [--apple-style=flat|outlined|glossy] [--fragment|--standalone] [--pdf] [--output=FILE]
 #
 # With --fragment the script writes the figure of main.tex, which supplies the
 # float and the caption; with --standalone, that figure as the document of
 # standalone_figure.jl, whose PDF main.tex includes. With --pdf the page is compiled to
-# output/pdf/g2_toric_degeneration_prime_edge_trees.pdf, and the fragment, in
+# ../output/pdf/g2_toric_degeneration_prime_edge_trees.pdf, and the fragment, in
 # the preamble of main.tex, to g2_toric_degeneration_prime_edge_trees_fragment.pdf.
 ###############################################################################
 
 include(joinpath(@__DIR__, "toric_degeneration_apple_trees.jl"))
 
-# The figure of main.tex and its drawing options, from figures/generate_figures.sh.
+# The figure of main.tex and its drawing options, from ../figures/generate_figures.sh.
 const PRIME_EDGE_PAPER_FIGURE = "figures/toric_degeneration_trees.tex"
 const PRIME_EDGE_OPTIONS = (scale=0.88, taxon_scale=0.75, bounded_length=1.0)
 # The space in centimetres between two rows of trees, and how far a tree rises
@@ -182,7 +182,7 @@ end
 
 function toric_degeneration_prime_edge_trees_main(args=ARGS)
     if "--help" in args
-        println("Usage: julia --project=julia julia/to_tex/toric_degeneration_prime_edge_trees.jl " *
+        println("Usage: julia --project=. to_tex/toric_degeneration_prime_edge_trees.jl " *
                 "[--apple-style=flat|outlined|glossy] [--fragment|--standalone] [--pdf] [--output=FILE]")
         println("--fragment writes the figure for \\input in main.tex; with --pdf its preview has ",
                 "the preamble of main.tex and the caption of the figure.")

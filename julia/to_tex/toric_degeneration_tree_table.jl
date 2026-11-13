@@ -5,10 +5,10 @@
 # labels and in the order of toric_degeneration_table.jl; with --non-toric,
 # the other has the remaining cells, whose labels continue these.
 #
-# Run from the repository root with julia --project=julia. The panels are
-# those of the ray catalog of build_styled_ray_orbit_tables.jl, which this
-# file includes, fitted to their trees. The script prints the tabular, or
-# writes it to --output=FILE; main.tex supplies the float and its caption.
+# Run from julia/ with `julia --project=.`. The panels are those of the ray
+# catalog of build_styled_ray_orbit_tables.jl, which this file includes, fitted
+# to their trees. The script prints the tabular, or writes it to --output=FILE;
+# main.tex supplies the float and its caption.
 ###############################################################################
 
 include(joinpath(@__DIR__, "build_styled_ray_orbit_tables.jl"))
@@ -32,28 +32,6 @@ const TORIC_TREE_TABLE_NOTE = (qq=raw"char\ \(\neq 2\)", gf2=raw"char\ 2")
 # the heading and takes no depth.
 const TORIC_TREE_TABLE_SQUARE =
     raw"\smash[b]{\tikz[baseline=0pt]\draw[g2TreeRule,line width=1pt] (0,0) rectangle (2.6mm,2.6mm);}"
-
-"""
-The rows of `toric_table_support_rows`, each with the `tree` of its support
-cell. The cell is certified to lie in the census orbit of the row in each of
-its fields; it has the same tree in these fields.
-"""
-function toric_tree_table_rows(; toric::Bool=true)
-    sources = Dict(field => load_g2_maximal_cell_source(; field=field)
-                   for field in TORIC_TABLE_FIELDS)
-    census = toric_table_census()
-    return map(toric_table_support_rows(census; toric=toric)) do row
-        for (field, orbit) in row.orbits
-            cell = g2_resolve_maximal_cell(sources[field], row.support)
-            cell.index in parse.(Int, split(census[field][orbit]["cells"], ';')) || error(
-                "the support of atlas label $(row.label) is not in " *
-                "$(TORIC_TABLE_FIELD_NAMES[field]) orbit $orbit",
-            )
-        end
-        source = sources[first(first(row.orbits))]
-        merge(row, (tree=g2_maximal_cell_tree(row.support; source=source).tree,))
-    end
-end
 
 """The panel of a row: its number, its orbit size, the tree of its cell, and a square if the cell is a quadrilateral."""
 function toric_tree_table_panel(io::IO, row, options)

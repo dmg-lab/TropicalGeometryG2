@@ -16,7 +16,7 @@
 # points, 18 counted with multiplicity, the degree of G2/P2; the 18 points of
 # a codimension-5 linear section of G2/P2 form a self-dual configuration.
 #
-#   julia --project=julia -t 16 julia/studies/g2/curves/hyperplane_intersection_census.jl \
+#   julia --project=. -t 16 studies/g2/curves/hyperplane_intersection_census.jl \
 #     [--first=K] [--experiments=N] [--shift=T] [--coordinates=I,J,...] [--support-sizes=A:B]
 #     [--solver=certified|highs|hybrid|soplex|float] [--output=DIR]
 #     [--from=K:S] [--candidates=C] [--point-candidates=P] [--shift-basis=default|FILE]
@@ -61,7 +61,7 @@
 # experiment 4 alone.
 #
 # Experiments K to K+N-1 (default 1 to 1) go to DIR/experiment_k, by default
-# in julia/results/curves/hyperplane_census. Every object is stored in .mrdi:
+# in results/curves/hyperplane_census. Every object is stored in .mrdi:
 #   hyperplanes.mrdi     the 5 hyperplanes: complexes, normal vectors, shifts
 #   intersection_s.mrdi  stage s-1 cut by hyperplane s, and its pieces
 #   stage_s.mrdi         its coarsening, the complex cut next, with multiplicities
@@ -78,8 +78,7 @@ include(joinpath(@__DIR__, "tropical_hyperplanes.jl"))
 include(joinpath(@__DIR__, "intersect_complexes.jl"))
 include(joinpath(@__DIR__, "decorated_curve_graph.jl"))
 
-using TropicalCensus: data_path, study_path, project_path
-import TropicalCensus: csv_rows
+using .IntersectionLib: load_shift_basis
 
 # The first 4 hyperplanes cut the curve, the fifth its points.
 const N_HYPERPLANES = 5
@@ -99,27 +98,32 @@ merge.
 """
 function g2_grassmannian()
     fan = load(data_path("g2", "grassmannian", "02_coarsest_fan.mrdi"))
-    raw = Dict(row["cone"] => parse(Int, row["mult_QQbar"]) for row in csv_rows(study_path(:g2, "weights", "weights.csv")))
-    rows = csv_rows(data_path("g2", "grassmannian", "02_coarsest_cells.csv"))
-    @req [parse(Int, row["coarsest_cell"]) for row in rows] == 1:n_maximal_cones(fan) "02_coarsest_cells.csv does not list the cells in order"
-    weights = [ZZ(only(unique(raw[c] for c in split(row["original_cells"], ';')))) for row in rows]
+    weights = ZZ.(coarsest_cell_weights())
+    @req length(weights) == n_maximal_cones(fan) "02_coarsest_cells.csv does not list the cells of the fan"
     complex = polyhedral_complex(fan)
     @req all(((P, C),) -> P == polyhedron(C), zip(maximal_polyhedra(complex), maximal_cones(fan))) "the complex reorders the cones"
     return complex, weights
 end
 
 """
-The hyperplanes of experiment `k`, drawn with `Xoshiro(k)` among `coordinates`
-and stored in `path`. The last one has full support: a hyperplane misses the
-points of the curve where all its coordinates vanish, so that fewer than 18
-points remain. A stored file that differs from the draw after the curve stage,
-from an earlier version of the census, is replaced, and the stages it cut are
-removed.
+The 5 hyperplanes of experiment `k` in `QQ^n`, drawn with `Xoshiro(k)` among
+`coordinates`, the first 4 with supports of sizes in `support_sizes`. The last
+one has full support: a hyperplane misses the points of the curve where all its
+coordinates vanish, so that fewer than 18 points remain.
 """
-function experiment_hyperplanes(path, k, n, shift, coordinates, support_sizes)
+function draw_hyperplanes(k, n; shift=1 << 20, coordinates=1:n, support_sizes=2:n)
     rng = Xoshiro(k)
     sizes(s) = s < N_HYPERPLANES ? support_sizes : (length(coordinates):length(coordinates))
-    drawn = [random_shifted_tropical_hyperplane(n; rng, shift, coordinates, support_sizes=sizes(s)) for s in 1:N_HYPERPLANES]
+    return [random_shifted_tropical_hyperplane(n; rng, shift, coordinates, support_sizes=sizes(s)) for s in 1:N_HYPERPLANES]
+end
+
+"""
+The hyperplanes of experiment `k` of `draw_hyperplanes`, stored in `path`. A
+stored file that differs from the draw after the curve stage, from an earlier
+version of the census, is replaced, and the stages it cut are removed.
+"""
+function experiment_hyperplanes(path, k, n, shift, coordinates, support_sizes)
+    drawn = draw_hyperplanes(k, n; shift, coordinates, support_sizes)
     if isfile(path)
         stored = load(path)
         drawn_among = haskey(stored, :coordinates) ? stored.coordinates : collect(1:n)
@@ -183,31 +187,8 @@ function modulo_lineality(complex)
     return [intersect(P, slice) for P in maximal_polyhedra(complex)]
 end
 
-"The primitive vector of the direction `d` in `ZZ^n`."
-function primitive_direction(d)
-    d = d .* lcm(denominator.(d))
-    return ZZ.(d .// gcd(numerator.(d)))
-end
-
 "Whether the multiplicities times the primitive directions of the edges and legs at every vertex add up to zero."
-function is_balanced(list, multiplicities)
-    total = Dict{Vector{QQFieldElem}, Vector{ZZRingElem}}()
-    for (P, m) in zip(list, multiplicities)
-        ends = collect.(vertices(P))
-        directions = is_bounded(P) ? [ends[2] - ends[1], ends[1] - ends[2]] : [collect(only(rays(P)))]
-        for (v, d) in zip(ends, directions)
-            total[v] = get(total, v, zeros(ZZ, length(d))) + m .* primitive_direction(d)
-        end
-    end
-    return all(iszero, values(total))
-end
-
-"The number of edges and legs at every vertex of `G`, a loop counted twice."
-function valences(G::DecoratedGraph)
-    valence = zeros(Int, length(G.points))
-    foreach(e -> (valence[e.tail] += 1; is_leg(e) || (valence[e.head] += 1)), G.edges)
-    return valence
-end
+is_balanced(list, multiplicities) = all(iszero, values(balancing_sums(list, multiplicities).sums))
 
 "A decorated graph as plain vectors, with the multiplicity of every edge and leg."
 graph_record(G::DecoratedGraph, multiplicities) =
@@ -225,16 +206,13 @@ function curve_record(stage, cells)
     G = decorated_graph(list, cells)
     graphs = (subdivided=G, desubdivided=desubdivide(G), reduced=desubdivide(G; within_cells=true),
               core=desubdivide(core(G)))
-    core_valences = valences(graphs.core)
+    core_valences = graph_valences(graphs.core)
     g = genus(G)
     return (; polyhedra=list, multiplicities=stage.multiplicities,
             (name => graph_record(graphs[name], stage.multiplicities) for name in keys(graphs))...,
             genus=g, core_valences, balanced=is_balanced(list, stage.multiplicities),
             target=g == TARGET_GENUS && !isempty(core_valences) && all(==(3), core_valences)), graphs
 end
-
-"`3^18 4^1` for the values `3, ..., 3, 4`."
-valence_profile(values) = join(("$d^$(count(==(d), values))" for d in sort!(unique(values))), ' ')
 
 """
 The points of the last stage modulo lineality, with their multiplicities, the
@@ -270,7 +248,7 @@ end
 Run experiment `k` in `directory`, loading the objects already stored there,
 and return its row of the census.
 """
-function run_experiment(directory, k, grassmannian, weights, cells, labels; shift, solver, coordinates, support_sizes)
+function run_census_experiment(directory, k, grassmannian, weights, cells, labels; shift, solver, coordinates, support_sizes)
     mkpath(directory)
     file(name) = joinpath(directory, name)
     hyperplanes = experiment_hyperplanes(file("hyperplanes.mrdi"), k, ambient_dim(grassmannian), shift, coordinates,
@@ -321,21 +299,14 @@ function summarize_stages!(row, stages, file, cells, labels)
     merge!(row, Dict("status" => "curve", "vertices" => length(G.points), "edges" => count(!is_leg, G.edges),
                      "legs" => count(is_leg, G.edges), "genus" => curve.genus,
                      "core_vertices" => length(graphs.core.points), "core_edges" => length(graphs.core.edges),
-                     "core_valences" => valence_profile(curve.core_valences),
-                     "multiplicities" => valence_profile(curve.multiplicities), "balanced" => curve.balanced))
+                     "core_valences" => histogram(curve.core_valences),
+                     "multiplicities" => histogram(curve.multiplicities), "balanced" => curve.balanced))
     points = point_record(stages[N_HYPERPLANES], cells)
     save(file("points.mrdi"), points)
     degree = sum(points.multiplicities)
-    merge!(row, Dict("points" => length(points.points), "point_multiplicities" => valence_profile(points.multiplicities),
+    merge!(row, Dict("points" => length(points.points), "point_multiplicities" => histogram(points.multiplicities),
                      "degree" => degree, "target" => curve.target && curve.balanced && degree == DEGREE))
     return row
-end
-
-"The basis of the shifts of `shift_basis.jl`, as integer rows."
-function load_shift_basis(path)
-    rows = Matrix{QQFieldElem}(load(path).basis)
-    @req all(isone ∘ denominator, rows) "the shift basis $path is not integral"
-    return Int.(numerator.(rows))
 end
 
 """
@@ -361,7 +332,7 @@ function candidate_score(stage, s, cells)
     s < CURVE_STAGE && return (true, -share), info
     if s == CURVE_STAGE
         curve, _ = curve_record(stage, cells)
-        merge!(info, Dict("genus" => curve.genus, "core_valences" => valence_profile(curve.core_valences)))
+        merge!(info, Dict("genus" => curve.genus, "core_valences" => histogram(curve.core_valences)))
         return (true, curve.target && curve.balanced, curve.genus, -share), info
     end
     points = point_record(stage, cells)
@@ -540,8 +511,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
                                        options.origin_directory, options.from_stage, options.candidates,
                                        options.point_candidates, options.shift,
                                        options.shift_basis, options.solver) :
-                run_experiment(directory, k, grassmannian, weights, cells, labels; options.shift, options.solver,
-                               options.coordinates, options.support_sizes)
+                run_census_experiment(directory, k, grassmannian, weights, cells, labels; options.shift, options.solver,
+                                      options.coordinates, options.support_sizes)
         catch error
             error isa InterruptException && rethrow()
             @error "Experiment $k failed" exception=(error, catch_backtrace())

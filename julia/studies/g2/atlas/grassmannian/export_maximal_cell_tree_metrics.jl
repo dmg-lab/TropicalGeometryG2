@@ -3,15 +3,16 @@
 # G2-Grassmannian in characteristic 0 and in characteristic 2: one tree per
 # orbit, that of the two tables of maximal trees of main.tex, numbered as there.
 #
-# Run from the repository root with julia --project=julia. The script writes
-# julia/data/g2/maximal_cell_tree_metrics.csv, or --output=FILE, in about half
+# Run from julia/ with `julia --project=.`; the script writes
+# data/g2/maximal_cell_tree_metrics.csv, or --output=FILE, in about half
 # a minute.
 ###############################################################################
 
-include(joinpath(@__DIR__, "..", "..", "..", "..", "to_tex", "toric_degeneration_tree_table.jl"))
+# The numbers of the orbits and the trees of their support cells.
+include(joinpath(@__DIR__, "..", "flag", "cell_orbit_trees.jl"))
 
 const MAXIMAL_CELL_TREE_METRICS_CSV =
-    TropicalCensus.data_path("g2", "maximal_cell_tree_metrics.csv")
+    TropicalGeometryG2.data_path("g2", "maximal_cell_tree_metrics.csv")
 const MAXIMAL_CELL_TREE_PAIRS = [(i, j) for i in 1:6 for j in (i + 1):7]
 # The six equalities of eq:dressian in main.tex.
 const MAXIMAL_CELL_TREE_EQUALITIES = (

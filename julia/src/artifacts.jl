@@ -8,14 +8,17 @@ function rows_matrix(rows; ring=ZZ)
     return matrix(ring, reduce(vcat, permutedims.(rows)))
 end
 
+"The four files of the symmetry artifacts with path prefix `prefix`, in this order."
+symmetry_artifact_paths(prefix::AbstractString) = (
+    permutations=prefix * "_taxon_permutations.mrdi",
+    rays=prefix * "_ray_actions.mrdi",
+    cells=prefix * "_cell_actions.mrdi",
+    orbits=prefix * "_cell_orbits.csv",
+)
+
 function save_symmetry_artifacts(prefix::AbstractString, symmetry)
     mkpath(dirname(prefix))
-    paths = (
-        permutations=prefix * "_taxon_permutations.mrdi",
-        rays=prefix * "_ray_actions.mrdi",
-        cells=prefix * "_cell_actions.mrdi",
-        orbits=prefix * "_cell_orbits.csv",
-    )
+    paths = symmetry_artifact_paths(prefix)
     save(paths.permutations, rows_matrix(symmetry.permutations))
     save(paths.rays, rows_matrix(symmetry.ray_actions))
     save(paths.cells, rows_matrix(symmetry.cell_actions))
@@ -33,9 +36,10 @@ matrix_rows(value) = [
 ]
 
 function load_symmetry_artifacts(prefix::AbstractString)
-    permutations = matrix_rows(load(prefix * "_taxon_permutations.mrdi"))
-    ray_actions = matrix_rows(load(prefix * "_ray_actions.mrdi"))
-    cell_actions = matrix_rows(load(prefix * "_cell_actions.mrdi"))
+    paths = symmetry_artifact_paths(prefix)
+    permutations = matrix_rows(load(paths.permutations))
+    ray_actions = matrix_rows(load(paths.rays))
+    cell_actions = matrix_rows(load(paths.cells))
     return (
         permutations=permutations,
         ray_actions=ray_actions,
@@ -76,6 +80,55 @@ csv_escape(value) = begin
     text = string(value)
     (occursin(',', text) || occursin('"', text) || occursin('\n', text)) ?
         "\"" * replace(text, "\"" => "\"\"") * "\"" : text
+end
+
+"""
+Split one CSV line, honouring double quotes: a quoted field may contain commas,
+and a doubled quote in it is one quote, as `csv_escape` writes them.
+"""
+function csv_fields(line)
+    characters = collect(line)
+    fields, buffer, quoted = String[], IOBuffer(), false
+    index = 1
+    while index <= length(characters)
+        character = characters[index]
+        if character == '"'
+            if quoted && index < length(characters) && characters[index + 1] == '"'
+                print(buffer, '"')
+                index += 1
+            else
+                quoted = !quoted
+            end
+        elseif character == ',' && !quoted
+            push!(fields, String(take!(buffer)))
+        else
+            print(buffer, character)
+        end
+        index += 1
+    end
+    quoted && error("unterminated CSV quote in $line")
+    push!(fields, String(take!(buffer)))
+    return fields
+end
+
+"""
+    csv_rows(path; header=nothing, comments=false)
+
+The rows of the CSV file `path`, each a dictionary by column name. Empty lines
+are skipped, and with `comments` also lines starting with #. With `header`, the
+column names must be these.
+"""
+function csv_rows(path; header=nothing, comments::Bool=false)
+    lines = filter(line -> !isempty(line) && !(comments && startswith(line, '#')), readlines(path))
+    isempty(lines) && error("empty CSV file $path")
+    names = csv_fields(first(lines))
+    isnothing(header) || names == header || error("$path: unexpected columns $(join(names, ','))")
+    return map(lines[2:end]) do line
+        fields = csv_fields(line)
+        length(fields) == length(names) ||
+            error("$path: a line with $(length(fields)) fields, the header has $(length(names)): $line")
+        Dict(zip(names, fields))
+    end
 end
 
 function degeneration_object_directory(path::AbstractString)

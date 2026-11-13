@@ -9,7 +9,8 @@
 # left by the six binomial linear forms, as for Gfan) and polymake's convex hull
 # backend. One variant per process; nothing is written to data/.
 #
-#   julia --project=julia benchmark_oscar_prevariety.jl --case=flag78 --order=input --hull=default --mode=oscar
+#   julia --project=. studies/g2/supplemental/benchmark_oscar_prevariety.jl \
+#     --case=flag78 --order=input --hull=default --mode=oscar
 #
 # --case   flag78 (78 generators, 28 coordinates), flag72 (the 72 generators left by the six
 #          binomial linear forms, in 22 coordinates; 71 distinct, two Pluecker relations coincide),

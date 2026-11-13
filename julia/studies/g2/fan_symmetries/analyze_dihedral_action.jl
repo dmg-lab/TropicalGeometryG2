@@ -2,7 +2,7 @@
 
 using LinearAlgebra
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 
 const DATA_DIRECTORY = data_path("g2", "grassmannian")
 const REPORT_PATH = joinpath(@__DIR__, "REPORT.md")
@@ -18,35 +18,6 @@ function permutation_power(permutation, exponent::Integer)
         result = compose(permutation, result)
     end
     return result
-end
-
-function permutation_order(permutation)
-    identity = collect(eachindex(permutation))
-    power = copy(permutation)
-    order = 1
-    while power != identity
-        power = compose(permutation, power)
-        order += 1
-        order <= factorial(length(permutation)) || error("failed to find permutation order")
-    end
-    return order
-end
-
-function generated_group(generators)
-    identity = collect(eachindex(first(generators)))
-    elements = Dict(Tuple(identity) => identity)
-    frontier = [identity]
-    while !isempty(frontier)
-        element = popfirst!(frontier)
-        for generator in generators
-            image = compose(generator, element)
-            key = Tuple(image)
-            haskey(elements, key) && continue
-            elements[key] = image
-            push!(frontier, image)
-        end
-    end
-    return collect(values(elements))
 end
 
 function cycle_type(permutation)
@@ -95,7 +66,7 @@ function fan_span_fixed_codimension(action::AbstractMatrix, lineality::AbstractM
 end
 
 function row_span_trace(action::AbstractMatrix, spanning_rows)
-    basis = TropicalCensus.canonical_row_span(spanning_rows)
+    basis = TropicalGeometryG2.canonical_row_span(spanning_rows)
     pivots = [findfirst(!iszero, collect(row)) for row in eachrow(basis)]
     transformed = basis * QQ.(action)
     restriction = transformed[:, pivots]
@@ -151,7 +122,7 @@ function character_table(characters)
 end
 
 function orthogonal_projector(spanning_rows)
-    basis = TropicalCensus.canonical_row_span(spanning_rows)
+    basis = TropicalGeometryG2.canonical_row_span(spanning_rows)
     gram_inverse = Matrix{QQFieldElem}(inv(matrix(QQ, basis * transpose(basis))))
     return transpose(basis) * gram_inverse * basis
 end
@@ -186,12 +157,8 @@ function direction_orbits(directions, actions)
     return orbits
 end
 
-function primitive_integer_direction(direction)
-    common_denominator = foldl(lcm, Int.(denominator.(direction)); init=1)
-    integers = [Int(common_denominator * coordinate) for coordinate in direction]
-    common_divisor = foldl(gcd, abs.(integers); init=0)
-    return Tuple(integers .÷ common_divisor)
-end
+"The primitive integer vector of the rational direction `direction`, as a tuple of `Int`s."
+primitive_integer_direction(direction) = Tuple(Int.(primitive_integer(collect(direction))))
 
 
 function lattice_primitive_direction(direction, plane_basis)
@@ -224,7 +191,7 @@ function induced_linear_fan_action(action, rays, cells, lineality)
         push!(ray_action, signature_to_ray[signature])
     end
     cell_index = Dict(Tuple(cell) => index for (index, cell) in enumerate(cells))
-    cell_action = TropicalCensus.induced_cell_action(ray_action, cells, cell_index)
+    cell_action = TropicalGeometryG2.induced_cell_action(ray_action, cells, cell_index)
     cell_action === nothing && return nothing
     return (rays=ray_action, cells=cell_action)
 end
@@ -248,7 +215,7 @@ stored_permutations = [
     for row in eachrow(load(joinpath(DATA_DIRECTORY, "05_symmetry_taxon_permutations.mrdi")))
 ]
 lineality = Matrix{QQFieldElem}(matrix(QQ, rays_modulo_lineality(fan).lineality_basis))
-cells = TropicalCensus.fan_cells(fan)
+cells = TropicalGeometryG2.fan_cells(fan)
 
 # The six-cycle follows the intrinsic hexagon 1-5-3-4-2-6.  The second
 # generator is reflection in the axis through the opposite vertices 1 and 4.
@@ -260,7 +227,7 @@ identity = collect(1:7)
 @assert permutation_order(reflection) == 2
 @assert compose(reflection, compose(rotation, reflection)) == invperm(rotation)
 
-group = generated_group([rotation, reflection])
+group = generated_subgroup([rotation, reflection])
 @assert length(group) == 12
 @assert Set(Tuple.(group)) == Set(Tuple.(stored_permutations))
 
@@ -369,7 +336,7 @@ lineality_projector = orthogonal_projector(lineality)
 identity_q = Matrix{QQFieldElem}(I, 21, 21)
 residual_e1_projector = e1_projector * (identity_q - lineality_projector)
 projected_rays = Matrix{QQFieldElem}(rays) * residual_e1_projector
-plane_basis = TropicalCensus.canonical_row_span(projected_rays)
+plane_basis = TropicalGeometryG2.canonical_row_span(projected_rays)
 plane_projector = orthogonal_projector(projected_rays)
 coxeter_taxon_reflections = [reflection, compose(rotation, reflection)]
 ambient_reflections = [
@@ -448,7 +415,7 @@ group_actions = [QQ.(coordinate_action_matrix(element)) for element in group]
 a1_projector = reduce(+, group_actions) ./ length(group_actions)
 residual_a1_projector = a1_projector * (identity_q - lineality_projector)
 projected_invariants = Matrix{QQFieldElem}(rays) * residual_a1_projector
-invariant_basis = TropicalCensus.canonical_row_span(projected_invariants)
+invariant_basis = TropicalGeometryG2.canonical_row_span(projected_invariants)
 invariant_pivots = [findfirst(!iszero, collect(row)) for row in eachrow(invariant_basis)]
 invariant_coordinates = projected_invariants[:, invariant_pivots]
 @assert size(invariant_basis, 1) == 2
@@ -852,8 +819,8 @@ open(PROJECTION_PATH, "w") do io
         if all(iszero, vector)
             println(io, join((
                 index, 0, 0, "", "", "zero",
-                TropicalCensus.rational_key(invariant_part[1]),
-                TropicalCensus.rational_key(invariant_part[2]),
+                TropicalGeometryG2.rational_key(invariant_part[1]),
+                TropicalGeometryG2.rational_key(invariant_part[2]),
                 "", "",
             ), ','))
             continue
@@ -864,15 +831,15 @@ open(PROJECTION_PATH, "w") do io
         normalized_invariant_part = invariant_part ./ scale
         println(io, join((
             index,
-            TropicalCensus.rational_key(vector[1]),
-            TropicalCensus.rational_key(vector[2]),
+            TropicalGeometryG2.rational_key(vector[1]),
+            TropicalGeometryG2.rational_key(vector[2]),
             direction[1],
             direction[2],
             root_type[direction],
-            TropicalCensus.rational_key(invariant_part[1]),
-            TropicalCensus.rational_key(invariant_part[2]),
-            TropicalCensus.rational_key(normalized_invariant_part[1]),
-            TropicalCensus.rational_key(normalized_invariant_part[2]),
+            TropicalGeometryG2.rational_key(invariant_part[1]),
+            TropicalGeometryG2.rational_key(invariant_part[2]),
+            TropicalGeometryG2.rational_key(normalized_invariant_part[1]),
+            TropicalGeometryG2.rational_key(normalized_invariant_part[2]),
         ), ','))
     end
 end
@@ -962,8 +929,8 @@ long:  $long_roots
 The inherited Gram matrix is
 
 ```text
-[$(TropicalCensus.rational_key(plane_metric[1, 1]))  $(TropicalCensus.rational_key(plane_metric[1, 2]))]
-[$(TropicalCensus.rational_key(plane_metric[2, 1]))  $(TropicalCensus.rational_key(plane_metric[2, 2]))],
+[$(TropicalGeometryG2.rational_key(plane_metric[1, 1]))  $(TropicalGeometryG2.rational_key(plane_metric[1, 2]))]
+[$(TropicalGeometryG2.rational_key(plane_metric[2, 1]))  $(TropicalGeometryG2.rational_key(plane_metric[2, 2]))],
 ```
 
 so the squared long/short length ratio is exactly 3.  Taking the short root
@@ -1147,10 +1114,10 @@ quotient, respectively.
 
 ## Reproduce
 
-From the repository root:
+From julia/:
 
 ```sh
-julia --project=julia julia/studies/g2/fan_symmetries/analyze_dihedral_action.jl
+julia --project=. studies/g2/fan_symmetries/analyze_dihedral_action.jl
 ```
 """)
 end

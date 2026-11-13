@@ -1,4 +1,4 @@
-# Section 3 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 3 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 "The basis of the lineality space of a fan, as a matrix over QQ."
 s3_lineality(F) = matrix(QQ, rays_modulo_lineality(F).lineality_basis)
@@ -65,9 +65,9 @@ function section_3()
     pairs = count(sp -> count(==(sp), spans) == 2, distinct)
     check("distinct linear spans of the 251 maximal cones, and pairs with the same span", [248, 3], [length(distinct), pairs])
     quotient = Matrix{QQFieldElem}(kernel(s3_lineality(D); side=:right))
-    Gcells = Set(TropicalCensus.cell_signatures(G, quotient))
-    Dcells = TropicalCensus.cell_signatures(D, quotient)          # in the order of maximal_cones(D)
-    raw_cells = TropicalCensus.cell_signatures(raw, quotient)     # in the order of spans
+    Gcells = Set(TropicalGeometryG2.cell_signatures(G, quotient))
+    Dcells = TropicalGeometryG2.cell_signatures(D, quotient)          # in the order of maximal_cones(D)
+    raw_cells = TropicalGeometryG2.cell_signatures(raw, quotient)     # in the order of spans
     quadrilaterals = Set(c for c in Gcells if length(c) == 4)
     merged = Set(union(raw_cells[findall(==(sp), spans)]...) for sp in distinct if count(==(sp), spans) == 2)
     claim("each pair of triangles with the same span merges into one of the three quadrilaterals of trop(G)",
@@ -97,7 +97,7 @@ function section_3()
     end
 
     subheading("Remark on multiplicities (stored: studies/g2/weights/weights.jl --absolute, weights/weights.csv)")
-    weights = rows(studies("g2", "weights", "weights.csv"))
+    weights = rows(study_path("g2", "weights", "weights.csv"))
     double = [r for r in weights if r["mult_QQbar"] != "1"]
     L = locator(G)
     types = orbit_types("grassmannian_orbits.csv", "qq")
@@ -110,9 +110,11 @@ function section_3()
     cells21 = sort(only(s3_members(r, "qq") for r in orbit_rows if r["kind"] == "cell" && r["orbit_type"] == "21"))
     check("the maximal cells of multiplicity 2 are the whole orbit of type 21", cells21, double_cells)
     info("that orbit has $(length(double_cells)) cells ($(join(double_cells, ", "))): \"maximal cones\" in the remark means types")
-    panel = match(r"\\oldstylenums\{(\d+)\}", read(repository("figures", "non_toric_cell_trees.tex"), String))
-    check("the type on the upper left of Figure fig:atlas_toric_cells_nontoric", "21", String(panel[1]))
-    balancing = run_in_module(studies("g2", "weights", "balancing.jl"); name=:Balancing)
+    if drawings("the type on the upper left of Figure fig:atlas_toric_cells_nontoric", "figures/non_toric_cell_trees.tex")
+        panel = match(r"\\oldstylenums\{(\d+)\}", figure_text("non_toric_cell_trees"))
+        check("the type on the upper left of Figure fig:atlas_toric_cells_nontoric", "21", String(panel[1]))
+    end
+    balancing = run_in_module(study_path("g2", "weights", "balancing.jl"); name=:Balancing)
     failures = redirect_stdout(() -> call(balancing, :check_balancing), devnull)
     check("walls of the raw fan where trop(G) with the QQbar multiplicities is not balanced (weights/balancing.jl)", 0,
           length(failures.QQbar))
@@ -172,7 +174,7 @@ function section_3()
         reduced = collect(gens(groebner_basis(J0; complete_reduction=true)))
         check("in_{w0}(J) recomputed: elements of its reduced Groebner basis", 83, length(reduced))
         claim("they are binomials, and their exponent differences span a saturated lattice (index 1)",
-              all(g -> length(g) == 2, reduced) && TropicalCensus.binomial_lattice_index(reduced) == 1)
+              all(g -> length(g) == 2, reduced) && TropicalGeometryG2.binomial_lattice_index(reduced) == 1)
         RJ = base_ring(J)
         claim("in_{w0}(J) is saturated by the product of the variables, hence prime", saturation(J0, ideal(RJ, prod(gens(RJ)))) == J0)
         check("d = dim J, and dim in_{w0}(J)", [8, 8], [Int(dim(J)), Int(dim(J0))])
@@ -187,8 +189,8 @@ function section_3()
     check("first loop: 4-simplices removed, and their orbits", [33, 6], collect(simplices))
     check("3-cells of the flag Dressian, and their orbits", [2729, 274], [fd["complex"]["f_vector"][4], fd["complex"]["orbit_f_vector"][4]])
     check("second loop: orbits kept, and their cells", [270, 2714], [s["complex"]["maximal_cell_orbits"], s["complex"]["maximal_cells"]])
-    run_log = TOML.parsefile(g2("flag", "provenance", "full28_benchmark.toml"))
-    stored("the run of the algorithm (data/g2/flag/provenance/full28_benchmark.toml)",
+    run_log = TOML.parsefile(study_path("g2", "supplemental", "full28_benchmark.toml"))
+    stored("the run of the algorithm (studies/g2/supplemental/full28_benchmark.toml)",
            "Gfan prevariety $(run_log["initial_prevariety_rays"]) rays, $(run_log["initial_prevariety_maximal_cones"]) cones; " *
            "first loop excludes $(run_log["oversized_orbits_excluded"]) orbits; $(run_log["candidate_skeleton_maximal_cones"]) 3-cells " *
            "in $(run_log["candidate_skeleton_orbits"]) orbits; second loop drops $(run_log["excluded_dimension_eight_orbits"]) orbits, " *
@@ -207,18 +209,8 @@ function section_3()
     info("its f-vector and 3-cells are those of the theorem, checked above")
 
     subheading("Proof of thm:flag: the projection to trop(G), the decorations and the rays")
-    flag_indices(perm) = vcat(invperm(perm), 7 .+ coordinate_permutation(perm))
-    verified = try
-        verify_ray_projection_certificate(certificate,
-            fan("flag"), load(g2("flag", "03_normalized_rays.mrdi")),
-            G, load(g2("grassmannian", "03_normalized_rays.mrdi")),
-            load_symmetry_artifacts(g2("flag", "05_symmetry")), load_symmetry_artifacts(g2("grassmannian", "05_symmetry"));
-            projection_columns=8:28, source_coordinate_indices=flag_indices, target_coordinate_indices=coordinate_permutation)
-    catch error
-        info("the verification raised: " * sprint(showerror, error))
-        false
-    end
-    claim("the exact projection certificate 07_projection_certificate.toml is valid (ray images, cells, D12-transport)", verified)
+    claim("the exact projection certificate 07_projection_certificate.toml is valid (ray images, cells, D12-transport)",
+          projection_certificate_valid("flag"))
     images = [c["target_cell"] for c in certificate["cells"]]
     check("each of the 2714 maximal cells maps onto a maximal cell of trop(G); the images (onto)", [2714, 248],
           [length(images), length(unique(images))])
@@ -235,9 +227,9 @@ function section_3()
     claim("trop(F) and the flag Dressian have the same lineality space", s3_same_lineality(F, FD))
     q = Matrix{QQFieldElem}(kernel(s3_lineality(FD); side=:right))
     FD_rays = [quotient_ray_signature(r, q) for r in rays_modulo_lineality(FD).rays_modulo_lineality]
-    Fcells = Set(TropicalCensus.cell_signatures(F, q))
+    Fcells = Set(TropicalGeometryG2.cell_signatures(F, q))
     FDcones = collect(maximal_cones(FD))
-    FDcells = TropicalCensus.cell_signatures(FD, q)
+    FDcells = TropicalGeometryG2.cell_signatures(FD, q)
     maximal3 = Set(c for (c, C) in zip(FDcells, FDcones) if dim(C) < dim(FD))
     simplex_facets = Set(Set(facet) for (c, C) in zip(FDcells, FDcones) if dim(C) == dim(FD) for facet in Combinatorics.combinations(collect(c), 4))
     removed = setdiff(union(maximal3, simplex_facets), Fcells)
@@ -297,7 +289,7 @@ function section_3()
     monomials = [[[(4, 5), (4, 6), (5, 6)], [(2, 3), (3, 6), (5, 6)], [(1, 4), (1, 2), (4, 5)], [(2, 6), (1, 3), (4, 5)], [(3, 5), (1, 2), (4, 6)]],
                  [[(2, 3), (1, 2), (1, 3)], [(4, 6), (1, 4), (1, 3)], [(2, 5), (5, 6), (2, 3)], [(1, 6), (4, 5), (2, 3)], [(3, 4), (5, 6), (1, 2)]],
                  [[(4, 6), (5, 6), (4, 5)], [(1, 2), (2, 5), (4, 5)], [(3, 6), (1, 3), (4, 6)], [(1, 5), (2, 3), (4, 6)], [(2, 4), (1, 3), (5, 6)]]]
-    vertices = [[34, 9, 40, 6], [33, 10, 41, 7], [8, 30, 12, 11]]   # QQ census rays = atlas rays 1:51 (julia/to_tex/cubic_tree_table.sh)
+    vertices = [[34, 9, 40, 6], [33, 10, 41, 7], [8, 30, 12, 11]]   # QQ census rays = atlas rays 1:51 (to_tex/cubic_tree_table.sh)
     centres = [3, 39, 36]                                           # GF(2) census rays of type epsilon (atlas rays 52, 54, 53)
     tropical_value(v, m) = sum(v[PAIR_INDEX[pair]] for pair in m)
     lin = s3_lineality(G)
@@ -337,8 +329,7 @@ function section_3()
     claim("type epsilon has no ray over QQ", !("epsilon" in values(types)))
     qtrees = Dict(parse(Int, r["index"]) => r for r in gtrees if r["kind"] == "ray")
     etrees = Dict(parse(Int, r["index"]) => r for r in rows(g2("grassmannian_gf2", "04_trees.csv")) if r["kind"] == "ray")
-    edge_lengths(t) = Set(filter(!iszero, vcat(parse.(Int, split(t["pendant_lengths"], ';')),
-                                              [parse(Int, last(split(x, ':'))) for x in split(t["internal_splits"], ';') if !isempty(x)])))
+    edge_lengths(r) = (t = tree_row(r); Set(filter(!iszero, vcat(t.pendant, collect(values(t.lengths))))))
     claim("all edges of the 15 trees have length 1 or 2",
           all(issubset(edge_lengths(t), Set([1, 2])) for t in vcat([qtrees[r] for v in vertices for r in v], [etrees[r] for r in centres])))
     claim("second column: splits", all(r -> qtrees[r]["pendant_lengths"] == "0;0;0;0;0;0;0" && !occursin(';', qtrees[r]["internal_splits"]), (34, 33, 8)))

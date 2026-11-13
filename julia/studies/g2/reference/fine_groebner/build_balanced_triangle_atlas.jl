@@ -1,13 +1,13 @@
 include(joinpath(@__DIR__, "build_balanced_fan_and_atlas.jl"))
 
 const DEFAULT_BALANCED_TRIANGLES_PATH =
-    TropicalCensus.data_path("g2", "reference", "fine_groebner", "canonical_fine_weights.mrdi")
+    TropicalGeometryG2.data_path("g2", "reference", "fine_groebner", "canonical_fine_weights.mrdi")
 const DEFAULT_TRIANGLE_INDICES_PATH =
-    TropicalCensus.data_path("g2", "reference", "fine_groebner", "fine_cell_rays.mrdi")
+    TropicalGeometryG2.data_path("g2", "reference", "fine_groebner", "fine_cell_rays.mrdi")
 const DEFAULT_TRIANGLE_ATLAS_TEX_PATH =
     joinpath(@__DIR__, "balanced_phylogenetic_triangles.tex")
 const DEFAULT_TRIANGLE_ANALYSIS_CSV_PATH =
-    TropicalCensus.data_path(
+    TropicalGeometryG2.data_path(
         "g2", "reference", "fine_groebner", "noncanonical_fine_initial_ideals.csv",
     )
 

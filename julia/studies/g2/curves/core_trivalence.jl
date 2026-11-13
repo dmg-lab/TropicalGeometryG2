@@ -1,24 +1,24 @@
 ###############################################################################
 # Is the core of a genus-10 curve trivalent? The curve is the intersection of
 # the tropical G2-Grassmannian with a translate B + t of the uniform Bergman
-# fan, computed exactly cell by cell with `exact_piece` of
-# bounded_cell_valences.jl, after a pass in floating point that keeps, with a
-# margin, the subsets T whose piece may be more than a point. Every vertex
+# fan, computed exactly cell by cell with `exact_piece` of bergman_curve.jl,
+# after a pass in floating point that keeps, with a margin, the subsets T
+# whose piece may be more than a point. Every vertex
 # inside a cell has 6 branches, so a vertex of the core is trivalent when 3 of
 # its branches are pending trees.
 #
 # Kinds of translations, from a given translation t0, by default that of
-# julia/curves_g10/uniform_shifts/translation_3.mrdi (experiment 3 of the
+# curves_g10/uniform_shifts/translation_3.mrdi (experiment 3 of the
 # uniform shifts), and the span W of the fan:
 #
 #   normal    the part of t0 in W plus a random part orthogonal to W;
 #   wpart     the part of t0 orthogonal to W plus a random part in W;
 #   fixed     a fixed random part in W plus a random part orthogonal to W;
-#   uniform   uniformly random, as in mukai_curves/run_experiments.jl.
+#   uniform   uniformly random, as in run_experiments.jl.
 #
-#   julia --project=julia -t 24 julia/studies/g2/curves/core_trivalence.jl KIND TRIALS
+#   julia --project=. -t 24 studies/g2/curves/core_trivalence.jl KIND TRIALS
 #         [--translation=FILE] [--batch=N] [--output=DIR]
-#   julia --project=julia -t 3 julia/studies/g2/curves/core_trivalence.jl --check=FILE
+#   julia --project=. -t 3 studies/g2/curves/core_trivalence.jl --check=FILE
 #
 # Trial k draws its random part from Xoshiro(k), so a run can be resumed or
 # extended: the trials already in DIR/core_trivalence_KIND.csv are skipped.
@@ -29,81 +29,25 @@
 # curve of the translation in FILE.
 ###############################################################################
 
-include("bounded_cell_valences.jl")
-include("decorated_curve_graph.jl")
-import LinearAlgebra
+include(joinpath(@__DIR__, "bergman_curve.jl"))
+import Random
 
-const FLOAT_MARGIN = 1e-6
 const CORE_KINDS = ("normal", "wpart", "fixed", "uniform")
-
-# polymake, behind `exact_piece` for the subsets of deficient rank, is not thread-safe.
-const POLYMAKE_LOCK = ReentrantLock()
-
-"""
-For every translation of `shifts`, the subsets of `subsets` whose piece of the
-cell of span `Mf` and facets `AMf`, in floating point, may be more than a
-point, with a margin relative to the size of the translation.
-"""
-function candidate_subsets(Mf, AMf, subsets, shifts)
-    found = [Vector{Int}[] for _ in shifts]
-    margins = [FLOAT_MARGIN * (1 + maximum(abs, t)) for t in shifts]
-    for T in subsets
-        k = T[1]
-        E = vcat(Mf[T[2:end], :] .- Mf[k:k, :], Mf[k:k, :])
-        F = LinearAlgebra.svd(E; full=true)
-        r = count(>(1e-9 * F.S[1]), F.S)
-        P = F.V[:, 1:r] * LinearAlgebra.Diagonal(1 ./ F.S[1:r]) * F.U[:, 1:r]'
-        xd, ad = Mf * F.V[:, 6], AMf * F.V[:, 6]
-        for (n, t) in enumerate(shifts)
-            f = [t[T[2:end]] .- t[k]; t[k]]
-            y0 = P * f
-            if r < 5
-                LinearAlgebra.norm(E * y0 - f) <= margins[n] && push!(found[n], T)
-                continue
-            end
-            x0, a0 = Mf * y0, AMf * y0
-            lo, hi, possible = -Inf, Inf, true
-            # The constraint c + s g ≥ 0 on the parameter s of the line, relaxed by the margin.
-            function constrain!(c, g)
-                c += margins[n]
-                if abs(g) < 1e-12
-                    possible &= c >= 0
-                elseif g > 0
-                    lo = max(lo, -c / g)
-                else
-                    hi = min(hi, -c / g)
-                end
-            end
-            for j in 1:21
-                j in T || constrain!((x0[j] - t[j]) - (x0[k] - t[k]), xd[j] - xd[k])
-            end
-            foreach(i -> constrain!(-a0[i], -ad[i]), eachindex(a0))
-            possible && lo <= hi && push!(found[n], T)
-        end
-    end
-    return found
-end
 
 "The curve of the translation `t` over `cells` from the candidate subsets `found[c]` of each cell `c`, and its number of pieces of dimension at least 2."
 function exact_curve(cells, found, t::Vector{QQFieldElem})
     points, index = Vector{QQFieldElem}[], Dict{Vector{QQFieldElem},Int}()
     vertex!(v) = get!(() -> (push!(points, v); length(points)), index, v)
     edges, seen, higher = DecoratedEdge[], Set{Any}(), 0
-    for (c, (M, A)) in enumerate(cells)
-        AM = A * M
-        for T in found[c]
-            # Only the subsets of deficient rank reach polymake; they are few.
-            piece = rank(vcat([M[i:i, :] - M[T[1]:T[1], :] for i in T[2:end]]..., M[T[1]:T[1], :])) == 5 ?
-                exact_piece(M, A, AM, t, T) : lock(() -> exact_piece(M, A, AM, t, T), POLYMAKE_LOCK)
-            isnothing(piece) && continue
-            first(piece) == :higher && (higher += 1; continue)
-            a = vertex!(piece[2])
-            b = first(piece) == :segment ? vertex!(piece[3]) : 0
-            key = b == 0 ? (a, piece[3]) : minmax(a, b)
-            key in seen && continue
-            push!(seen, key)
-            push!(edges, DecoratedEdge((a, b, [c], [length(edges) + 1])))
-        end
+    for p in bergman_curve_pieces(cells, found, t)
+        piece = p.piece
+        first(piece) == :higher && (higher += 1; continue)
+        a = vertex!(piece[2])
+        b = first(piece) == :segment ? vertex!(piece[3]) : 0
+        key = b == 0 ? (a, piece[3]) : minmax(a, b)
+        key in seen && continue
+        push!(seen, key)
+        push!(edges, DecoratedEdge((a, b, [p.cell], [length(edges) + 1])))
     end
     return (graph=DecoratedGraph((points, edges)), higher=higher)
 end
@@ -114,25 +58,12 @@ for the translations `shifts`, as decorated graphs, each with the number of its
 pieces of dimension at least 2.
 """
 function curves(cells, shifts::Vector{Vector{QQFieldElem}}; approximations=nothing)
-    subsets = collect(Combinatorics.combinations(1:21, 5))
-    floats = [Float64.(t) for t in shifts]
-    approximations = something(approximations, [(Float64.(Matrix(M)), Float64.(Matrix(A * M))) for (M, A) in cells])
-    found = Vector{Vector{Vector{Vector{Int}}}}(undef, length(cells))
-    Threads.@threads for c in eachindex(cells)
-        found[c] = candidate_subsets(approximations[c]..., subsets, floats)
-    end
+    found = cell_candidates(cells, shifts; approximations)
     results = Vector{Any}(undef, length(shifts))
     Threads.@threads for n in eachindex(shifts)
         results[n] = exact_curve(cells, [found[c][n] for c in eachindex(cells)], shifts[n])
     end
     return results
-end
-
-"The valences of the vertices of `G`, legs included."
-function graph_valences(G::DecoratedGraph)
-    valence = zeros(Int, length(G.points))
-    foreach(e -> (valence[e.tail] += 1; is_leg(e) || (valence[e.head] += 1)), G.edges)
-    return valence
 end
 
 """
@@ -186,8 +117,17 @@ function trial_translations(fan, kind, t0)
     return translation
 end
 
+"The value of the last option `--name=VALUE` of `args`, or `default`."
+command_option(args, name, default) = last([[default]; [split(a, '='; limit=2)[2] for a in args if startswith(a, "--$name=")]])
+
+"The trials already in the table `path`, by its first column; a missing table is created with the columns `header`."
+function resume_table(path, header)
+    isfile(path) || (open(io -> println(io, join(header, ",")), path, "w"); return Set{Int}())
+    return Set(parse(Int, first(split(l, ','))) for l in readlines(path)[2:end])
+end
+
 function main(args)
-    option(name, default) = last([[default]; [split(a, '='; limit=2)[2] for a in args if startswith(a, "--$name=")]])
+    option(name, default) = command_option(args, name, default)
     positional = filter(a -> !startswith(a, "--"), args)
     fan = load(data_path("g2", "grassmannian", "02_coarsest_fan.mrdi"))
     cells = [cell_span(C) for C in maximal_cones(fan)]
@@ -212,8 +152,7 @@ function main(args)
     translation = trial_translations(fan, kind, load(String(file)))
 
     table = joinpath(output, "core_trivalence_$(kind).csv")
-    done = isfile(table) ? Set(parse(Int, first(split(l, ','))) for l in readlines(table)[2:end]) : Set{Int}()
-    isfile(table) || open(io -> println(io, join(["trial"; collect(string.(CORE_COLUMNS)); "translation"], ",")), table, "w")
+    done = resume_table(table, ["trial"; collect(string.(CORE_COLUMNS)); "translation"])
     todo = [k for k in 1:trials if !(k in done)]
     println("$kind: $(length(todo)) of $trials trials to run, translation $file, $(Threads.nthreads()) threads, output $table")
     approximations = [(Float64.(Matrix(M)), Float64.(Matrix(A * M))) for (M, A) in cells]

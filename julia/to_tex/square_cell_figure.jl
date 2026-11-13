@@ -10,13 +10,14 @@
 # beside it. The rays are labeled by their orbits in the ray catalog of
 # build_styled_ray_orbit_tables.jl, which this file includes as well, and the
 # cell by the number of the orbit of the squares in the tables of maximal
-# trees, read from the atlas by the helpers of toric_degeneration_table.jl.
+# trees, read from the atlas by cell_orbit_labels.jl of
+# studies/g2/atlas/flag/, which the renderer includes.
 #
-#   julia --project=julia julia/to_tex/square_cell_figure.jl \
+#   julia --project=. to_tex/square_cell_figure.jl \
 #     [--rays=I,J,K,L] [--scale=FACTOR] [--taxon-scale=FACTOR] \
 #     [--bounded-length=LENGTH] [--ray-scale=FACTOR] [--ray-bounded-length=LENGTH] \
 #     [--weight-font=PT] [--standalone] [--output=FILE]
-#   julia --project=julia julia/to_tex/square_cell_figure.jl --simple \
+#   julia --project=. to_tex/square_cell_figure.jl --simple \
 #     [--rays=I,J,K,L] [--edge-length=LENGTH] [--max-lines=N] \
 #     [--standalone] [--output=FILE]
 #
@@ -27,7 +28,6 @@
 
 include(joinpath(@__DIR__, "build_styled_ray_orbit_tables.jl"))
 include(joinpath(@__DIR__, "render_simple_tree.jl"))
-include(joinpath(@__DIR__, "toric_degeneration_table.jl"))
 
 const G2_SQUARE_FONT_PT = 12
 const G2_SQUARE_EM_CM = G2_SQUARE_FONT_PT / G2_SIMPLE_PT_PER_CM
@@ -119,23 +119,8 @@ function g2_square_orbit_number()
 end
 
 """The distances between the taxa of `tree`, as a dictionary by pairs."""
-function g2_square_taxon_distances(tree)
-    distances = Dict{Tuple{Int,Int},QQFieldElem}()
-    for taxon in 1:tree.ntaxa
-        reached = Dict(taxon => QQ(0))
-        pending = [taxon]
-        while !isempty(pending)
-            vertex = pop!(pending)
-            for (neighbor, length) in tree.adjacency[vertex]
-                haskey(reached, neighbor) && continue
-                reached[neighbor] = reached[vertex] + length
-                push!(pending, neighbor)
-            end
-        end
-        foreach(other -> distances[(taxon, other)] = reached[other], 1:tree.ntaxa)
-    end
-    return distances
-end
+g2_square_taxon_distances(tree) = Dict{Tuple{Int,Int},QQFieldElem}(
+    (taxon, other) => tree_distance(tree, taxon, other) for taxon in 1:tree.ntaxa for other in 1:tree.ntaxa)
 
 """
 The tree of a ray of a cell drawn on `cell_tree`, the tree of the cell: the
@@ -350,7 +335,7 @@ function g2_square_cell_tex(cell=G2_SQUARE_RAYS; simple::Bool=false,
 end
 
 function g2_square_cell_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/square_cell_figure.jl"
+    script = "julia --project=. to_tex/square_cell_figure.jl"
     if "--help" in args
         println("Usage: $script [--rays=I,J,K,L] [--scale=FACTOR] [--taxon-scale=FACTOR] " *
                 "[--bounded-length=LENGTH] [--ray-scale=FACTOR] " *

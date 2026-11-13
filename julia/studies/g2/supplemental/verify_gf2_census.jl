@@ -8,57 +8,21 @@ the whole-cone Gröbner computation. Its only output is 07_verification.toml.
 module G2GF2CensusVerification
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 using SHA
 using TOML
 using Dates
 
 include(joinpath(@__DIR__, "..", "ideals", "G2GrassmannianGF2Ideal.jl"))
 using .G2GrassmannianGF2Ideal
+include(joinpath(@__DIR__, "..", "ideals", "G2Symmetry.jl"))
+using .G2Symmetry: G2_GAUGE
 include(project_path("src", "parallel_worker.jl"))
 
 gf2_file(parts...) = data_path("g2", "grassmannian_gf2", parts...)
 file_digest(path) = bytes2hex(sha256(read(path)))
 require(condition, message) = condition || error(message)
 support(polynomial) = Tuple(sort!(Tuple.(collect(exponents(polynomial)))))
-
-function csv_fields(line)
-    characters = collect(line)
-    fields = String[]
-    buffer = IOBuffer()
-    quoted = false
-    index = 1
-    while index <= length(characters)
-        character = characters[index]
-        if character == '"'
-            if quoted && index < length(characters) && characters[index + 1] == '"'
-                print(buffer, '"')
-                index += 1
-            else
-                quoted = !quoted
-            end
-        elseif character == ',' && !quoted
-            push!(fields, String(take!(buffer)))
-        else
-            print(buffer, character)
-        end
-        index += 1
-    end
-    require(!quoted, "unterminated CSV quote")
-    push!(fields, String(take!(buffer)))
-    return fields
-end
-
-function csv_records(path)
-    lines = filter(!isempty, readlines(path))
-    require(!isempty(lines), "empty CSV: $path")
-    header = csv_fields(first(lines))
-    return [begin
-        fields = csv_fields(line)
-        require(length(fields) == length(header), "CSV column count differs: $path")
-        Dict(zip(header, fields))
-    end for line in lines[2:end]]
-end
 
 integer_list(text) = isempty(text) ? Int[] : parse.(Int, split(text, ';'))
 rational(text) = begin
@@ -71,7 +35,7 @@ function fan_data(fan)
     data = rays_modulo_lineality(fan)
     return (rays=Matrix{QQFieldElem}(matrix(QQ, data.rays_modulo_lineality)),
             lineality=Matrix{QQFieldElem}(matrix(QQ, data.lineality_basis)),
-            cells=TropicalCensus.fan_cells(fan))
+            cells=TropicalGeometryG2.fan_cells(fan))
 end
 
 function fan_counts(fan)
@@ -83,7 +47,7 @@ end
 
 "Exact cone keys after projection through one common lineality quotient."
 function quotient_cone_keys(data, quotient)
-    keys = [Tuple(TropicalCensus._primitive_integer_row(
+    keys = [Tuple(TropicalGeometryG2._primitive_integer_row(
         vec(transpose(collect(ray)) * quotient))) for ray in eachrow(data.rays)]
     require(all(any(!iszero, key) for key in keys), "a fan ray lies in lineality")
     require(length(unique(keys)) == length(keys), "duplicate quotient rays")
@@ -122,14 +86,13 @@ function verify_gf2_census()
              "01_certification_policy.toml", "02_coarsest_fan.mrdi",
              "03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi",
              "04_canonical_cell_weights.mrdi", "04_normalized_cell_trees.mrdi", "04_trees.csv",
-             "05_symmetry_taxon_permutations.mrdi", "05_symmetry_ray_actions.mrdi",
-             "05_symmetry_cell_actions.mrdi", "05_symmetry_cell_orbits.csv",
+             symmetry_artifact_paths("05_symmetry")...,
              "06_canonical_interior_degenerations.csv"]
     missing_files = filter(name -> !isfile(gf2_file(name)), names)
     require(isempty(missing_files), "the census is incomplete: $(join(missing_files, ", "))")
 
     policy = TOML.parsefile(gf2_file("01_certification_policy.toml"))
-    require(policy["certification_policy"] == TropicalCensus.TROPICAL_CERTIFICATION_POLICY,
+    require(policy["certification_policy"] == TropicalGeometryG2.TROPICAL_CERTIFICATION_POLICY,
             "unknown exact-certification policy")
     require(policy["certification_strategy"] == "groebner", "expected whole-cone certification")
     require(policy["coefficient_field"] == "GF(2)" && policy["valuation"] == "trivial",
@@ -158,7 +121,7 @@ function verify_gf2_census()
     require(ideal(ring, provider_polynomials) == defining_ideal,
             "saved defining ideal differs from the GF(2) provider")
     basis_text = filter(!isempty, strip.(readlines(gf2_file("01_tropical_basis.txt"))))
-    support_text = TropicalCensus.gfan_basis_polynomials(
+    support_text = TropicalGeometryG2.gfan_basis_polynomials(
         gf2_file("01_tropical_basis_supports.gfan"), string.(symbols(ring)))
     require(!isnothing(support_text) && sort(basis_text) == sort(support_text),
             "exported basis differs from its hashed support input")
@@ -172,10 +135,10 @@ function verify_gf2_census()
 
     # The generator prevariety is the G2-Dressian, stored once for all fields.
     prevariety = load(data_path("g2", "dressian", "01_prevariety_fan.mrdi"))
-    certified_max = TropicalCensus.parse_gfan_fan(gf2_file("01_certified_fan_max.gfan"))
+    certified_max = TropicalGeometryG2.parse_gfan_fan(gf2_file("01_certified_fan_max.gfan"))
     certified_min = min_fan(certified_max)
-    fine = TropicalCensus.tree_orbit_jobs(certified_min, G2_GF2_PERMUTATIONS)
-    checks = csv_records(gf2_file("01_cone_certificates.csv"))
+    fine = TropicalGeometryG2.tree_orbit_jobs(certified_min, G2_GF2_PERMUTATIONS)
+    checks = csv_rows(gf2_file("01_cone_certificates.csv"))
     require(all(record["valid"] == "true" for record in checks), "a final cone check failed")
     whole = filter(record -> record["phase"] == "whole_cone", checks)
     require(length(whole) == length(fine.jobs), "whole-cone certificate count differs")
@@ -211,32 +174,32 @@ function verify_gf2_census()
     normalized_data = fan_data(normalized)
     saved_ray_rows = Matrix{QQFieldElem}(rays)
     require(size(saved_ray_rows) == size(normalized_data.rays) &&
-            all(TropicalCensus.quotient_positive_equivalent(
+            all(TropicalGeometryG2.quotient_positive_equivalent(
                 vec(saved_ray_rows[index, :]), vec(normalized_data.rays[index, :]),
                 normalized_data.lineality) for index in axes(saved_ray_rows, 1)),
             "saved normalized rays differ from the normalized fan modulo lineality")
-    action = TropicalCensus.load_symmetry_artifacts(gf2_file("05_symmetry"))
+    action = TropicalGeometryG2.load_symmetry_artifacts(gf2_file("05_symmetry"))
     require(length(action.permutations) == 12, "expected the order-12 taxon group")
-    TropicalCensus.validate_tropical_permutation_group(action.permutations)
+    TropicalGeometryG2.validate_tropical_permutation_group(action.permutations)
     recomputed = taxon_symmetry(rays, normalized_data.cells;
         candidates=G2_GF2_PERMUTATIONS, lineality=normalized_data.lineality)
     for field in (:permutations, :ray_actions, :cell_actions, :ray_orbits, :cell_orbits)
         require(getproperty(action, field) == getproperty(recomputed, field),
                 "saved symmetry differs from exact geometry: $field")
     end
-    require(TropicalCensus.verify_ideal_preservation(
+    require(TropicalGeometryG2.verify_ideal_preservation(
         defining_ideal, action.permutations, g2_gf2_coordinate_images),
         "the saved symmetry does not preserve the GF(2) defining ideal")
     weights = canonical_cell_weights(normalized, rays)
     saved_weights = load(gf2_file("04_canonical_cell_weights.mrdi"))
-    require(saved_weights == TropicalCensus.rows_matrix(weights; ring=QQ),
+    require(saved_weights == TropicalGeometryG2.rows_matrix(weights; ring=QQ),
             "saved canonical weights differ from exact positive ray sums")
-    require(TropicalCensus.verify_canonical_weight_action(
+    require(TropicalGeometryG2.verify_canonical_weight_action(
         weights, action, normalized_data.lineality), "canonical weights are not equivariant")
-    cell_trees = normalized_cell_trees(weights, TreeGauge(7, [1 -1 0 -1 1 0 0; -1 0 1 1 0 -1 0]))
-    require(load(gf2_file("04_normalized_cell_trees.mrdi")) == TropicalCensus.rows_matrix(cell_trees; ring=QQ),
+    cell_trees = normalized_cell_trees(weights, G2_GAUGE)
+    require(load(gf2_file("04_normalized_cell_trees.mrdi")) == TropicalGeometryG2.rows_matrix(cell_trees; ring=QQ),
             "saved normalized cell trees differ from the normalized ray sums")
-    orbit_records = csv_records(gf2_file("05_symmetry_cell_orbits.csv"))
+    orbit_records = csv_rows(symmetry_artifact_paths(gf2_file("05_symmetry")).orbits)
     require(length(orbit_records) == length(action.cell_orbits), "orbit CSV count differs")
     for (index, (record, orbit)) in enumerate(zip(orbit_records, action.cell_orbits))
         require(integer_list(record["cells"]) == orbit &&
@@ -244,7 +207,7 @@ function verify_gf2_census()
                 parse(Int, record["size"]) == length(orbit) &&
                 parse(Int, record["representative"]) == first(orbit), "orbit CSV differs")
     end
-    trees = csv_records(gf2_file("04_trees.csv"))
+    trees = csv_rows(gf2_file("04_trees.csv"))
     require(all(record["kind"] in ("ray", "cell") for record in trees), "unknown tree record kind")
     require(sort([parse(Int, r["index"]) for r in trees if r["kind"] == "ray"]) ==
             collect(1:size(rays, 1)), "ray tree census is incomplete")
@@ -254,7 +217,7 @@ function verify_gf2_census()
     flush(stdout)
 
     degeneration_path = gf2_file("06_canonical_interior_degenerations.csv")
-    records = csv_records(degeneration_path)
+    records = csv_rows(degeneration_path)
     require(sort([parse(Int, record["orbit"]) for record in records]) ==
             collect(eachindex(action.cell_orbits)), "degeneration orbit coverage is incomplete")
     object_hashes = Dict{String, String}()

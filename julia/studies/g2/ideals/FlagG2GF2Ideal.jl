@@ -1,7 +1,7 @@
 module FlagG2GF2Ideal
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 include("FlagG2Ideal.jl")
 using .FlagG2Ideal
 
@@ -12,12 +12,12 @@ export build_full_flag_g2_gf2_ideal,
 
 const G2_FLAG_GF2_PERMUTATIONS = G2_FLAG_PERMUTATIONS
 const GF2_GRASSMANNIAN_TROPICAL_BASIS =
-    TropicalCensus.data_path("g2", "grassmannian_gf2", "01_tropical_basis.txt")
+    TropicalGeometryG2.data_path("g2", "grassmannian_gf2", "01_tropical_basis.txt")
 
 "Signs in the point and exterior-square actions coincide in characteristic two."
 flag_gf2_coordinate_images(permutation, variables) = vcat(
     [variables[permutation[index]] for index in 1:7],
-    TropicalCensus.pluecker_coordinate_images(permutation, variables[8:28]),
+    TropicalGeometryG2.pluecker_coordinate_images(permutation, variables[8:28]),
 )
 
 "Parse a sum of monomials with coefficient one, as stored in the tropical basis."

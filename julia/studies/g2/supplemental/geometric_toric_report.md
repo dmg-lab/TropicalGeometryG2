@@ -22,10 +22,10 @@ three-term polynomials over `QQ`; this remains true after extension to `CC`.
 The older fine Groebner atlas numbers the corresponding two triangles 158 and
 159; those are the two `QQ`-prime nonbinomial entries in that atlas.
 
-Reproduce the geometric check from the repository root with:
+Reproduce the geometric check from julia/ with:
 
 ```sh
-julia --project=julia julia/studies/g2/supplemental/verify_geometric_toric.jl
+julia --project=. studies/g2/supplemental/verify_geometric_toric.jl
 ```
 
 The Smith normal form criterion is the lattice-ideal primality criterion of

@@ -1,82 +1,8 @@
 include(joinpath(@__DIR__, "atlas_common.jl"))
+using TropicalGeometryG2: all_permutations, action_orbits, permutation_order, cycle_notation,
+    generated_subgroup
 
 const ORBIT_REPORT = joinpath(@__DIR__, "REPORT.md")
-
-"""All permutations of the supplied vector, in lexicographic recursion order."""
-function all_permutations(values::Vector{Int})
-    result = Vector{Vector{Int}}()
-    function extend!(prefix::Vector{Int}, remaining::Vector{Int})
-        if isempty(remaining)
-            push!(result, copy(prefix))
-            return
-        end
-        for index in eachindex(remaining)
-            push!(prefix, remaining[index])
-            extend!(prefix, vcat(remaining[1:index-1], remaining[index+1:end]))
-            pop!(prefix)
-        end
-    end
-    extend!(Int[], values)
-    return result
-end
-
-"""Permutation composition: `left` after `right`."""
-compose(left::Vector{Int}, right::Vector{Int}) = [left[right[index]] for index in eachindex(left)]
-
-function permutation_order(permutation::Vector{Int})
-    visited = falses(length(permutation))
-    result = 1
-    for start in eachindex(permutation)
-        visited[start] && continue
-        length_of_cycle = 0
-        current = start
-        while !visited[current]
-            visited[current] = true
-            current = permutation[current]
-            length_of_cycle += 1
-        end
-        result = lcm(result, length_of_cycle)
-    end
-    return result
-end
-
-function cycle_notation(permutation::Vector{Int}; omit_fixed_seven::Bool=true)
-    visited = falses(length(permutation))
-    cycles = String[]
-    for start in eachindex(permutation)
-        visited[start] && continue
-        cycle = Int[]
-        current = start
-        while !visited[current]
-            visited[current] = true
-            push!(cycle, current)
-            current = permutation[current]
-        end
-        length(cycle) == 1 && continue
-        push!(cycles, "(" * join(cycle, " ") * ")")
-    end
-    isempty(cycles) && return "()"
-    return join(cycles)
-end
-
-function generated_subgroup(generators::Vector{Vector{Int}})
-    identity = collect(1:length(first(generators)))
-    elements = Dict(Tuple(identity) => identity)
-    frontier = [identity]
-    while !isempty(frontier)
-        element = popfirst!(frontier)
-        for generator in generators
-            for product in (compose(generator, element), compose(element, generator))
-                key = Tuple(product)
-                if !haskey(elements, key)
-                    elements[key] = product
-                    push!(frontier, product)
-                end
-            end
-        end
-    end
-    return collect(values(elements))
-end
 
 """Topology-only rooted signature, used to cross-check triangle images."""
 function rooted_topology_signature(tree::TreeMetric, permutation::Vector{Int}=collect(1:7))
@@ -116,19 +42,6 @@ function induced_triangle_permutation(ray_permutation, triangles, triangle_to_in
         push!(result, triangle_to_index[image])
     end
     sort(result) == collect(eachindex(triangles)) || return nothing
-    return result
-end
-
-function action_orbits(actions::Vector{Vector{Int}}, number_of_objects::Int)
-    unseen = Set(1:number_of_objects)
-    result = Vector{Vector{Int}}()
-    while !isempty(unseen)
-        seed = minimum(unseen)
-        orbit = sort!(unique(action[seed] for action in actions))
-        foreach(object -> delete!(unseen, object), orbit)
-        push!(result, orbit)
-    end
-    sort!(result; by=first)
     return result
 end
 
@@ -282,13 +195,13 @@ function write_report(
         println(io, "- `label_permutation_group.csv`: every label permutation and its induced actions;")
         println(io, "- `ray_label_orbits.csv`: exact rooted-metric ray orbits;")
         println(io, "- `triangle_label_orbits.csv`: triangle orbits, ray triples, fiber types, and rooted topologies.\n")
-        println(io, "The paper ray catalog and the flag atlas read these files. Reproduce them from the repository root with\n")
+        println(io, "The paper ray catalog and the flag atlas read these files. Reproduce them from julia/ with\n")
         println(io, "```sh")
-        println(io, "julia --project=julia julia/studies/g2/atlas/grassmannian/compute_label_orbits.jl")
+        println(io, "julia --project=. studies/g2/atlas/grassmannian/compute_label_orbits.jl")
         println(io, "```\n")
         println(io, "The maintained coarsest-fan symmetry artifacts are recomputed instead with\n")
         println(io, "```sh")
-        println(io, "julia --project=julia julia/studies/g2/run_census.jl --target=base --stage=symmetry")
+        println(io, "julia --project=. studies/g2/run_census.jl --target=base --stage=symmetry")
         println(io, "```")
     end
 end
@@ -340,7 +253,7 @@ function compute_label_orbits()
     @assert tested == factorial(6) == 720
     label_keys = Set(Tuple.(label_permutations))
     for left in label_permutations, right in label_permutations
-        @assert Tuple(compose(left, right)) in label_keys
+        @assert Tuple(left[right]) in label_keys
     end
 
     rotation = [5, 6, 4, 2, 3, 1, 7]       # (1 5 3 4 2 6)

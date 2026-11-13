@@ -17,17 +17,15 @@ stage.
 """
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 using TOML
 
 include(joinpath(@__DIR__, "ideals", "G2GrassmannianSlongIdeal.jl"))
 using .G2GrassmannianSlongIdeal
-include(joinpath(@__DIR__, "g2_chevalley.jl"))
+include(joinpath(@__DIR__, "ideals", "G2Symmetry.jl"))
+using .G2Symmetry: G2_GROUP_CANDIDATES
+include(joinpath(@__DIR__, "census", "g2_chevalley.jl"))
 
-const G2_GROUP_CANDIDATES = [vcat(permutation, [7]) for permutation in all_permutations(collect(1:6))]
-const SYMMETRY_SUFFIXES = (
-    "_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv",
-)
 const PROVIDER = study_path(:g2, "ideals", "G2GrassmannianSlongIdeal.jl")
 
 const TARGETS = Dict(
@@ -49,15 +47,9 @@ const TARGETS = Dict(
 
 spec(target) = TARGETS[target.name]
 file(target, name) = joinpath(spec(target).directory, name)
-symmetry_files(target) = [file(target, "05_symmetry" * suffix) for suffix in SYMMETRY_SUFFIXES]
+symmetry_files(target) = collect(symmetry_artifact_paths(file(target, "05_symmetry")))
 manifest_file(target, stage) = stage_provenance_path(spec(target).directory, stage)
 ideal_builder(target) = getproperty(G2GrassmannianSlongIdeal, spec(target).builder)
-
-function skip_current(outputs, options)
-    current = all(isfile, outputs)
-    current && !options.force && println("  using existing canonical artifact(s)")
-    return current && !options.force
-end
 
 function record(target, stage, options; inputs, outputs, metadata=Dict{String, Any}())
     write_provenance(
@@ -70,18 +62,23 @@ end
 
 fan_counts(fan) = (length(rays_modulo_lineality(fan).rays_modulo_lineality), n_maximal_cones(fan))
 
+function slong_problem(name)
+    s = TARGETS[name]
+    return TropicalProblem(
+        name=s.name, slug=s.slug,
+        provider_file=PROVIDER, provider_module=:G2GrassmannianSlongIdeal, builder=s.builder,
+        output_prefix=s.prefix, default_output=s.work, published_fan=joinpath(s.directory, "01_raw_fan.mrdi"),
+        symmetry_candidates=s.generators, symmetry_action=:variables,
+        default_engine=:parallel,
+    )
+end
+
 function stage_tropicalize(target, options)
     s = spec(target)
     ideal_path, output = file(target, "00_ideal.mrdi"), file(target, "01_raw_fan.mrdi")
     mkpath(s.directory)
     (!isfile(ideal_path) || options.force) && save(ideal_path, ideal_builder(target)().ideal)
-    problem = TropicalProblem(
-        name=s.name, slug=s.slug,
-        provider_file=PROVIDER, provider_module=:G2GrassmannianSlongIdeal, builder=s.builder,
-        output_prefix=s.prefix, default_output=s.work, published_fan=output,
-        symmetry_candidates=s.generators, symmetry_action=:variables,
-        default_engine=:parallel,
-    )
+    problem = slong_problem(target.name)
     engine = options.engine == :auto ? :parallel : options.engine
     if !skip_current([output], options)
         run_tropicalization(problem, TropicalizationConfig(
@@ -134,7 +131,7 @@ end
 function weyl_coordinate_permutations(target)
     generators = getproperty(G2GrassmannianSlongIdeal, spec(target).generators)
     n = length(first(first(generators)))
-    group = TropicalCensus.signed_permutation_group(generators, n)
+    group = TropicalGeometryG2.signed_permutation_group(generators, n)
     return group.permutations
 end
 
@@ -148,13 +145,13 @@ function stage_symmetry(target, options)
         # taxon permutations act as on Pluecker coordinates. The 24 combined
         # coordinates have no taxa: there the Weyl group acts on variables.
         result = target.name == "slong" ?
-            taxon_symmetry(rays, TropicalCensus.fan_cells(fan); candidates=G2_GROUP_CANDIDATES, lineality=lineality) :
-            taxon_symmetry(rays, TropicalCensus.fan_cells(fan); candidates=weyl_coordinate_permutations(target),
+            taxon_symmetry(rays, TropicalGeometryG2.fan_cells(fan); candidates=G2_GROUP_CANDIDATES, lineality=lineality) :
+            taxon_symmetry(rays, TropicalGeometryG2.fan_cells(fan); candidates=weyl_coordinate_permutations(target),
                            lineality=lineality, action=:variables)
         length(result.permutations) >= 12 || error("the Weyl group does not preserve the fan")
-        TropicalCensus.save_symmetry_artifacts(file(target, "05_symmetry"), result)
+        TropicalGeometryG2.save_symmetry_artifacts(file(target, "05_symmetry"), result)
     end
-    result = TropicalCensus.load_symmetry_artifacts(file(target, "05_symmetry"))
+    result = TropicalGeometryG2.load_symmetry_artifacts(file(target, "05_symmetry"))
     println("  group order $(length(result.permutations)), $(length(result.ray_orbits)) ray orbits, ",
             "$(length(result.cell_orbits)) maximal-cell orbits")
     record(target, symmetry, options; inputs=[fan_path, rays_path], outputs=outputs,
@@ -166,7 +163,7 @@ function stage_degenerations(target, options)
     fan_path, rays_path = file(target, "03_normalized_coarsest_fan.mrdi"), file(target, "03_normalized_rays.mrdi")
     ideal_path, prefix = file(target, "00_ideal.mrdi"), file(target, "05_symmetry")
     output = file(target, "06_canonical_interior_degenerations.csv")
-    symmetry_result = TropicalCensus.load_symmetry_artifacts(prefix)
+    symmetry_result = TropicalGeometryG2.load_symmetry_artifacts(prefix)
     expected_orbits = length(symmetry_result.cell_orbits)
     recorded_orbits() = Set(parse(Int, first(split(line, ',', limit=2)))
                             for line in readlines(output)[2:end] if !isempty(line))
@@ -179,15 +176,15 @@ function stage_degenerations(target, options)
             chevalley_test=g2_chevalley_simplex,
         )
         if options.force
-            objects = TropicalCensus.degeneration_object_directory(output)
+            objects = TropicalGeometryG2.degeneration_object_directory(output)
             isdir(objects) && rm(objects; recursive=true)
         end
         open(output, continuing ? "a" : "w") do io
-            continuing || TropicalCensus.write_degenerations_header(io)
+            continuing || TropicalGeometryG2.write_degenerations_header(io)
             classify_degenerations(
                 load(ideal_path), load(fan_path), load(rays_path), symmetry_result;
                 config=config, skip_orbits=completed,
-                on_record=record -> TropicalCensus.write_degenerations_record(io, output, record),
+                on_record=record -> TropicalGeometryG2.write_degenerations_record(io, output, record),
             )
         end
         recorded_orbits() == Set(1:expected_orbits) || error("degeneration census is incomplete")
@@ -221,8 +218,8 @@ function census_fan(directory)
     fan = load(joinpath(directory, "03_normalized_coarsest_fan.mrdi"))
     rays = Matrix{QQFieldElem}(load(joinpath(directory, "03_normalized_rays.mrdi")))
     lineality = Matrix{QQFieldElem}(matrix(QQ, rays_modulo_lineality(fan).lineality_basis))
-    cells = TropicalCensus.fan_cells(fan)
-    orbits = TropicalCensus.load_symmetry_artifacts(joinpath(directory, "05_symmetry")).cell_orbits
+    cells = TropicalGeometryG2.fan_cells(fan)
+    orbits = TropicalGeometryG2.load_symmetry_artifacts(joinpath(directory, "05_symmetry")).cell_orbits
     orbit_of = zeros(Int, length(cells))
     for (index, orbit) in enumerate(orbits)
         orbit_of[orbit] .= index
@@ -230,10 +227,10 @@ function census_fan(directory)
     census = joinpath(directory, "06_canonical_interior_degenerations.csv")
     toric = Set{Int}()
     if isfile(census)
-        rows = TropicalCensus.csv_rows(census)
+        rows = TropicalGeometryG2.csv_rows(census)
         sort([parse(Int, row["orbit"]) for row in rows]) == collect(eachindex(orbits)) ||
             error("the stage-6 census in $directory is incomplete")
-        toric = Set(TropicalCensus.degeneration_cells(rows, "toric"))
+        toric = Set(TropicalGeometryG2.degeneration_cells(rows, "toric"))
     end
     cones = [positive_hull(rays[cell, :], lineality) for cell in cells]
     return (fan=fan, rays=rays, lineality=lineality, cells=cells, orbits=orbits, orbit_of=orbit_of,
@@ -300,7 +297,7 @@ function stage_projections(target, options)
     inputs = vcat(
         [joinpath(directory, name) for directory in (both_directory, short_directory, long_directory)
          for name in ("03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi",
-                      ("05_symmetry" * suffix for suffix in SYMMETRY_SUFFIXES)...)],
+                      symmetry_artifact_paths("05_symmetry")...)],
         # the toric columns come from the stage-6 census of both targets
         [joinpath(directory, "06_canonical_interior_degenerations.csv") for directory in (short_directory, long_directory)],
     )
@@ -402,11 +399,12 @@ function target_definition(name)
         tropicalize => [path("01_raw_fan.mrdi")],
         coarsen => [path("02_coarsest_fan.mrdi"), path("02_coarsest_cells.csv")],
         normalize => [path("03_normalized_coarsest_fan.mrdi"), path("03_normalized_rays.mrdi")],
-        symmetry => [path("05_symmetry" * suffix) for suffix in SYMMETRY_SUFFIXES],
+        symmetry => collect(symmetry_artifact_paths(path("05_symmetry"))),
         summarize => [summary_path(TARGETS[name].directory)],
     )
     name == "slong" && (artifacts[degenerations] = [path("06_canonical_interior_degenerations.csv")])
-    return StudyTarget(name=name, stages=Set(keys(callbacks)), callbacks=callbacks, artifacts=artifacts)
+    return StudyTarget(name=name, stages=Set(keys(callbacks)), callbacks=callbacks, artifacts=artifacts,
+                       tropical_problem=() -> slong_problem(name))
 end
 
 const SLONG_CENSUS = StudyCensus(

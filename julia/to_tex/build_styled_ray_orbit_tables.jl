@@ -3,9 +3,9 @@
 # the twelve ray orbits of the tropical G2 Grassmannian, the last of which
 # occurs only in characteristic 2.
 #
-# Run from the repository root with julia --project=julia. The script prints
-# the tabular, or writes it to --output=FILE; main.tex includes it as the PDF
-# of --standalone and supplies the float and its caption.
+# Run from julia/ with `julia --project=.`. The script prints the tabular, or
+# writes it to --output=FILE; main.tex includes it as the PDF of --standalone
+# and supplies the float and its caption.
 ###############################################################################
 
 include(joinpath(@__DIR__, "render_maximal_cell_tree.jl"))
@@ -17,13 +17,16 @@ const PAPER_MAIN_TEX = normpath(joinpath(@__DIR__, "..", "..", "main.tex"))
 
 # Data-orbit indices 1:11 stay fixed in ray_label_orbits.csv; orbit 12 holds
 # the rays 52:54, which occur only over GF(2). Article labels follow the
-# left-to-right, top-to-bottom order of the catalog.
-const PAPER_RAY_CATALOG_ORDER = (3, 5, 4, 6, 9, 1, 2, 7, 8, 10, 11, 12)
-const PAPER_RAY_ARTICLE_LABELS = (
-    raw"\beta_1", raw"\beta_2", raw"\alpha_1", raw"\alpha_3",
-    raw"\alpha_2", raw"\alpha_4", raw"\gamma_1", raw"\gamma_2",
-    raw"\alpha_5", raw"\gamma_3", raw"\delta", raw"\epsilon",
-)
+# left-to-right, top-to-bottom order of the catalog. Both are read from
+# ray_orbit_labels.csv: the label of each data orbit and its catalog position.
+const PAPER_RAY_LABELS_CSV = joinpath(dirname(RAY_ORBITS_CSV), "ray_orbit_labels.csv")
+const PAPER_RAY_LABEL_ROWS = sort!(TropicalGeometryG2.csv_rows(PAPER_RAY_LABELS_CSV); by=row -> parse(Int, row["orbit"]))
+[parse(Int, row["orbit"]) for row in PAPER_RAY_LABEL_ROWS] == 1:12 &&
+    sort([parse(Int, row["catalog_position"]) for row in PAPER_RAY_LABEL_ROWS]) == 1:12 ||
+    error("$PAPER_RAY_LABELS_CSV must list the ray orbits 1 to 12 and the catalog positions 1 to 12 once each")
+const PAPER_RAY_CATALOG_ORDER =
+    Tuple(sortperm([parse(Int, row["catalog_position"]) for row in PAPER_RAY_LABEL_ROWS]))
+const PAPER_RAY_ARTICLE_LABELS = Tuple("\\" * row["label"] for row in PAPER_RAY_LABEL_ROWS)
 const PAPER_RAY_CHARACTERISTIC_2_ORBIT = 12
 
 function paper_ray_article_label(index::Int)
@@ -477,14 +480,14 @@ function styled_tree_table_main(table_tex, args; script::AbstractString,
                                 bounded_length::Real, stem::AbstractString,
                                 caption::AbstractString, flags=())
     if "--help" in args
-        println("Usage: julia --project=julia julia/to_tex/$script " *
+        println("Usage: julia --project=. to_tex/$script " *
                 join("[$flag] " for flag in flags) *
                 "[--color|--grayscale] " *
                 "[--label=true|false] [--scale=FACTOR] [--taxon-scale=FACTOR] " *
                 "[--bounded-length=LENGTH] [--edge-labels=disk|aligned] " *
                 "[--standalone] [--pdf] [--output=FILE]")
         println("--scale scales tree distances, column widths, row heights, and gaps.")
-        println("--pdf compiles a preview to output/pdf/ instead of printing the TeX.")
+        println("--pdf compiles a preview to ../output/pdf/ instead of printing the TeX.")
         return nothing
     end
     allowed = ("--color", "--grayscale", "--label=true", "--label=false",

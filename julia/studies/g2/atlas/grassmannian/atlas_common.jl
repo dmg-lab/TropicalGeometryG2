@@ -12,12 +12,13 @@ include(joinpath(
     @__DIR__, "..", "..", "reference", "fine_groebner",
     "build_balanced_triangle_atlas.jl",
 ))
+using TropicalGeometryG2: rational_key
 
 const LABEL_GROUP_CSV = joinpath(@__DIR__, "label_permutation_group.csv")
 const RAY_ORBITS_CSV = joinpath(@__DIR__, "ray_label_orbits.csv")
 const TRIANGLE_ORBITS_CSV = joinpath(@__DIR__, "triangle_label_orbits.csv")
 const PREVARIETY_FAN_PATH =
-    TropicalCensus.data_path("g2", "dressian", "01_prevariety_fan.mrdi")
+    TropicalGeometryG2.data_path("g2", "dressian", "01_prevariety_fan.mrdi")
 
 # These are written in the ray indexing of the tropical variety. The
 # prevariety's raw ray order and scaling are recovered and certified by
@@ -58,7 +59,7 @@ end
 """The stage-3 file `name` of the Grassmannian census over `field`, `:qq` or `:gf2`."""
 function grassmannian_census_path(field::Symbol, name::AbstractString)
     field in (:qq, :gf2) || throw(ArgumentError("field must be :qq or :gf2, not :$field"))
-    return TropicalCensus.data_path(
+    return TropicalGeometryG2.data_path(
         "g2", field == :qq ? "grassmannian" : "grassmannian_gf2", name,
     )
 end
@@ -76,7 +77,7 @@ function census_atlas_rays(field::Symbol, balanced_rays)
     )
     quotient = Matrix{QQFieldElem}(kernel(matrix(QQ, balanced_lineality_basis()); side=:right))
     signature(rays, row) =
-        TropicalCensus.quotient_ray_signature(row_as_vector(rays, row), quotient)
+        TropicalGeometryG2.quotient_ray_signature(row_as_vector(rays, row), quotient)
     atlas_index = Dict(signature(balanced_rays, row) => row for row in 1:nrows(balanced_rays))
     length(atlas_index) == nrows(balanced_rays) || error("the atlas rays are not distinct")
 
@@ -111,7 +112,7 @@ function census_atlas_cells(field::Symbol, ray_index)
     census_lineality = matrix(QQ, rays_modulo_lineality(fan).lineality_basis)
     rank(lineality) == rank(census_lineality) == rank(vcat(lineality, census_lineality)) ||
         error("the census fan over $field has another lineality space than the atlas")
-    return [Tuple(sort!(ray_index[cell])) for cell in TropicalCensus.fan_cells(fan)]
+    return [Tuple(sort!(ray_index[cell])) for cell in TropicalGeometryG2.fan_cells(fan)]
 end
 
 ###############################################################################
@@ -208,12 +209,6 @@ function rooted_internal_edges(tree::TreeMetric)
 end
 
 cluster_key(cluster) = isempty(cluster) ? "-" : join(cluster, "")
-
-function rational_key(value)
-    value = QQ(value)
-    denominator(value) == 1 && return string(numerator(value))
-    return "$(numerator(value))/$(denominator(value))"
-end
 
 """Scale-invariant exact signature of a rooted metric tree."""
 function rooted_metric_signature(tree::TreeMetric, permutation::Vector{Int}=collect(1:7))

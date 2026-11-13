@@ -1,5 +1,6 @@
 using Oscar
-using TropicalCensus: data_path, project_path
+import TropicalGeometryG2
+using TropicalGeometryG2: data_path, project_path, study_path, csv_rows
 
 """
 An edge from `tail` to `head`, or a leg from `tail` to infinity when `head` is
@@ -39,12 +40,12 @@ containing_cells(P::Polyhedron, cells::Vector{<:Cone}; relabel=identity) =
 """
 The graph of the segments and rays `list`, relabelled to the coordinates of
 `cells`: segments are edges and rays legs, each decorated by the maximal cone
-containing it. The vertices are numbered as in `build_intersection_graph`, the
-endpoints of the segments first. Empty polyhedra are skipped: the solver
-`certified` keeps the pairs it cannot certify, and their exact intersections
-may be empty.
+containing it, or by no cell when `cells` is `nothing`. The vertices are
+numbered as in `build_intersection_graph`, the endpoints of the segments
+first. Empty polyhedra are skipped: the solver `certified` keeps the pairs it
+cannot certify, and their exact intersections may be empty.
 """
-function decorated_graph(list::Vector{Polyhedron{QQFieldElem}}, cells::Vector{<:Cone}; relabel=identity)
+function decorated_graph(list::Vector{Polyhedron{QQFieldElem}}, cells::Union{Vector{<:Cone},Nothing}; relabel=identity)
     points, index = Vector{QQFieldElem}[], Dict{Vector{QQFieldElem},Int}()
     vertex!(v) = get!(() -> (push!(points, v); length(points)), index, v)
     edges = DecoratedEdge[]
@@ -52,8 +53,8 @@ function decorated_graph(list::Vector{Polyhedron{QQFieldElem}}, cells::Vector{<:
     for k in [filter(k -> is_bounded(list[k]), pieces); filter(k -> !is_bounded(list[k]), pieces)]
         P = list[k]
         @req dim(P) == 1 && lineality_dim(P) == 0 "polyhedron $k is neither a segment nor a ray"
-        containing = containing_cells(P, cells; relabel)
-        @req length(containing) == 1 "polyhedron $k lies in the maximal cells $containing"
+        containing = isnothing(cells) ? Int[] : containing_cells(P, cells; relabel)
+        isnothing(cells) || @req length(containing) == 1 "polyhedron $k lies in the maximal cells $containing"
         ends = [vertex!(relabel(collect(v))) for v in vertices(P)]
         push!(edges, DecoratedEdge((ends[1], is_bounded(P) ? ends[2] : 0, containing, [k])))
     end
@@ -122,6 +123,88 @@ function genus(G::DecoratedGraph)
     return length(edges) - length(G.points) + count(x -> root(x) == x, eachindex(G.points))
 end
 
+"The valences of the vertices of `G`, legs included, a loop counted twice."
+function graph_valences(G::DecoratedGraph)
+    valence = zeros(Int, length(G.points))
+    foreach(e -> (valence[e.tail] += 1; is_leg(e) || (valence[e.head] += 1)), G.edges)
+    return valence
+end
+
+"The histogram `count` of `values` as `value^count`, in increasing order: `3^18 4^1` for the values `3, ..., 3, 4`."
+histogram(values; delimiter=" ") = join(("$v^$(count(==(v), values))" for v in sort!(unique(values))), delimiter)
+
+###############################################################################
+# Curves with multiplicities
+###############################################################################
+
+"The point `x` modulo the diagonal, with first coordinate 0."
+normalized(x) = [x[i] - x[1] for i in eachindex(x)]
+
+"The primitive vector of the direction `d` in `ZZ^n`."
+primitive(d) = ZZ.(TropicalGeometryG2.primitive_integer(d))
+
+"""
+The multiplicity over QQbar of every maximal cell of the coarsest fan, that of the raw cones it merges
+(weights/weights.csv).
+"""
+function coarsest_cell_weights()
+    raw = Dict(row["cone"] => parse(Int, row["mult_QQbar"]) for row in csv_rows(study_path(:g2, "weights", "weights.csv")))
+    rows = csv_rows(data_path("g2", "grassmannian", "02_coarsest_cells.csv"))
+    @req [parse(Int, row["coarsest_cell"]) for row in rows] == 1:length(rows) "02_coarsest_cells.csv does not list the cells in order"
+    return [only(unique(raw[c] for c in split(row["original_cells"], ';'))) for row in rows]
+end
+
+"""
+The one-dimensional polyhedron `P` as a piece of `exact_piece` of bergman_curve.jl: `(:segment, a, b)` with `a` and
+`b` its ends, or `(:leg, a, u)` with `a` its vertex and `u` its direction. A piece of `exact_piece` is kept as it is.
+"""
+function curve_piece(P::Polyhedron)
+    ends = [collect(v) for v in vertices(P)]
+    return is_bounded(P) ? (:segment, ends[1], ends[2]) : (:leg, only(ends), collect(only(rays(P))))
+end
+curve_piece(piece::Tuple) = piece
+
+"""
+The degree in every coordinate i of the curve with the rays `legs`, pairs of a primitive direction u and a
+multiplicity m: the sum of m (u_i - min u), its number of points on {p_i = 0}, 18 for a curve section of G2/P2.
+"""
+curve_degree(legs) = [sum((m * (u[i] - minimum(u)) for (u, m) in legs); init=ZZ(0)) for i in eachindex(PLUCKER_PAIRS)]
+
+"""
+The curve of the one-dimensional `pieces`, polyhedra or pieces of `exact_piece`, with `multiplicities`, modulo the
+diagonal: at every vertex the sum of the multiplicities times the primitive directions of its edges and legs, and the
+legs as pairs of a primitive direction and a multiplicity.
+"""
+function balancing_sums(pieces, multiplicities)
+    sums = Dict{Vector{QQFieldElem},Vector{ZZRingElem}}()
+    function add!(v, d, m)
+        u = primitive(normalized(d))
+        v = normalized(v)
+        sums[v] = get(sums, v, zeros(ZZ, length(u))) + m .* u
+        return u
+    end
+    legs = []
+    for (piece, m) in zip(pieces, multiplicities)
+        kind, a, b = curve_piece(piece)
+        if kind == :segment
+            add!(a, b - a, m)
+            add!(b, a - b, m)
+        else
+            push!(legs, (add!(a, b, m), m))
+        end
+    end
+    return (; sums, legs)
+end
+
+"""
+Whether the curve of `balancing_sums` is balanced at every vertex, its degree in every coordinate (`curve_degree`) and
+its number of vertices.
+"""
+function balancing_and_degree(pieces, multiplicities)
+    (; sums, legs) = balancing_sums(pieces, multiplicities)
+    return (balanced=all(iszero, values(sums)), degree=curve_degree(legs), vertices=length(sums))
+end
+
 "The census orbit of every maximal cell of the G2-Grassmannian, and its number in the tables of maximal trees of `main.tex`."
 function cell_labels()
     orbit = Dict{Int,Int}()
@@ -166,32 +249,11 @@ load_decorated_graphs(path) =
                         DecoratedEdge[DecoratedEdge(e) for e in zip(G.tail, G.head, G.cells, G.pieces)]))
     end
 
-"""
-Save the polygons `x18` of k3_surface_polygons.jl with Oscar, flat: one
-vector per field of the polygons, which Oscar saves, unlike their pairs.
-"""
-function save_k3_polygons(path, x18)
-    P, Key = x18.polygons, Tuple{Symbol,Int,Vector{Int}}
-    save(path, (cells=[c for ((c, _), _) in P], subsets=[S for ((_, S), _) in P], bounded=[p.bounded for (_, p) in P],
-                verts=[p.verts for (_, p) in P], keys=[Key[k for k in p.keys] for (_, p) in P],
-                curve_keys=Dict{Int,Key}(x18.curve_keys), cells_of_wall=x18.cells_of_wall, t=x18.t))
-end
-
-"The polygons saved by `save_k3_polygons`, as k3_surface_polygons.jl returns them."
-function load_k3_polygons(path)
-    x = load(path)
-    polygons = [(c, S) => (; keys, bounded, verts)
-                for (c, S, bounded, verts, keys) in zip(x.cells, x.subsets, x.bounded, x.verts, x.keys)]
-    return (; polygons, curve_keys=Dict{Int,Any}(x.curve_keys), cells_of_wall=x.cells_of_wall, t=x.t)
-end
-
 function describe(io::IO, name, G::DecoratedGraph)
-    valence = zeros(Int, length(G.points))
-    foreach(e -> (valence[e.tail] += 1; is_leg(e) || (valence[e.head] += 1)), G.edges)
     distinct_cells = [length(unique(e.cells)) for e in G.edges]
     println(io, "$name: $(length(G.points)) vertices, $(count(!is_leg, G.edges)) edges, ",
             "$(count(is_leg, G.edges)) legs, genus $(genus(G))")
-    println(io, "  valences: ", join(("$d^$(count(==(d), valence))" for d in sort!(unique(valence))), ", "))
+    println(io, "  valences: ", histogram(graph_valences(G); delimiter=", "))
     println(io, "  edges and legs through k distinct cells: ",
             join(("k=$k: $(count(==(k), distinct_cells))" for k in sort!(unique(distinct_cells))), ", "))
 end

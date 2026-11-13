@@ -1,29 +1,14 @@
-# Section 10 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 10 of the paper: run by paper_results.jl, which defines the helpers used here.
 
-"The Mukai model of genus 10: G2/P2 ⊂ P^13 by the 4x4 Pfaffians of a skew 7x7 matrix (as in mukai_curves/mukai_models.jl)."
+"""
+The Mukai model of genus 10: G2/P2 ⊂ P^13 by the 4x4 Pfaffians of a skew 7x7 matrix. The matrix is a deliberate copy of
+that of studies/g2/curves/mukai_models.jl, a script with no function to call.
+"""
 function mukai_model(K=QQ)
     R, (a, b, c, d, e, f, g, h, i, j, k, l, m, n) = polynomial_ring(K, [string(Char('a' + s)) for s in 0:13])
     M = matrix(R, [0 -f e g h i a; f 0 -d j k l b; -e d 0 m n -g-k c; -g -j -m 0 c -b d;
                    -h -k -n -c 0 a e; -i -l g+k b -a 0 f; -a -b -c -d -e -f 0])
     return R, ideal(R, pfaffians(M, 4))
-end
-
-"The curve of a stored complex: vertices, bounded edges and rays."
-function curve_graph(complex)
-    vertex = Dict{Vector{QQFieldElem},Int}()
-    index(v) = get!(vertex, v, length(vertex) + 1)
-    edges, rays = Tuple{Int,Int}[], Tuple{Int,Vector{QQFieldElem}}[]
-    for P in maximal_polyhedra(complex)
-        V = [QQ.(collect(v)) for v in vertices(P)]
-        if is_bounded(P)
-            push!(edges, (index(V[1]), index(V[2])))
-        else
-            push!(rays, (index(V[1]), QQ.(collect(first(Oscar.rays(P))))))
-        end
-    end
-    points = Vector{Vector{QQFieldElem}}(undef, length(vertex))
-    foreach(((v, k),) -> points[k] = v, vertex)
-    return (; points, edges, rays)
 end
 
 "The core of a graph (leaves removed until none is left), then without its vertices of valence 2."
@@ -53,7 +38,7 @@ function core_graph(n, edges)
 end
 
 "The primitive integer vector of a rational direction."
-s10_primitive(d) = (d = d .* lcm(denominator.(d)); ZZ.(d .// gcd(numerator.(d))))
+s10_primitive(d) = ZZ.(primitive_integer(d))
 
 "A direction in R^21/R1 as its primitive representative with minimum 0."
 s10_direction(d) = s10_primitive(d .- minimum(d))
@@ -327,10 +312,10 @@ function section_10()
     end
     q_paper = [-204958, -1849487, -1813412, 1389486, -611356, -155086, -128988, -1698926, 1863394, -602010, -2239681,
                -1904628, 124320, -1025736, -87111, -1360439, 705715, -619752, 2004970, 1344973, 232336]
-    q = Int.(load(repository("julia", "curves_g10", "overnight_20261028", "wpart_2722", "translation_1.mrdi")))
+    q = Int.(load(project_path("curves_g10", "overnight_20261028", "wpart_2722", "translation_1.mrdi")))
     # main.tex: "Only here, we use $\min$-convention": the printed q and q_1, ..., q_4 are those of the files.
     check("Method 1: the shift vector q, as stored (translation_1.mrdi, in the min convention of the files)", q_paper, q)
-    experiment = repository("julia", "curves_g10", "overnight_20261028", "experiment_100128")
+    experiment = project_path("curves_g10", "overnight_20261028", "experiment_100128")
     planes = load(joinpath(experiment, "hyperplanes.mrdi"))
     support = [findall(!iszero, planes.normals[h]) for h in 1:5]
     check("Method 2: supports of the normal vectors of the five hyperplanes (q_5 of full support)", [3, 8, 9, 15, 21],
@@ -357,7 +342,7 @@ function section_10()
           ([("p12", "p67"), ("p13", "p57"), ("p17", "p56"), ("p23", "p47"), ("p27", "p46"), ("p37", "p45")], 15),
           (equal, rank_of(vcat(grays, glin))))
     claim("Method 1: at most 15 × 18 = 270 rays", length(M1.graph.rays) <= 270, "$(length(M1.graph.rays)) rays")
-    record = TOML.parsefile(repository("julia", "curves_g10", "overnight_20261028", "wpart_2722", "wpart_2722_record.toml"))
+    record = TOML.parsefile(project_path("curves_g10", "overnight_20261028", "wpart_2722", "wpart_2722_record.toml"))
     row = record["rays"]
     stored("Method 1: rays, rays with multiplicity (the bound 270 is reached), multiplicities (curve_rays.jl, 94 s on " *
            "8 threads; wpart_2722_record.toml)", "$(row["rays"]), $(row["rays_with_multiplicity"]), $(row["multiplicities"])")
@@ -430,8 +415,11 @@ function section_10()
     met = sort(unique(M1.skeleton_cones))
     check("Method 1: the Berkovich skeleton meets 5 maximal cones of trop(G), of types", ["11", "11", "12", "12", "7"],
           sort([types[("cell", c)] for c in met]))
-    check("Method 1: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_regions.tex",
-          drawn("genus_10_curve_regions.tex"), by_number([types[("cell", c)] for c in met]))
+    if drawings("Method 1: the types met by the skeleton, against the \\celltype labels of Figure fig:planar_curve",
+                "figures/genus_10_curve_regions.tex")
+        check("Method 1: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_regions.tex",
+              drawn("genus_10_curve_regions.tex"), by_number([types[("cell", c)] for c in met]))
+    end
     # main.tex: "Only five of the $248$ maximal cones of $\trop(\linespace)$ are intersected by the skeleton of $\mathfrak{L}_4$".
     info("Method 1: the whole curve trop(G) ∩ L_4, trees and rays included, meets " *
          "$(length(unique(vcat(M1.edge_cones, M1.ray_cones)))) maximal cones of trop(G)")
@@ -463,14 +451,20 @@ function section_10()
     m2_types = by_number([types[("cell", c)] for c in met])
     info("Method 2: the skeleton meets $(length(met)) maximal cones of trop(G), of types $(join(m2_types, ", ")); the " *
          "whole curve, trees and rays included, meets $(length(unique(vcat(M2.edge_cones, M2.ray_cones))))")
-    check("Method 2: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_100128_regions.tex",
-          drawn("genus_10_curve_100128_regions.tex"), m2_types)
+    if drawings("Method 2: the types met by the skeleton, against the \\celltype labels of Figure fig:nonplanar_curve",
+                "figures/genus_10_curve_100128_regions.tex")
+        check("Method 2: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_100128_regions.tex",
+              drawn("genus_10_curve_100128_regions.tex"), m2_types)
+    end
     # main.tex: "The numbers 17, 12, 16, ... refer to their types of G2-trees in Figures fig:atlas_rays,
     # fig:atlas_toric_cells_prime, and fig:atlas_toric_cells_nontoric"; the first shows rays only, the others the types of
     # toric_degeneration_prime_edge_trees.tex and non_toric_cell_trees.tex.
-    panels = vcat(drawn("toric_degeneration_prime_edge_trees.tex", "oldstylenums"), drawn("non_toric_cell_trees.tex", "oldstylenums"))
-    check("Method 2: types met by the skeleton that are not drawn in Figures fig:atlas_toric_cells_prime and " *
-          "fig:atlas_toric_cells_nontoric, to which the paper refers them", String[], unique(filter(!in(panels), m2_types)))
+    if drawings("Method 2: the types met by the skeleton are drawn in Figures fig:atlas_toric_cells_prime and " *
+                "fig:atlas_toric_cells_nontoric", "figures/toric_degeneration_prime_edge_trees.tex", "figures/non_toric_cell_trees.tex")
+        panels = vcat(drawn("toric_degeneration_prime_edge_trees.tex", "oldstylenums"), drawn("non_toric_cell_trees.tex", "oldstylenums"))
+        check("Method 2: types met by the skeleton that are not drawn in Figures fig:atlas_toric_cells_prime and " *
+              "fig:atlas_toric_cells_nontoric, to which the paper refers them", String[], unique(filter(!in(panels), m2_types)))
+    end
     s10_regions(M2, types)
     s10_points_by_cone(2, [only(locate(L, x)) for x in divisor], types)
     two, crossings = s10_broken_lines(M2)
@@ -480,11 +474,11 @@ function section_10()
           "$(join(sort(unique(M2.valence[crossings])), ", ")) in the curve")
 
     subheading("The K3 surface (b) of Method 1: trop(G) ∩ L_3")
-    x18 = repository("julia", "results", "curves", "genus_10", "k3", "wpart_2722_x18.mrdi")
+    x18 = project_path("results", "curves", "genus_10", "k3", "wpart_2722_x18.mrdi")
     if isfile(x18)
-        m = run_in_module(studies("g2", "curves", "k3_fins.jl"); name=:K3Fins)
+        m = run_in_module(study_path("g2", "curves", "k3_fins.jl"); name=:K3Fins)
         G = call(m, :load_decorated_graphs,
-                 repository("julia", "curves_g10", "overnight_20261028", "wpart_2722", "decorated_graph_1.mrdi")).subdivided
+                 project_path("curves_g10", "overnight_20261028", "wpart_2722", "decorated_graph_1.mrdi")).subdivided
         polygons = call(m, :load_k3_polygons, x18)
         # k3_fins prints its own report; only the claim goes into this one.
         result = redirect_stdout(devnull) do
@@ -494,12 +488,12 @@ function section_10()
               "the edge graph of a simple 3-polytope", result.sphere && result.core_on_sphere &&
               result.pieces == result.faces && result.polytope_graph, "$(result.pieces) pieces, $(result.faces) faces")
     else
-        # wpart_2722_x18.mrdi is written by k3_surface_polygons.jl into the git-ignored julia/results/; without it, the
+        # wpart_2722_x18.mrdi is written by k3_surface_polygons.jl into the git-ignored results/; without it, the
         # result of k3_fins.jl as recorded in wpart_2722_record.toml.
         k3 = record["k3_surface"]
         k3["core_simple_and_3_connected"] || error("wpart_2722_record.toml: the core is not recorded simple and 3-connected")
         stored("the K3 surface of Method 1: a 2-sphere with fins, cut by the core into its E - V + 2 faces; the core is " *
-               "the edge graph of a simple 3-polytope (k3_fins.jl, wpart_2722_record.toml; julia/results/curves/" *
+               "the edge graph of a simple 3-polytope (k3_fins.jl, wpart_2722_record.toml; results/curves/" *
                "genus_10/k3/wpart_2722_x18.mrdi of k3_surface_polygons.jl is absent)",
                "a sphere of $(k3["sphere_polygons"]) polygons ($(k3["sphere_vertices"]) vertices, $(k3["sphere_edges"]) " *
                "edges), $(k3["fins"]) fins, $(k3["core_discs"]) discs; the core simple and 3-connected")

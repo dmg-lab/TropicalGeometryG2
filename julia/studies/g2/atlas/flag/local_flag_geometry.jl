@@ -3,9 +3,9 @@
 
 include(joinpath(@__DIR__, "..", "grassmannian", "atlas_common.jl"))
 
-const CLEAN_ATLAS_FAN = TropicalCensus.data_path("g2", "flag", "02_coarsest_fan.mrdi")
+const CLEAN_ATLAS_FAN = TropicalGeometryG2.data_path("g2", "flag", "02_coarsest_fan.mrdi")
 const CLEAN_ATLAS_GRASS_FAN =
-    TropicalCensus.data_path("g2", "grassmannian", "01_raw_fan.mrdi")
+    TropicalGeometryG2.data_path("g2", "grassmannian", "01_raw_fan.mrdi")
 
 clean_vector(M, i::Int) = [QQ(M[i, j]) for j in 1:ncols(M)]
 clean_tex_set(values) = "\\{" * join(values, ",\\,") * "\\}"
@@ -23,22 +23,8 @@ function clean_positive_ray_match(v, rays)
     return -1
 end
 
-function clean_graph_distance(tree::TreeMetric, source::Int, target::Int)
-    source == target && return QQ(0)
-    stack = [(source, 0, QQ(0))]
-    while !isempty(stack)
-        vertex, parent, distance = pop!(stack)
-        for (neighbor, edge_length) in tree.adjacency[vertex]
-            neighbor == parent && continue
-            neighbor == target && return distance + edge_length
-            push!(stack, (neighbor, vertex, distance + edge_length))
-        end
-    end
-    error("tree vertices $source and $target are disconnected")
-end
-
 function clean_internal_vertex(tree::TreeMetric, vertex::Int)
-    x = [-clean_graph_distance(tree, vertex, taxon) for taxon in 1:tree.ntaxa]
+    x = [-tree_distance(tree, vertex, taxon) for taxon in 1:tree.ntaxa]
     return x .- x[7]
 end
 

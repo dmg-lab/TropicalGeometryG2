@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 # Three-page atlas of the maintained QQ and GF(2) G2-Grassmannian fans.
-# Run from the repository root with julia --project=julia <this file>.
+# Run from julia/ with julia --project=. studies/g2/atlas/grassmannian/build_field_comparison_atlas.jl.
 using TOML
 using Printf
 using SHA

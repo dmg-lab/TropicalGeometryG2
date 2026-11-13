@@ -14,18 +14,17 @@
 #    a unimodular triangulation with the facets of K * Delta_2 (Sturmfels,
 #    Theorem 8.3). Both tests must agree on every toric cell.
 #
-# Run with julia --project=julia from any directory; writes verify.txt next
-# to this file. Characteristic 0 only.
+# Run from julia/ with
+#   julia --project=. studies/g2/degenerations_grassmannian/Christophersen_Ilten/verify.jl
+# It writes verify.txt next to this file. Characteristic 0 only.
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
+include(joinpath(@__DIR__, "..", "common.jl"))
 
-const DATA = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "data", "g2", "grassmannian"))
-const TORIC_TABLE = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "..", "tables",
-                                      "toric_degeneration_table.tex"))
-const OUTPUT = open(joinpath(@__DIR__, "verify.txt"), "w")
-say(parts...) = (println(parts...); println(OUTPUT, parts...))
+const DATA = grassmannian_census("QQ")
+say, OUTPUT = output_file(@__DIR__, "verify.txt")
 
 pfaffian(M, i, j, k, l) = M[i, j] * M[k, l] - M[i, k] * M[j, l] + M[i, l] * M[j, k]
 const QUADRUPLES = [(i, j, k, l) for i in 1:7 for j in i+1:7 for k in j+1:7 for l in k+1:7]
@@ -198,22 +197,11 @@ end
 # The census stores weights in the min convention; here the largest weight leads.
 weights = load(joinpath(DATA, "04_canonical_cell_weights.mrdi"))
 cell_weights = [[-Int(ZZ(weights[cell, k])) for k in 1:21] for cell in 1:nrows(weights)]
-orbit_of = zeros(Int, length(cell_weights))
-for line in readlines(joinpath(DATA, "05_symmetry_cell_orbits.csv"))[2:end]
-    fields = split(line, ','; limit=4)
-    orbit_of[parse.(Int, split(strip(fields[4], '"'), ';'))] .= parse(Int, fields[1])
-end
-toric_orbit = Dict{Int, Bool}()
-for line in readlines(joinpath(DATA, "06_canonical_interior_degenerations.csv"))[2:end]
-    fields = split(line, ',')
-    toric_orbit[parse(Int, fields[1])] = fields[15] == "true"
-end
+orbit_of = cell_orbits()
+toric_orbit = Dict(parse(Int, row["orbit"]) => row["toric"] == "true"
+                   for row in csv_rows(joinpath(DATA, "06_canonical_interior_degenerations.csv")))
 @assert count(values(toric_orbit)) == 17
-type_of_orbit = Dict{Int, Int}()
-for line in readlines(TORIC_TABLE)
-    m = match(r"\\oldstylenums\{(\d+)\}.*% QQ orbit (\d+)", line)
-    isnothing(m) || (type_of_orbit[parse(Int, m.captures[2])] = parse(Int, m.captures[1]))
-end
+type_of_orbit = toric_types("QQ")
 @assert sort(collect(keys(type_of_orbit))) == sort([o for (o, t) in toric_orbit if t])
 label(cell) = haskey(type_of_orbit, orbit_of[cell]) ? "type $(type_of_orbit[orbit_of[cell]])" :
               "non-toric orbit $(orbit_of[cell])"

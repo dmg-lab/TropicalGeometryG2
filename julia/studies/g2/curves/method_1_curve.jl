@@ -2,31 +2,31 @@
 # The genus-10 curve of Method 1 of Section 10 of main.tex, trop(G2/P2) ∩
 # (B + q) with B the uniform Bergman fan fan_uniform_linear_space_16_21.mrdi,
 # exactly from the shift q alone, in the slice sum(x) = sum(q). Its pieces are
-# those of the certified run of mukai_curves/run_experiments.jl that found it
+# those of the certified run of run_experiments.jl that found it
 # (20 to 35 min on 24 cores of hydra), built by the same exact intersections in
 # the same order, without the empty ones. The pairs of a maximal cell C of the raw fan
 # and a maximal cone B_T of B, T the 5 coordinates where x - q is minimal, come
-# from `candidate_subsets` and `exact_piece` of bounded_cell_valences.jl, cell by
-# cell, instead of an LP for each of the 251 × 20349 pairs. The raw fan, not
+# from `bergman_curve_pieces` of bergman_curve.jl, cell by cell, instead of an
+# LP for each of the 251 × 20349 pairs. The raw fan, not
 # the coarsest: the curve crosses the diagonal of a quadrilateral of the
 # coarsest fan, a wall of the raw fan, 5 times, and the stored pieces end there.
 #
 # The floating-point filter of `candidate_subsets` certifies nothing, so the
-# curve is checked balanced, every piece with its multiplicity as in
-# curve_rays.jl, and of degree 18 in every coordinate. The curve is balanced
+# curve is checked balanced, every piece with its multiplicity, and of degree
+# 18 in every coordinate. The curve is balanced
 # of degree 18, so a missing part would be balanced, hence have rays, and
 # lower the degree.
 #
-#   julia --project=julia -t 8 julia/studies/g2/curves/method_1_curve.jl [SHIFT.mrdi [PIECES.mrdi]]
+#   julia --project=. -t 8 studies/g2/curves/method_1_curve.jl [SHIFT.mrdi [PIECES.mrdi]]
 #
 # SHIFT defaults to curves_g10/overnight_20261028/wpart_2722/translation_1.mrdi;
 # the pieces are saved to PIECES when given.
 ###############################################################################
 
-include(joinpath(@__DIR__, "curve_rays.jl"))
+include(joinpath(@__DIR__, "bergman_curve.jl"))
 
 module IntersectionLib
-include(joinpath(@__DIR__, "..", "..", "..", "intersection_lib.jl"))
+include(joinpath(@__DIR__, "intersection_lib.jl"))
 end
 
 const METHOD_1_SHIFT = project_path("curves_g10", "overnight_20261028", "wpart_2722", "translation_1.mrdi")
@@ -75,30 +75,6 @@ function bergman_cones(bergman)
 end
 
 """
-Whether the curve of the one-dimensional `pieces` with `multiplicities` is
-balanced at every vertex, modulo the diagonal, and its degree in every
-coordinate as in curve_rays.jl.
-"""
-function balancing_and_degree(pieces, multiplicities)
-    total = Dict{Vector{QQFieldElem},Vector{ZZRingElem}}()
-    add!(v, d, m) = (total[v] = get(total, v, zeros(ZZ, 21)) + m .* primitive(normalized(d)))
-    legs = Tuple{Vector{ZZRingElem},Int}[]
-    for (P, m) in zip(pieces, multiplicities)
-        ends = [normalized(collect(v)) for v in vertices(P)]
-        if is_bounded(P)
-            add!(ends[1], ends[2] - ends[1], m)
-            add!(ends[2], ends[1] - ends[2], m)
-        else
-            u = primitive(normalized(collect(only(rays(P)))))
-            add!(only(ends), u, m)
-            push!(legs, (u, m))
-        end
-    end
-    degree = [sum(m * (u[i] - minimum(u)) for (u, m) in legs) for i in 1:21]
-    return all(iszero, values(total)), degree
-end
-
-"""
 The curve `trop(G2/P2) ∩ (B + q)` in the slice `sum(x) = sum(q)`: its
 one-dimensional `pieces`, the intersections of a maximal cone `B_T + q` with a
 maximal cell of `01_variety_complex.mrdi`, in the order of the `pairs` of
@@ -119,44 +95,29 @@ function method_1_pieces(q::Vector{Int})
     cone_of = bergman_cones(bergman)
     cells = [cell_span(C) for C in cones]
     t = Vector{QQFieldElem}(QQ.(q))
-    subsets = collect(Combinatorics.combinations(1:21, 5))
-    # (cone of B, raw cell, multiplicity) of the pieces of dimension 1, by cell.
-    found = Vector{Vector{Tuple{Int,Int,Int}}}(undef, length(cells))
-    candidates = zeros(Int, length(cells))
-    Threads.@threads for c in eachindex(cells)
-        M, A = cells[c]
-        AM = A * M
-        subsets_c = only(candidate_subsets(Float64.(Matrix(M)), Float64.(Matrix(AM)), subsets, [Float64.(t)]))
-        candidates[c] = length(subsets_c)
-        L = saturated_lattice(M)
-        found[c] = Tuple{Int,Int,Int}[]
-        for T in subsets_c
-            piece = lock(() -> exact_piece(M, A, AM, t, T), POLYMAKE_LOCK)
-            isnothing(piece) && continue
-            first(piece) == :higher && error("a piece of dimension at least 2 in raw cell $c, T = $T: q is not transverse")
-            push!(found[c], (cone_of[T], c, weights[c] * lattice_index(L, T)))
-        end
+    candidates = [only(f) for f in cell_candidates(cells, [t])]
+    pieces = bergman_curve_pieces(cells, candidates, t; weights)
+    for p in pieces
+        first(p.piece) == :higher && error("a piece of dimension at least 2 in raw cell $(p.cell), T = $(p.subset): q is not transverse")
     end
-    # The order of `hybrid_prefilter`: by cone of B, then by cell.
-    found = sort!(reduce(vcat, found))
+    # (cone of B, raw cell, multiplicity) of the pieces of dimension 1, in the order of `hybrid_prefilter`: by cone of
+    # B, then by cell.
+    found = sort!([(cone_of[p.subset], p.cell, p.multiplicity) for p in pieces])
     pairs = [(i, c) for (i, c, _) in found]
     @req allunique(pairs) "a pair of a cone and a cell twice"
 
     # The exact intersections of `run_experiment` of intersection_lib.jl.
-    N, S = length(q), sum(q)
-    slice = polyhedron(matrix(QQ, [ones(Int, 1, N); -ones(Int, 1, N)]), [QQ(S), QQ(-S)])
-    point = convex_hull(matrix(QQ, reshape(q, 1, N)))
     bergman_cells = maximal_cones(bergman)
-    shifted = Dict{Int,Polyhedron}(i => minkowski_sum(polyhedron(bergman_cells[i]), point) for i in unique(first.(pairs)))
-    result = IntersectionLib.build_intersection_graph(pairs, shifted, polyhedra, slice)
+    cones_of_pairs = Dict(i => polyhedron(bergman_cells[i]) for i in unique(first.(pairs)))
+    result = IntersectionLib.shifted_intersections(pairs, cones_of_pairs, polyhedra, q)
     @req all(P -> dim(P) == 1, result.list_P) "an exact intersection is not one-dimensional"
 
     multiplicities = [m for (_, _, m) in found]
-    balanced, degree = balancing_and_degree(result.list_P, multiplicities)
-    @req balanced "the curve is not balanced: a piece is missing"
-    @req all(==(G2_DEGREE), degree) "the curve has degree $degree, not $G2_DEGREE in every coordinate: a piece is missing"
+    curve = balancing_and_degree(result.list_P, multiplicities)
+    @req curve.balanced "the curve is not balanced: a piece is missing"
+    @req all(==(G2_DEGREE), curve.degree) "the curve has degree $(curve.degree), not $G2_DEGREE in every coordinate: a piece is missing"
     return (pieces=result.list_P, multiplicities=multiplicities, pairs=pairs, graph=result.g,
-            candidates=sum(candidates))
+            candidates=sum(length, candidates))
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -9,17 +9,16 @@
 # its values on omega_1 + omega_2. The comparison with the census is that of
 # ../Feigin_Fourier_Littelmann/verify.jl, through ../flag_census.jl.
 #
-# Run with julia --project=julia from any directory; writes compare_flag.txt
-# next to this file. Characteristic 0 only.
+# Run from julia/ with
+#   julia --project=. studies/g2/degenerations_grassmannian/Spacek_Wang/compare_flag.jl
+# It writes compare_flag.txt next to this file. Characteristic 0 only.
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 include(joinpath(@__DIR__, "..", "flag_census.jl"))
 
-const CP = TropicalCensus.ChevalleyPolytopes
-const OUTPUT = open(joinpath(@__DIR__, "compare_flag.txt"), "w")
-say(parts...) = (println(parts...); println(OUTPUT, parts...))
+say, OUTPUT = output_file(@__DIR__, "compare_flag.txt")
 
 """
 The values of the valuation of the paper word `word` of G2/B on the sections
@@ -29,16 +28,8 @@ the parabolic of `varpi`.
 function valuation_values(varpi, word)
     L = lie_algebra(QQ, :G, 2)
     V = simple_module(L, varpi)
-    highest = only(findall(==(varpi), CP._basis_weights(L, V, 2)))
-    lowering = CP._lowering_columns(L, V, 2)
-    l = length(word)
-    # Variables created as a_l > ... > a_1, so that degrevlex is the paper's order.
-    ring, generators = polynomial_ring(QQ, ["a$k" for k in l:-1:1])
-    vector = [k == highest ? one(ring) : zero(ring) for k in 1:dim(V)]
-    for k in 1:l
-        vector = CP._exp_f(lowering[word[k]], generators[l + 1 - k], vector, ring)
-    end
-    values = CP._adapted_valuations(vector, degrevlex(ring))
+    expansion = torus_expansion(L, V, only(findall(==(varpi), basis_weights(L, V))), word)
+    values = adapted_valuations(expansion.vector, expansion.ordering)
     @assert length(values) == dim(V)
     return values
 end
@@ -46,7 +37,7 @@ end
 invariants(P) = string("dimension ", dim(P), ", f-vector ", Int.(f_vector(P)), ", ",
                        length(lattice_points(P)), " lattice points, normalized volume ", normalized_volume(P))
 "The convex hull of integer points in the affine lattice of their differences."
-intrinsic_hull(points, dimension) = TropicalCensus.affine_lattice_body(
+intrinsic_hull(points, dimension) = TropicalGeometryG2.affine_lattice_body(
     matrix(ZZ, reduce(vcat, permutedims.(points))); expected_dimension=dimension).polytope
 # The Chevalley polytopes of G2/P1 and G2/P2, each for its only word.
 const PARABOLIC = Dict(varpi => chevalley_polytope(chevalley_data(:G, 2, varpi)) for varpi in ([1, 0], [0, 1]))

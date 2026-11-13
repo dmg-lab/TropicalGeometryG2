@@ -14,9 +14,9 @@
 # 92% of those gave a curve of genus 10, and all 8 curves of genus 10 with a
 # trivalent core were among them.
 #
-#   julia --project=julia -t 8 julia/studies/g2/curves/point_filter.jl KIND TRIALS [--first=K]
+#   julia --project=. -t 8 studies/g2/curves/point_filter.jl KIND TRIALS [--first=K]
 #         [--translation=FILE] [--batch=N] [--output=DIR]
-#   julia --project=julia -t 8 julia/studies/g2/curves/point_filter.jl --check=TABLE
+#   julia --project=. -t 8 studies/g2/curves/point_filter.jl --check=TABLE
 #         [--trials=K1;K2;...] [--sample=N] [--curves]
 #
 # The first form draws the translations of trials K..TRIALS of KIND as
@@ -34,20 +34,10 @@
 # themselves, from the curves computed again.
 ###############################################################################
 
-include("core_trivalence.jl")
-import TropicalCensus: csv_rows
-using TropicalCensus: study_path
+include(joinpath(@__DIR__, "core_trivalence.jl"))
 
 const POINT_SUBSETS = collect(Combinatorics.combinations(1:21, 6))
 const POINT_COLUMNS = (:points, :degree, :degenerate, :multiplicities, :point_orbits, :point_cells)
-
-"The multiplicity over QQbar of every maximal cell of the coarsest fan, that of the raw cones it merges."
-function cell_weights()
-    raw = Dict(row["cone"] => parse(Int, row["mult_QQbar"]) for row in csv_rows(study_path(:g2, "weights", "weights.csv")))
-    rows = csv_rows(data_path("g2", "grassmannian", "02_coarsest_cells.csv"))
-    @req [parse(Int, row["coarsest_cell"]) for row in rows] == 1:length(rows) "02_coarsest_cells.csv does not list the cells in order"
-    return [only(unique(raw[c] for c in split(row["original_cells"], ';'))) for row in rows]
-end
 
 """
 The cell of span `M` and facets `A` for `exact_point` and `candidate_points`:
@@ -197,12 +187,12 @@ function check(table, cells, spans, weights, orbit, args, option)
 end
 
 function main(args)
-    option(name, default) = last([[default]; [split(a, '='; limit=2)[2] for a in args if startswith(a, "--$name=")]])
+    option(name, default) = command_option(args, name, default)
     positional = filter(a -> !startswith(a, "--"), args)
     fan = load(data_path("g2", "grassmannian", "02_coarsest_fan.mrdi"))
     spans = [cell_span(C) for C in maximal_cones(fan)]
     cells = [point_cell(M, A) for (M, A) in spans]
-    weights = cell_weights()
+    weights = coarsest_cell_weights()
     @req length(weights) == length(cells) "one multiplicity per cell"
     orbit, number = cell_labels()
 
@@ -220,8 +210,7 @@ function main(args)
     translation = trial_translations(fan, kind, load(String(file)))
 
     table = joinpath(output, "point_filter_$(kind).csv")
-    done = isfile(table) ? Set(parse(Int, first(split(l, ','))) for l in readlines(table)[2:end]) : Set{Int}()
-    isfile(table) || open(io -> println(io, join(["trial"; collect(string.(POINT_COLUMNS)); collect(string.(CORE_COLUMNS)); "translation"], ",")), table, "w")
+    done = resume_table(table, ["trial"; collect(string.(POINT_COLUMNS)); collect(string.(CORE_COLUMNS)); "translation"])
     todo = [k for k in first_trial:trials if !(k in done)]
     println("$kind: $(length(todo)) of trials $first_trial-$trials to run, translation $file, $(Threads.nthreads()) threads, output $table")
     approximations = [(Float64.(Matrix(M)), Float64.(Matrix(A * M))) for (M, A) in spans]

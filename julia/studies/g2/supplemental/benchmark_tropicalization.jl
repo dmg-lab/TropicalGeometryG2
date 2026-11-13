@@ -6,7 +6,7 @@
 # A small example first compiles the same code paths, each repetition starts
 # from a new ideal, and nothing is written to data/.
 #
-#   julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl <case> [repetitions] [gfan threads]
+#   julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl <case> [repetitions] [gfan threads]
 #
 # Cases:
 #   dressian_gfan                    Gfan on the 42 Grassmannian generators
@@ -17,7 +17,7 @@
 #   grassmannian_skip_decomposition  tropical_variety as in the census, without primary decomposition
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 
 include(joinpath(@__DIR__, "..", "ideals", "G2GrassmannianIdeal.jl"))
 include(joinpath(@__DIR__, "..", "ideals", "FlagG2Ideal.jl"))
@@ -30,13 +30,13 @@ const GFAN_BITS = 64
 
 fan_counts(fan) = (rays=length(rays_modulo_lineality(fan).rays_modulo_lineality), maximal_cells=n_maximal_cones(fan),
                    dimension=dim(fan), lineality_dimension=lineality_dim(fan))
-complex_counts(complex) = fan_counts(TropicalCensus.as_polyhedral_fan(complex))
+complex_counts(complex) = fan_counts(TropicalGeometryG2.as_polyhedral_fan(complex))
 
 "Seconds of `gfan_tropicalprevariety` alone, without reading its output."
 function gfan_seconds(polynomials, threads)
     directory = mktempdir()
     input = joinpath(directory, "input.txt")
-    TropicalCensus.write_basis_input(input, string.(symbols(parent(first(polynomials)))), string.(polynomials))
+    TropicalGeometryG2.write_basis_input(input, string.(symbols(parent(first(polynomials)))), string.(polynomials))
     command = `$GFAN -j $threads --bits $GFAN_BITS`
     return @elapsed run(pipeline(command, stdin=input, stdout=joinpath(directory, "prevariety.gfan"),
                                  stderr=joinpath(directory, "gfan.log")))

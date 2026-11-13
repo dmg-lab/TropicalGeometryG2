@@ -1,5 +1,6 @@
 #!/bin/bash
-# Slurm array for sample_genus_10.jl on hydra, from julia/:
+# Slurm array for sample_genus_10.jl on hydra; submit from julia/:
+#   mkdir -p work/genus_10_sampling/logs
 #   sbatch --array=0-113 studies/g2/curves/sample_genus_10.slurm
 # Task t of T runs the experiments BASE + t + i T, i = 0, 1, ..., in Julia
 # processes of at most BATCH experiments each until the time limit; a process

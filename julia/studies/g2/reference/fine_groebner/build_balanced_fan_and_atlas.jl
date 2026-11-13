@@ -4,9 +4,9 @@ using LinearAlgebra
 using Printf
 
 const DEFAULT_BALANCED_FAN_PATH =
-    TropicalCensus.data_path("g2", "reference", "fine_groebner", "normalized_fine_fan.mrdi")
+    TropicalGeometryG2.data_path("g2", "reference", "fine_groebner", "normalized_fine_fan.mrdi")
 const DEFAULT_BALANCED_RAYS_PATH =
-    TropicalCensus.data_path("g2", "reference", "fine_groebner", "normalized_fine_rays.mrdi")
+    TropicalGeometryG2.data_path("g2", "reference", "fine_groebner", "normalized_fine_rays.mrdi")
 const DEFAULT_ATLAS_TEX_PATH = joinpath(@__DIR__, "balanced_phylogenetic_trees.tex")
 
 """A full-rank, human-readable basis for the common lineality space."""

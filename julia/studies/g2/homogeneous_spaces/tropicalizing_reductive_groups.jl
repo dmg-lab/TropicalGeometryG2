@@ -6,61 +6,24 @@ obtained by forgetting the coordinate p_36, using the census data of the G2-Gras
 compare the two, with exact linear algebra over QQ.
 Section 6 computes, for every non-vertical maximal cell, the initial ideal of the weight-basis ideal
 at an interior weight, and tests it for being toric with the criterion of canonical_initial_ideal in
-julia/src/degenerations.jl.
+src/degenerations.jl.
 
-Usage, from the repository root:
-    julia --project=julia julia/studies/g2/homogeneous_spaces/tropicalizing_reductive_groups.jl \
-        julia/data/g2/grassmannian > julia/studies/g2/homogeneous_spaces/tropicalizing_reductive_groups.txt
+Usage, from julia/:
+    julia --project=. studies/g2/homogeneous_spaces/tropicalizing_reductive_groups.jl \
+        data/g2/grassmannian > studies/g2/homogeneous_spaces/tropicalizing_reductive_groups.txt
 Reads:  00_ideal.mrdi, 04_trees.csv, 02_coarsest_cells.csv, 06_canonical_interior_degenerations.csv,
-        and, for the paper's labels, julia/studies/g2/atlas/flag/local_flag_cell_atlas.csv
-        (cell types) and julia/studies/g2/atlas/grassmannian/ray_label_orbits.csv (ray orbits).
+        and, for the paper's labels, studies/g2/atlas/flag/local_flag_cell_atlas.csv
+        (cell types) and studies/g2/atlas/grassmannian/ray_label_orbits.csv and
+        ray_orbit_labels.csv (ray orbits and their labels).
 Census orbits are printed as paper cell types, e.g. type 1 is census orbit 29.
-This is a standalone script; it is not part of the TropicalCensus module.
+This is a standalone script, not part of the TropicalGeometryG2 module; it takes only its CSV reader and
+binomial_lattice_index.
 =#
 
 using Oscar
+using TropicalGeometryG2: csv_rows, binomial_lattice_index
 
-# ---------------------------------------------------------------- CSV and printing
-
-"Split one CSV line into fields, honoring double quotes."
-function csv_fields(line::AbstractString)
-    fields = String[]
-    buf = IOBuffer()
-    inquote = false
-    chars = collect(line)
-    i = 1
-    while i <= length(chars)
-        c = chars[i]
-        if inquote
-            if c == '"'
-                if i < length(chars) && chars[i + 1] == '"'
-                    write(buf, '"')
-                    i += 1
-                else
-                    inquote = false
-                end
-            else
-                write(buf, c)
-            end
-        elseif c == '"'
-            inquote = true
-        elseif c == ','
-            push!(fields, String(take!(buf)))
-        else
-            write(buf, c)
-        end
-        i += 1
-    end
-    push!(fields, String(take!(buf)))
-    return fields
-end
-
-"Read a CSV file with a header line into a vector of rows."
-function read_csv(path::AbstractString)
-    lines = filter(!isempty, readlines(path))
-    header = csv_fields(lines[1])
-    return [Dict(zip(header, csv_fields(l))) for l in lines[2:end]]
-end
+# ---------------------------------------------------------------- printing
 
 pyrepr(s::AbstractString) = "'" * s * "'"
 pyrepr(b::Bool) = b ? "True" : "False"
@@ -117,28 +80,27 @@ function tree_metric(row)
                        for (i, j) in PAIRS]
 end
 
-trees = read_csv(joinpath(D, "04_trees.csv"))
+trees = csv_rows(joinpath(D, "04_trees.csv"))
 ray_order = [r["index"] for r in trees if r["kind"] == "ray"]
 rays = Dict(r["index"] => tree_metric(r) for r in trees if r["kind"] == "ray")
 cell_point = Dict(r["index"] => tree_metric(r) for r in trees if r["kind"] == "cell")
-coarsest = read_csv(joinpath(D, "02_coarsest_cells.csv"))
+coarsest = csv_rows(joinpath(D, "02_coarsest_cells.csv"))
 cell_order = [c["coarsest_cell"] for c in coarsest]
 cell_rays = Dict(c["coarsest_cell"] => String.(split(c["extremal_original_rays"], ';')) for c in coarsest)
 ATLAS = joinpath(D, "..", "..", "..", "studies", "g2", "atlas")
 cell_type = Dict(r["qq_orbit"] => r["label"]
-                 for r in read_csv(joinpath(ATLAS, "flag", "local_flag_cell_atlas.csv")) if !isempty(r["qq_orbit"]))
-# article labels of the ray orbits, as in julia/to_tex/build_styled_ray_orbit_tables.jl
-RAY_LABELS = ["beta_1", "beta_2", "alpha_1", "alpha_3", "alpha_2", "alpha_4", "gamma_1", "gamma_2",
-              "alpha_5", "gamma_3", "delta"]
+                 for r in csv_rows(joinpath(ATLAS, "flag", "local_flag_cell_atlas.csv")) if !isempty(r["qq_orbit"]))
+# article labels of the ray orbits, as in to_tex/build_styled_ray_orbit_tables.jl
+RAY_LABELS = Dict(r["orbit"] => r["label"] for r in csv_rows(joinpath(ATLAS, "grassmannian", "ray_orbit_labels.csv")))
 ray_type = Dict{String, String}()
-for r in read_csv(joinpath(ATLAS, "grassmannian", "ray_label_orbits.csv"))
+for r in csv_rows(joinpath(ATLAS, "grassmannian", "ray_label_orbits.csv"))
     for i in split(r["rays"], ';')
-        ray_type[String(i)] = RAY_LABELS[parse(Int, r["orbit"])]
+        ray_type[String(i)] = RAY_LABELS[r["orbit"]]
     end
 end
 toric = Dict{String, Bool}()
 orbit = Dict{String, String}()
-for r in read_csv(joinpath(D, "06_canonical_interior_degenerations.csv"))
+for r in csv_rows(joinpath(D, "06_canonical_interior_degenerations.csv"))
     for c in split(r["cells"], ';')
         toric[String(c)] = r["toric"] == "true"
         orbit[String(c)] = cell_type[r["orbit"]]
@@ -264,7 +226,7 @@ println("distinct images of these rays after forgetting p_36: ",
 # ---------------------------------------------------------------- 6. initial ideals in the weight basis
 
 """
-Toric test of canonical_initial_ideal in julia/src/degenerations.jl: the initial ideal is toric if
+Toric test of canonical_initial_ideal in src/degenerations.jl: the initial ideal is toric if
 it is prime, has a binomial reduced Groebner basis, contains no monomial, and the exponent-difference
 lattice of that basis is saturated.  The binomial test runs first, since it is the cheapest.
 """
@@ -274,10 +236,7 @@ function is_toric_initial(J)
     S = base_ring(J)
     isone(saturation(J, ideal(S, prod(gens(S))))) && return false
     is_prime(J) || return false
-    differences = [e[1] - e[2] for e in (collect(exponents(f)) for f in reduced) if length(e) == 2]
-    isempty(differences) && return true
-    L = snf(matrix(ZZ, reduce(vcat, permutedims.(differences))))
-    return prod((abs(L[i, i]) for i in 1:min(size(L)...) if !iszero(L[i, i])); init=ZZ(1)) == 1
+    return binomial_lattice_index(reduced) == 1
 end
 
 println("== 6. initial ideals in the weight basis, at an interior point of each non-vertical cell")

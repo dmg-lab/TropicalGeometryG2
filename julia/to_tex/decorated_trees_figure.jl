@@ -9,7 +9,7 @@
 # figure only name the vertex, and the bounded edge of the cell by the letters
 # at its two ends. The star has its taxa where the other two have them.
 #
-#   julia --project=julia julia/to_tex/decorated_trees_figure.jl \
+#   julia --project=. to_tex/decorated_trees_figure.jl \
 #     [--orbit=N] [--pendant=K] [--vertex=A] [--edge=AB] [--scale=FACTOR] \
 #     [--taxon-scale=FACTOR] [--apple-style=flat|outlined|glossy] [--standalone] \
 #     [--output=FILE]
@@ -233,7 +233,7 @@ function g2_decorated_trees_tex(number::Int=G2_TRIANGLE_ORBIT; pendant::Integer=
 end
 
 function g2_decorated_trees_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/decorated_trees_figure.jl"
+    script = "julia --project=. to_tex/decorated_trees_figure.jl"
     if "--help" in args
         println("Usage: $script [--orbit=N] [--pendant=K] [--vertex=A] [--edge=AB] [--scale=FACTOR] " *
                 "[--taxon-scale=FACTOR] [--apple-style=flat|outlined|glossy] [--standalone] " *

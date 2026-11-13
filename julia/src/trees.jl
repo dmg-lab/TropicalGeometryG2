@@ -1,4 +1,8 @@
-"An exact unrooted phylogenetic tree with rational edge lengths."
+"""
+An exact unrooted phylogenetic tree with rational edge lengths. The taxa are the
+vertices `1:ntaxa`, the inner vertices the larger labels; pendant lengths may be
+negative before the star-tree lineality is quotiented out.
+"""
 struct TreeMetric
     ntaxa::Int
     adjacency::Dict{Int, Vector{Tuple{Int, QQFieldElem}}}
@@ -174,6 +178,7 @@ function tree_from_min_pluecker(weight::AbstractVector)
     return contract_zero_internal_edges(neighbor_joining(distances, ntaxa))
 end
 
+"The distance between two vertices of `tree`, taxa or inner vertices."
 function tree_distance(tree::TreeMetric, source::Int, target::Int)
     source == target && return QQ(0)
     stack = [(source, 0, QQ(0))]
@@ -446,16 +451,6 @@ function normalize_fan(
         non_redundant=true,
     )
     return (fan=normalized_fan, rays=matrix(QQ, rays), records=records)
-end
-
-"Return normalized ray trees, and optionally canonical maximal-cell trees."
-function trees_from_fan(fan, gauge::TreeGauge; maximal_cells::Bool=false)
-    normalized = normalize_fan(fan, gauge)
-    ray_trees = getproperty.(normalized.records, :tree)
-    maximal_cells || return (rays=ray_trees, normalized=normalized)
-    weights = canonical_cell_weights(normalized.fan, normalized.rays)
-    cell_trees = [tree_from_min_pluecker(weight) for weight in weights]
-    return (rays=ray_trees, cells=cell_trees, weights=weights, normalized=normalized)
 end
 
 "Exact equal-positive sums of normalized extreme rays, one per maximal cell."

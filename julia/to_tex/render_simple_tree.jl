@@ -70,27 +70,7 @@ function g2_simple_tree_graph(tree::TreeMetric)
     return (taxa=taxa, edges=edges)
 end
 
-"""All orders of `items`."""
-function g2_simple_orders(items::Vector{Int})
-    length(items) <= 1 && return [copy(items)]
-    orders = Vector{Int}[]
-    for position in eachindex(items)
-        rest = vcat(items[1:(position - 1)], items[(position + 1):end])
-        append!(orders, [vcat(items[position], order) for order in g2_simple_orders(rest)])
-    end
-    return orders
-end
-
 g2_simple_distance(p, q) = hypot(p[1] - q[1], p[2] - q[2])
-
-"""Distance from the point `p` to the segment from `a` to `b`."""
-function g2_simple_segment_distance(p, a, b)
-    direction = (b[1] - a[1], b[2] - a[2])
-    along = ((p[1] - a[1]) * direction[1] + (p[2] - a[2]) * direction[2]) /
-            (direction[1]^2 + direction[2]^2)
-    along = clamp(along, 0.0, 1.0)
-    return g2_simple_distance(p, (a[1] + along * direction[1], a[2] + along * direction[2]))
-end
 
 """Whether the segments `ab` and `cd`, which share no end, meet."""
 function g2_simple_segments_meet(a, b, c, d)
@@ -179,7 +159,7 @@ function g2_simple_layout_score(positions, edges)
     end
     for node in nodes, (left, right, _) in edges
         node in (left, right) && continue
-        clearance = min(clearance, g2_simple_segment_distance(
+        clearance = min(clearance, g2_segment_distance(
             positions[node], positions[left], positions[right],
         ))
     end
@@ -234,8 +214,8 @@ function g2_simple_tree_layout(graph, edge_length)
     candidates = [
         node == root ?
         [vcat(first(neighbours[node]), order)
-         for order in g2_simple_orders(neighbours[node][2:end])] :
-        g2_simple_orders(filter(!=(parents[node]), neighbours[node]))
+         for order in TropicalGeometryG2.all_permutations(neighbours[node][2:end])] :
+        TropicalGeometryG2.all_permutations(filter(!=(parents[node]), neighbours[node]))
         for node in inner
     ]
     step(point, length, angle) = (point[1] + length * cos(angle), point[2] + length * sin(angle))
@@ -364,7 +344,7 @@ function g2_simple_length_labels(drawing, em_cm::Real=G2_SIMPLE_EM_CM)
             )
             for (other, (one, two, _)) in enumerate(graph.edges)
                 other == edge && continue
-                clearance = min(clearance, g2_simple_segment_distance(
+                clearance = min(clearance, g2_segment_distance(
                     centre, positions[one], positions[two],
                 ))
             end
@@ -548,7 +528,7 @@ function g2_simple_tree_tex(selected; edge_length::Real=1.0, max_lines=nothing,
 end
 
 function g2_simple_tree_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/render_simple_tree.jl"
+    script = "julia --project=. to_tex/render_simple_tree.jl"
     if "--help" in args
         println("Usage: $script $G2_TREE_SELECTION_USAGE " *
                 "[--edge-length=LENGTH] [--max-lines=N] [--standalone] [--output=FILE]")

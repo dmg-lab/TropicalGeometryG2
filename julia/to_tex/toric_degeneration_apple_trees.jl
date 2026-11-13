@@ -11,11 +11,11 @@
 # location and up to one shift of all pendant edges, a lineality vector, so
 # that the vertex numbers of the atlas are those of the trees.
 #
-#   julia --project=julia julia/to_tex/toric_degeneration_apple_trees.jl \
+#   julia --project=. to_tex/toric_degeneration_apple_trees.jl \
 #     [--scale=FACTOR] [--taxon-scale=FACTOR] [--bounded-length=LENGTH] \
 #     [--apple-scale=FACTOR] [--apple-style=flat|outlined|glossy] [--pdf] [--output=FILE]
 #
-# With --pdf the page is compiled to output/pdf/g2_toric_degeneration_apple_trees.pdf.
+# With --pdf the page is compiled to ../output/pdf/g2_toric_degeneration_apple_trees.pdf.
 ###############################################################################
 
 include(joinpath(@__DIR__, "toric_degeneration_tree_table.jl"))
@@ -317,7 +317,7 @@ tree; weighted by the orbit sizes, they add up to \$$(totals[:qq])\$ in characte
 end
 
 function toric_degeneration_apple_trees_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/toric_degeneration_apple_trees.jl"
+    script = "julia --project=. to_tex/toric_degeneration_apple_trees.jl"
     if "--help" in args
         println("Usage: $script [--scale=FACTOR] [--taxon-scale=FACTOR] [--bounded-length=LENGTH] " *
                 "[--apple-scale=FACTOR] [--apple-style=flat|outlined|glossy] [--pdf] [--output=FILE]")

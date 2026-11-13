@@ -1,28 +1,19 @@
 #!/usr/bin/env julia
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 using TOML
 
 include(joinpath(@__DIR__, "ideals", "G2GrassmannianIdeal.jl"))
 include(joinpath(@__DIR__, "ideals", "FlagG2Ideal.jl"))
+include(joinpath(@__DIR__, "ideals", "G2Symmetry.jl"))
 using .G2GrassmannianIdeal
 using .FlagG2Ideal
+using .G2Symmetry
 
-const G2_ROOT_DIRECTIONS = [
-     1  -1   0  -1   1   0  0
-    -1   0   1   1   0  -1  0
-     0   1  -1   0  -1   1  0
-]
-const G2_GAUGE = TreeGauge(7, G2_ROOT_DIRECTIONS)
-const G2_GROUP_CANDIDATES = [vcat(permutation, [7]) for permutation in all_permutations(collect(1:6))]
-const G2_FORM_SUPPORT = Set([
-    (1, 2, 3), (4, 5, 6), (1, 4, 7), (2, 5, 7), (3, 6, 7),
-])
-
-include(joinpath(@__DIR__, "flag_census_helpers.jl"))
-include(joinpath(@__DIR__, "dressian_census.jl"))
-include(joinpath(@__DIR__, "zenodo_census.jl"))
+include(joinpath(@__DIR__, "census", "flag_census_helpers.jl"))
+include(joinpath(@__DIR__, "census", "dressian_census.jl"))
+include(joinpath(@__DIR__, "census", "zenodo_census.jl"))
 using .G2Zenodo: zenodo_target_definition
 
 # Each target keeps its artifacts, coarsening report and provenance in one directory.
@@ -34,12 +25,6 @@ target_directory(target) = data_path("g2", G2_TARGET_DIRECTORIES[target])
 base_file(name) = data_path("g2", "grassmannian", name)
 flag_file(name) = data_path("g2", "flag", name)
 manifest_file(target, stage) = stage_provenance_path(target_directory(target), stage)
-
-function skip_current(outputs, options)
-    current = all(isfile, outputs)
-    current && !options.force && println("  using existing canonical artifact(s)")
-    return current && !options.force
-end
 
 function save_ideal_if_needed(path, builder, options)
     if !isfile(path) || options.force
@@ -225,10 +210,10 @@ function stage_trees(target, options)
         weights = canonical_cell_weights(fan, rays)
         cell_trees = target.name == "base" ?
             normalized_cell_trees(weights, G2_GAUGE) : flag_normalized_cell_trees(fan, weights)
-        TropicalCensus.save_unless_current(weights_path, TropicalCensus.rows_matrix(weights; ring=QQ))
-        TropicalCensus.save_unless_current(cell_trees_path, TropicalCensus.rows_matrix(cell_trees; ring=QQ))
+        TropicalGeometryG2.save_unless_current(weights_path, TropicalGeometryG2.rows_matrix(weights; ring=QQ))
+        TropicalGeometryG2.save_unless_current(cell_trees_path, TropicalGeometryG2.rows_matrix(cell_trees; ring=QQ))
         target.name == "base" ?
-            TropicalCensus.write_tree_census(census_path, rays, cell_trees) :
+            TropicalGeometryG2.write_tree_census(census_path, rays, cell_trees) :
             write_flag_tree_census(census_path, rays, cell_trees)
     end
     write_provenance(
@@ -244,10 +229,10 @@ function stage_symmetry(target, options)
     fan_path = target.name == "base" ? base_file("03_normalized_coarsest_fan.mrdi") : flag_file("03_normalized_coarsest_fan.mrdi")
     rays_path = target.name == "base" ? base_file("03_normalized_rays.mrdi") : flag_file("03_normalized_rays.mrdi")
     prefix = target.name == "base" ? base_file("05_symmetry") : flag_file("05_symmetry")
-    outputs = [prefix * suffix for suffix in ("_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv")]
+    outputs = collect(symmetry_artifact_paths(prefix))
     if !skip_current(outputs, options)
         fan, rays = load(fan_path), load(rays_path)
-        cells = TropicalCensus.fan_cells(fan)
+        cells = TropicalGeometryG2.fan_cells(fan)
         symmetry_result = target.name == "base" ?
             taxon_symmetry(
                 rays,
@@ -260,9 +245,9 @@ function stage_symmetry(target, options)
             error("expected the order-12 G2 taxon group, found $(length(symmetry_result.permutations))")
         target.name == "base" && length(symmetry_result.cell_orbits) != 31 &&
             error("expected 31 coarsest-cell orbits")
-        TropicalCensus.save_symmetry_artifacts(prefix, symmetry_result)
+        TropicalGeometryG2.save_symmetry_artifacts(prefix, symmetry_result)
     end
-    symmetry_result = TropicalCensus.load_symmetry_artifacts(prefix)
+    symmetry_result = TropicalGeometryG2.load_symmetry_artifacts(prefix)
     write_provenance(
         manifest_file(target.name, symmetry);
         study="G2", target=target.name, stage=symmetry,
@@ -272,44 +257,7 @@ function stage_symmetry(target, options)
     )
 end
 
-function permutation_orientation(values)
-    inversions = count(i < j && values[i] > values[j] for i in eachindex(values) for j in eachindex(values))
-    return isodd(inversions) ? -1 : 1
-end
-
-function g2_leaf_signs(permutation)
-    for mask in 0:(2^7 - 1)
-        signs = [iszero(mask & (1 << (index - 1))) ? 1 : -1 for index in 1:7]
-        coefficients = Dict{NTuple{3, Int}, Int}()
-        for triple in G2_FORM_SUPPORT
-            image = [permutation[index] for index in triple]
-            key = Tuple(sort(image))
-            coefficients[key] = permutation_orientation(image) * prod(signs[index] for index in triple)
-        end
-        Set(keys(coefficients)) == G2_FORM_SUPPORT || continue
-        length(unique(values(coefficients))) == 1 && return signs
-    end
-    error("taxon permutation has no signed lift preserving the G2 three-form")
-end
-
-g2_coordinate_images(permutation, variables) = TropicalCensus.pluecker_coordinate_images(
-    permutation,
-    variables;
-    leaf_signs=g2_leaf_signs(permutation),
-)
-
-function g2_flag_coordinate_images(permutation, variables)
-    length(variables) == 28 || throw(ArgumentError("expected 28 flag coordinates"))
-    signs = g2_leaf_signs(permutation)
-    return vcat(
-        [signs[i] * variables[permutation[i]] for i in 1:7],
-        TropicalCensus.pluecker_coordinate_images(
-            permutation, variables[8:28]; leaf_signs=signs,
-        ),
-    )
-end
-
-include(joinpath(@__DIR__, "g2_chevalley.jl"))
+include(joinpath(@__DIR__, "census", "g2_chevalley.jl"))
 
 function stage_degenerations(target, options)
     file = target.name == "base" ? base_file : flag_file
@@ -343,18 +291,18 @@ function stage_degenerations(target, options)
                 weight_coordinate_indices=g2_flag_weight_coordinate_indices,
             )
         if options.force
-            object_directory = TropicalCensus.degeneration_object_directory(output)
+            object_directory = TropicalGeometryG2.degeneration_object_directory(output)
             isdir(object_directory) && rm(object_directory; recursive=true)
         end
         mkpath(dirname(output))
         open(output, continuing ? "a" : "w") do io
-            continuing || TropicalCensus.write_degenerations_header(io)
+            continuing || TropicalGeometryG2.write_degenerations_header(io)
             classify_degenerations(
                 load(ideal_path), load(fan_path), load(rays_path),
-                TropicalCensus.load_symmetry_artifacts(prefix);
+                TropicalGeometryG2.load_symmetry_artifacts(prefix);
                 config=config,
                 skip_orbits=completed,
-                on_record=record -> TropicalCensus.write_degenerations_record(io, output, record),
+                on_record=record -> TropicalGeometryG2.write_degenerations_record(io, output, record),
             )
         end
         recorded = Set(
@@ -370,10 +318,7 @@ function stage_degenerations(target, options)
     write_provenance(
         manifest_file(target.name, degenerations);
         study="G2", target=target.name, stage=degenerations,
-        inputs=vcat(
-            [ideal_path, fan_path, rays_path],
-            [prefix * suffix for suffix in ("_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv")],
-        ), outputs=outputs,
+        inputs=vcat([ideal_path, fan_path, rays_path], collect(symmetry_artifact_paths(prefix))), outputs=outputs,
         configuration=census_configuration(options),
         metadata=Dict(
             "weight_policy" => "equal sum of normalized coarsest-cell extreme rays",
@@ -391,17 +336,16 @@ end
 function stage_projections(target, options)
     prefix = flag_file("07_projection")
     outputs = [prefix * suffix for suffix in ("_certificate.toml", "_orbits.csv", "_cells.csv")]
-    symmetry_suffixes = ("_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv")
     inputs = vcat(
         [file(name) for file in (flag_file, base_file)
          for name in ("03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi")],
-        [file("05_symmetry" * suffix) for file in (flag_file, base_file) for suffix in symmetry_suffixes],
+        [path for file in (flag_file, base_file) for path in symmetry_artifact_paths(file("05_symmetry"))],
     )
     all(isfile, inputs) || error("projection certificates require normalized fans and symmetry artifacts for both G2 targets")
     source_fan, source_rays = load(inputs[1]), load(inputs[2])
     target_fan, target_rays = load(inputs[3]), load(inputs[4])
-    source_symmetry = TropicalCensus.load_symmetry_artifacts(flag_file("05_symmetry"))
-    target_symmetry = TropicalCensus.load_symmetry_artifacts(base_file("05_symmetry"))
+    source_symmetry = TropicalGeometryG2.load_symmetry_artifacts(flag_file("05_symmetry"))
+    target_symmetry = TropicalGeometryG2.load_symmetry_artifacts(base_file("05_symmetry"))
     arguments = (source_fan, source_rays, target_fan, target_rays, source_symmetry, target_symmetry)
     keywords = (
         projection_columns=8:28,
@@ -412,7 +356,7 @@ function stage_projections(target, options)
         certificate = TOML.parsefile(first(outputs))
         verify_ray_projection_certificate(certificate, arguments...; keywords...)
         orbit_io, cell_io = IOBuffer(), IOBuffer()
-        TropicalCensus.write_projection_tables(orbit_io, cell_io, certificate)
+        TropicalGeometryG2.write_projection_tables(orbit_io, cell_io, certificate)
         read(outputs[2], String) == String(take!(orbit_io)) &&
             read(outputs[3], String) == String(take!(cell_io)) ||
             error("projection tables disagree with the verified certificate; rerun with --force")
@@ -452,7 +396,7 @@ function stage_summarize(target, options)
     file(name) = joinpath(directory, name)
     inputs = vcat(
         [file(spec.stage1), file("03_normalized_coarsest_fan.mrdi")],
-        [file("05_symmetry" * suffix) for suffix in ("_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv")],
+        collect(symmetry_artifact_paths(file("05_symmetry"))),
         filter(isfile, [file("06_canonical_interior_degenerations.csv")]),
     )
     all(isfile, inputs) || error("the summary requires the artifacts of stages 1, 3 and 5")
@@ -485,12 +429,7 @@ function target_definition(name; degeneration_stage=false)
         coarsen => [file("02_coarsest_fan.mrdi"), file("02_coarsest_cells.csv")],
         normalize => [file("03_normalized_coarsest_fan.mrdi"), file("03_normalized_rays.mrdi")],
         trees => [file("04_canonical_cell_weights.mrdi"), file("04_normalized_cell_trees.mrdi"), file("04_trees.csv")],
-        symmetry => [
-            file("05_symmetry_taxon_permutations.mrdi"),
-            file("05_symmetry_ray_actions.mrdi"),
-            file("05_symmetry_cell_actions.mrdi"),
-            file("05_symmetry_cell_orbits.csv"),
-        ],
+        symmetry => collect(symmetry_artifact_paths(file("05_symmetry"))),
         summarize => [summary_path(target_directory(name))],
     )
     degeneration_stage && (artifacts[degenerations] = [file("06_canonical_interior_degenerations.csv")])
@@ -500,7 +439,9 @@ function target_definition(name; degeneration_stage=false)
         artifacts[projections] = [file("07_projection" * suffix)
                                 for suffix in ("_certificate.toml", "_orbits.csv", "_cells.csv")]
     end
-    return StudyTarget(name=name, stages=stages, callbacks=callbacks, artifacts=artifacts)
+    # G2/P2 is tropicalized by Oscar, G2/B by the parallel engine.
+    return StudyTarget(name=name, stages=stages, callbacks=callbacks, artifacts=artifacts,
+                       tropical_problem=name == "flag" ? (() -> g2_problem(name)) : nothing)
 end
 
 const G2_CENSUS = StudyCensus(

@@ -1,19 +1,19 @@
 #=
 make_paper_data.jl
 
-Writes the data of the paper "Tropical Geometry of G2" (Joswig, Kuehn, Sturmfels, Vallée) into julia/data/: the files
-of the folder data/ of the Zenodo tarball, with the same names, from the ideals, the shift vector q of the first curve
+Writes the data of the paper "Tropical Geometry of G2" (Joswig, Kuehn, Sturmfels, Vallée) into data/: the files of
+the folder data/ of the Zenodo tarball, with the same names, from the ideals, the shift vector q of the first curve
 of genus ten, the run of the second, and the inputs kept in git: among them the tables that give the census orbits
-the names of the paper (julia/studies/g2/atlas/, julia/data/g2/maximal_cell_tree_metrics.csv). It runs the census,
-in order, one Julia process per step, so that the memory of a step is returned before the next one. A step whose
-outputs are stored is skipped, so the script continues where it stopped.
+the names of the paper (studies/g2/atlas/, data/g2/maximal_cell_tree_metrics.csv). It runs the census, in order,
+one Julia process per step, so that the memory of a step is returned before the next one. A step whose outputs are
+stored is skipped, so the script continues where it stopped.
 
-Usage, from the repository root:
+Usage, from julia/:
 
-    julia --project=julia julia/make_paper_data.jl              # every step whose outputs are missing
-    julia --project=julia julia/make_paper_data.jl --list       # the steps, their time, and what is stored
-    julia --project=julia julia/make_paper_data.jl --only=qq_base,qq_dressian
-    julia --project=julia julia/make_paper_data.jl --from=gf2_base
+    julia --project=. make_paper_data.jl              # every step whose outputs are missing
+    julia --project=. make_paper_data.jl --list       # the steps, their time, and what is stored
+    julia --project=. make_paper_data.jl --only=qq_base,qq_dressian
+    julia --project=. make_paper_data.jl --from=gf2_base
 
     --force       run the selected steps even if their outputs are stored (the census gets --force)
     --dry-run     print the commands only
@@ -21,10 +21,10 @@ Usage, from the repository root:
                   the other steps run on one thread, since polymake must not be called from two threads at once
 
 A full run takes about 1.5 hours on a laptop with 16 GB (Intel i7-12700H); no step needs more than 6 GB. It needs
-gfan 0.8 (julia/scripts/install_gfan.sh). Besides julia/data/, the steps write checkpoints to julia/work/. Then
-julia/paper_results.jl checks every statement of the paper, and production/make_zenodo_tarball.sh packs julia/data/
-into the Zenodo tarball. The label tables are computed by the scripts of julia/studies/g2/atlas/ (see the README
-there), and the checks of the census over GF(2) by julia/studies/g2/supplemental/verify_gf2_census.jl.
+gfan 0.8 (bash scripts/install_gfan.sh). Besides data/, the steps write checkpoints to work/. Then paper_results.jl
+checks every statement of the paper, and ../production/make_zenodo_tarball.sh packs data/ into the Zenodo tarball.
+The label tables are computed by the scripts of studies/g2/atlas/ (see the README there), and the checks of the
+census over GF(2) by studies/g2/supplemental/verify_gf2_census.jl.
 =#
 
 const JULIA_DIRECTORY = @__DIR__
@@ -137,7 +137,7 @@ function main()
     pending = filter(s -> force || !done(s), steps)
     needs_gfan = any(s -> s.script in (CENSUS, CENSUS_GF2, CENSUS_SLONG) && s.name != "zenodo", pending)
     needs_gfan && !flag("dry-run") && Sys.which("gfan_tropicalprevariety") === nothing &&
-        error("gfan_tropicalprevariety of gfan 0.8 is not on the PATH; the census needs it (julia/scripts/install_gfan.sh)")
+        error("gfan_tropicalprevariety of gfan 0.8 is not on the PATH; the census needs it (bash scripts/install_gfan.sh)")
     total = 0.0
     for (k, s) in enumerate(steps)
         header = "[$k/$(length(steps))] $(s.name): $(s.purpose)"
@@ -146,19 +146,19 @@ function main()
             continue
         end
         arguments, cmd = command(s, threads, force)
-        println("\n", header, "\n  julia --project=julia", s.threaded ? " --threads=$threads" : "", " julia/", s.script,
+        println("\n", header, "\n  julia --project=.", s.threaded ? " --threads=$threads" : "", " ", s.script,
                 isempty(arguments) ? "" : " " * join(arguments, ' '))
         flush(stdout)
         flag("dry-run") && continue
         foreach(mkpath ∘ dirname, s.outputs)
-        seconds = @elapsed run(Cmd(cmd; dir=dirname(JULIA_DIRECTORY)))
+        seconds = @elapsed run(Cmd(cmd; dir=JULIA_DIRECTORY))
         total += seconds
         all(isfile, s.outputs) || error("step $(s.name) finished without writing $(join(filter(!isfile, s.outputs), ", "))")
         println("  $(s.name) done in $(round(seconds / 60; digits=1)) min")
         flush(stdout)
     end
     missing_steps = [s.name for s in STEPS if !done(s)]
-    println("\n", isempty(missing_steps) ? "julia/data/ is complete" : "missing: $(join(missing_steps, ", "))",
+    println("\n", isempty(missing_steps) ? "data/ is complete" : "missing: $(join(missing_steps, ", "))",
             " ($(round(total / 60; digits=1)) min in this run)")
 end
 

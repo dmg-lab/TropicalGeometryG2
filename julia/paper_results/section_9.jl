@@ -1,19 +1,10 @@
-# Section 9 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
-
-const HEXAGON_POINTS = [[11, 12, 4, 15, 0, 14, 13], [0, 3, 3, 6, 1, 5, 4], [2, 5, 3, 4, 1, 0, 0],
-                        [9, 12, 5, 15, 12, 11, 0], [0, 3, 3, 6, 3, 2, 0], [2, 5, 3, 4, 1, 0, 2]]
-const HEXAGON_LINES = [[9, 9, 12, 7, 11, 10, 10, 5, 8, 0, 7, 13, 0, 12, 11, 11, 7, 10, 10, 9, 9],
-                       [3, 3, 6, 1, 5, 4, 6, 9, 4, 8, 7, 7, 0, 6, 5, 5, 7, 6, 4, 3, 3],
-                       [6, 7, 12, 9, 8, 4, 10, 15, 12, 11, 7, 13, 10, 9, 0, 0, 7, 10, 4, 7, 6],
-                       [11, 12, 14, 11, 10, 9, 15, 5, 0, 9, 12, 18, 15, 14, 5, 5, 12, 15, 9, 12, 11],
-                       [2, 3, 6, 3, 2, 0, 6, 9, 6, 5, 3, 7, 4, 3, 3, 3, 3, 6, 0, 3, 2],
-                       [11, 9, 12, 7, 11, 10, 10, 15, 8, 14, 13, 13, 0, 12, 11, 11, 13, 10, 10, 9, 11]]
+# Section 9 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 function section_9()
     subheading("Hexagons, the variety H and the map psi (eq:hexagon; studies/hexagon/complete_hexagon.jl)")
     cited("the incidence graph of (Q, G, F) has diameter 6 and girth 12, the split Cayley generalized hexagon; hexagons are " *
           "its 12-cycles, the apartments [Aschbacher §5; Van Maldeghem, Def. 2.4.9]")
-    m = run_in_module(studies("hexagon", "complete_hexagon.jl"); name=:ClassicalHexagon)   # includes polynomial_expressions.jl
+    m = run_in_module(study_path("hexagon", "complete_hexagon.jl"); name=:ClassicalHexagon)   # includes polynomial_expressions.jl
     e(k) = call(m, :basis_vector, k)
     line(a, b) = call(m, :wedge, e(a), e(b))
     same(u, w) = call(m, :proportional, u, w)
@@ -57,7 +48,7 @@ function section_9()
 
     subheading("Theorem thm:completing_hexagons: val(psi(z)) = trop(psi)(val z) at lifts (studies/hexagon/tests/test_tropical_hexagon.jl)")
     # The tests module includes tropical_complete_hexagon.jl; the certificate it loads is used again in the example.
-    h = QUICK ? nothing : run_in_module(studies("hexagon", "tests", "test_tropical_hexagon.jl"); name=:TropicalHexagon)
+    h = QUICK ? nothing : run_in_module(study_path("hexagon", "tests", "test_tropical_hexagon.jl"); name=:TropicalHexagon)
     if QUICK
         skipped("val(psi(z)) = trop(psi)(val z) for random lifts z over QQ(t) of pairs of flags", "--quick")
     else
@@ -142,7 +133,7 @@ function section_9()
     check("maximal cones of trop(Q), and of trop(Q) × trop(G) in the coarsest structure (6 × 248 = 1488; main.tex counts the " *
           "6 × 251 = 1506 raw ones, below)", [6, 1488],
           [n_maximal_polyhedra(T), n_maximal_polyhedra(T) * n_maximal_cones(coarsest)])
-    directory = studies("hexagon", "certificate", "verification")
+    directory = study_path("hexagon", "certificate", "verification")
     part_rows(suffix) = vcat([rows(f) for f in sort(readdir(directory; join=true)) if endswith(f, suffix)]...)
     cones = part_rows("_cones.csv")
     representatives = part_rows("_representatives.csv")
@@ -179,7 +170,7 @@ function section_9()
         return finish(B)
     end
     certificate = if QUICK
-        file = load(studies("hexagon", "certificate", "hexagon_certificate.mrdi"))
+        file = load(study_path("hexagon", "certificate", "hexagon_certificate.mrdi"))
         [(String(n), E_polynomial(g), Int.(u)) for (n, gs, us) in zip(file["coordinate"], file["g"], file["u"]) for (g, u) in zip(gs, us)]
     else
         loaded = call(h, :hexagon_certificate)
@@ -234,11 +225,11 @@ function section_9()
         check("tropical_complete_hexagon from flags 1 and 4 gives the stored hexagon", (hexagon.points, hexagon.lines),
               (completion.points, completion.lines))
     end
-    figure = Meta.parseall(read(studies("hexagon", "figures", "hexagon_tree_ring.jl"), String))
+    figure = Meta.parseall(read(project_path("to_tex", "hexagon_tree_ring.jl"), String))
     constant(name) = only(Base.eval(Main, a.args[1].args[2]) for a in figure.args
                           if a isa Expr && a.head == :const && a.args[1] isa Expr && a.args[1].args[1] == name)
     drawn = constant(:HEXAGON)
-    claim("Figure fig:tropical_hexagon draws the stored hexagon (const HEXAGON of studies/hexagon/figures/hexagon_tree_ring.jl)",
+    claim("Figure fig:tropical_hexagon draws the stored hexagon (const HEXAGON of to_tex/hexagon_tree_ring.jl)",
           isequal((hexagon.points, hexagon.lines), ([QQ.(v) for v in drawn.points], [QQ.(v) for v in drawn.lines])))
     claim("its input flags INPUT_1, INPUT_4 are the flags 1 and 4",
           isequal([(hexagon.points[1], hexagon.lines[1]), (hexagon.points[4], hexagon.lines[4])],

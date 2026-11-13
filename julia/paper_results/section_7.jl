@@ -1,7 +1,7 @@
-# Section 7 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 7 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 "The local flag cell atlas: one row per 3-cell (location_kind edge) and per node 2-cell (node) of each fiber complex."
-const s7_ATLAS = studies("g2", "atlas", "flag", "local_flag_cell_atlas.csv")
+const s7_ATLAS = study_path("g2", "atlas", "flag", "local_flag_cell_atlas.csv")
 
 """
 The letters of the vertices R_g^X of F_{A_1} (type 21) and F_D (type 5) in Figures fig:triangle_cell and
@@ -65,8 +65,8 @@ end
 
 "The inner splits of the trees of a Grassmannian census (04_trees.csv), as unordered pairs of leaf sets, by (kind, index)."
 function s7_splits(target)
-    pair(s) = Set(Set(parse(Int, c) for c in side) for side in split(first(split(s, ':')), '|'))
-    return Dict((r["kind"], parse(Int, r["index"])) => Set{Set{Set{Int}}}(pair(s) for s in split(r["internal_splits"], ';') if !isempty(s))
+    pair(S) = Set([Set(S), setdiff(Set(1:7), S)])
+    return Dict((r["kind"], parse(Int, r["index"])) => Set{Set{Set{Int}}}(pair(S) for S in keys(tree_splits(r)))
                 for r in rows(g2(target, "04_trees.csv")))
 end
 
@@ -242,7 +242,7 @@ function section_7()
     if QUICK
         skipped("23 combinatorial types of fiber complexes, 6 distinct f-vectors, Table tab:local_flag_complex from the face lattices", "--quick")
     else
-        m = run_in_module(repository("julia", "to_tex", "local_flag_complex_table.jl"); name=:LocalFlagComplexes)
+        m = run_in_module(project_path("to_tex", "local_flag_complex_table.jl"); name=:LocalFlagComplexes)
         types = call(m, :local_flag_types)
         check("combinatorial types of fiber complexes, and distinct f-vectors", [23, 6],
               [length(types), length(unique(t.complex.f_vector for t in types))])
@@ -385,22 +385,25 @@ function section_7()
     end
     claim("the green edges from the atlas: the same in both fields, as many as the green numbers of the census",
           fields_agree && all(length(green_edges[t]) == green2[string(t)] for t in 1:20))
-    figure = read(repository("figures", "toric_degeneration_prime_edge_trees.tex"), String)
-    heads = collect(eachmatch(r"\\oldstylenums\{(\d+)\}\}\{\\large\((\d+)\)\}", figure))
-    figure_edges = Dict{Int,String}()
-    for (n, h) in enumerate(heads)
-        panel = SubString(figure, h.offset, n < length(heads) ? prevind(figure, heads[n+1].offset) : lastindex(figure))
-        drawn = [(d[2], minmax(parse(Int, d[3]), parse(Int, d[4])), d[1] == "pendant")
-                 for d in eachmatch(r"\\draw\[g2tree (internal|pendant),draw=(g2Prime|g2Barren)\] \(v(\d+)\)--\(v(\d+)\);", panel)]
-        places = colour -> [pendant ? string(a) : "$a-$b" for (c, (a, b), pendant) in sort(drawn; by=d -> (!d[3], d[2])) if c == colour]
-        figure_edges[parse(Int, h[1])] = join(places("g2Prime"), " ") * " | " * join(places("g2Barren"), " ")
-    end
-    info("the green | red edges (leaf k, inner a-b) of figures/toric_degeneration_prime_edge_trees.tex = the prime | other 3-cells:")
-    for t in 1:20
-        cells = s7_sorted_cells(fibers[string(t)])
-        check(@sprintf("Figure fig:atlas_toric_cells_prime, type %2d (%2d)", t, sizes2[string(t)]), get(figure_edges, t, "no panel"),
-              join([s7_place(r) for r in cells if r["location"] in green_edges[t]], " ") * " | " *
-              join([s7_place(r) for r in cells if !(r["location"] in green_edges[t])], " "))
+    if drawings("Figure fig:atlas_toric_cells_prime: its green and red edges, against the prime cones of the atlas",
+                "figures/toric_degeneration_prime_edge_trees.tex")
+        figure = figure_text("toric_degeneration_prime_edge_trees")
+        heads = collect(eachmatch(r"\\oldstylenums\{(\d+)\}\}\{\\large\((\d+)\)\}", figure))
+        figure_edges = Dict{Int,String}()
+        for (n, h) in enumerate(heads)
+            panel = SubString(figure, h.offset, n < length(heads) ? prevind(figure, heads[n+1].offset) : lastindex(figure))
+            drawn = [(d[2], minmax(parse(Int, d[3]), parse(Int, d[4])), d[1] == "pendant")
+                     for d in eachmatch(r"\\draw\[g2tree (internal|pendant),draw=(g2Prime|g2Barren)\] \(v(\d+)\)--\(v(\d+)\);", panel)]
+            places = colour -> [pendant ? string(a) : "$a-$b" for (c, (a, b), pendant) in sort(drawn; by=d -> (!d[3], d[2])) if c == colour]
+            figure_edges[parse(Int, h[1])] = join(places("g2Prime"), " ") * " | " * join(places("g2Barren"), " ")
+        end
+        info("the green | red edges (leaf k, inner a-b) of figures/toric_degeneration_prime_edge_trees.tex = the prime | other 3-cells:")
+        for t in 1:20
+            cells = s7_sorted_cells(fibers[string(t)])
+            check(@sprintf("Figure fig:atlas_toric_cells_prime, type %2d (%2d)", t, sizes2[string(t)]), get(figure_edges, t, "no panel"),
+                  join([s7_place(r) for r in cells if r["location"] in green_edges[t]], " ") * " | " *
+                  join([s7_place(r) for r in cells if !(r["location"] in green_edges[t])], " "))
+        end
     end
     total = sum(green[t] * sizes[t] for t in order)
     # main.tex: "by adding up all 17 products, we arrive at the total count: 807".
@@ -416,7 +419,7 @@ function section_7()
           (over19, sort(unique(gf2_type[c] for c in setdiff(toric_grass_gf2, images_gf2)))))
 
     subheading("The toric degenerations of the flag variety (in words in the paper; here as a table)")
-    D = studies("g2", "degenerations_grassmannian")
+    D = study_path("g2", "degenerations_grassmannian")
     equivalent(file) = strip(last(split(first(l for l in readlines(joinpath(D, file)) if startswith(l, "QQ flag:")), "lattice equivalent to it:")))
     spacek_wang = equivalent(joinpath("Spacek_Wang", "compare_flag.txt"))
     ffl = equivalent(joinpath("Feigin_Fourier_Littelmann", "verify.txt"))

@@ -10,17 +10,16 @@
 # weight lies in the closure of the Groebner cone, that is, the initial
 # degenerations of ours that degenerate further to theirs.
 #
-# Run with julia --project=julia from any directory; writes compare.txt next
-# to this file. Characteristic 0 only.
+# Run from julia/ with
+#   julia --project=. studies/g2/degenerations_grassmannian/Christophersen_Ilten/compare.jl
+# It writes compare.txt next to this file. Characteristic 0 only.
 ###############################################################################
 
 using Oscar, Random, LinearAlgebra
+include(joinpath(@__DIR__, "..", "common.jl"))
 
-const DATA = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "data", "g2", "grassmannian"))
-const TORIC_TABLE = normpath(joinpath(@__DIR__, "..", "..", "..", "..", "..", "tables",
-                                      "toric_degeneration_table.tex"))
-const OUTPUT = open(joinpath(@__DIR__, "compare.txt"), "w")
-say(parts...) = (println(parts...); println(OUTPUT, parts...))
+const DATA = grassmannian_census("QQ")
+say, OUTPUT = output_file(@__DIR__, "compare.txt")
 
 pfaffian(M, i, j, k, l) = M[i, j] * M[k, l] - M[i, k] * M[j, l] + M[i, l] * M[j, k]
 const QUADRUPLES = [(i, j, k, l) for i in 1:7 for j in i+1:7 for k in j+1:7 for l in k+1:7]
@@ -155,17 +154,9 @@ say("dictionary: ", join(("$name = p$(KEPT[name][1])$(KEPT[name][2])" for name i
 weights = load(joinpath(DATA, "04_canonical_cell_weights.mrdi"))
 cell_weights = [[-Int(ZZ(weights[cell, k])) for k in 1:21] for cell in 1:nrows(weights)]
 
-orbit_of = zeros(Int, length(cell_weights))
-for line in readlines(joinpath(DATA, "05_symmetry_cell_orbits.csv"))[2:end]
-    fields = split(line, ','; limit=4)
-    orbit_of[parse.(Int, split(strip(fields[4], '"'), ';'))] .= parse(Int, fields[1])
-end
-# Index of the toric orbits in the table of the paper, read off its generated comments.
-table_index = Dict{Int, String}()
-for line in readlines(TORIC_TABLE)
-    m = match(r"\\oldstylenums\{(\d+)\}.*% QQ orbit (\d+)", line)
-    m === nothing || (table_index[parse(Int, m.captures[2])] = m.captures[1])
-end
+orbit_of = cell_orbits()
+# The type of the toric orbits in the table of the paper.
+table_index = toric_types("QQ")
 label(cell) = string(cell, " (", get(table_index, orbit_of[cell], "non-toric orbit $(orbit_of[cell])"), ")")
 
 "Their chart eliminates p36: the weight must attain the maximum of p14, p25, p36 at p36."

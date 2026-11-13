@@ -2,16 +2,21 @@
 ###############################################################################
 # Build the Zenodo tarball of the paper, TropicalGeometryG2_data.tar.gz, at the
 # repository root. The script only copies stored files; it computes nothing.
-# A missing file aborts it. julia/make_paper_data.jl writes every file.
+# A missing file aborts it. make_paper_data.jl (in julia/) writes every file.
 #
 # The tarball holds the files of the table tab:data of the paper at its top
-# level, and in data/ a copy of julia/data/ as make_paper_data.jl writes it.
-# Unpacking data/ into julia/ is the same as running make_paper_data.jl:
+# level, and in data/ a copy of data/ in julia/, as make_paper_data.jl writes
+# it. Unpacking data/ into julia/ is the same as running make_paper_data.jl;
+# from julia/, with the tarball at the repository root:
 #
-#   tar -xzf TropicalGeometryG2_data.tar.gz -C julia --strip-components=1 TropicalGeometryG2_data/data
+#   tar -xzf ../TropicalGeometryG2_data.tar.gz --strip-components=1 TropicalGeometryG2_data/data
 #
-# Run from anywhere: bash production/make_zenodo_tarball.sh [TARBALL]
-# (TARBALL defaults to TropicalGeometryG2_data.tar.gz at the repository root).
+# Run from anywhere; from julia/:
+#
+#   bash ../production/make_zenodo_tarball.sh [TARBALL]
+#
+# (TARBALL defaults to TropicalGeometryG2_data.tar.gz at the repository root,
+# ../ from julia/).
 ###############################################################################
 
 set -euo pipefail
@@ -118,9 +123,9 @@ put "$DATA/mukai_curves/genus_10_method_2.mrdi"        05_curves/genus_10_method
 put "$DATA/mukai_curves/genus_10_method_1_pieces.mrdi" 05_curves/genus_10_method_1_pieces.mrdi
 ALIASES="$(find "$OUT" -type f | wc -l)"
 
-# data/: julia/data/ as julia/make_paper_data.jl writes it, with the inputs
-# that it reads and that git keeps. The list names what to copy, so that
-# nothing else in julia/data/ goes into the tarball.
+# data/: the folder data/ of julia/ as make_paper_data.jl writes it, with the
+# inputs that it reads and that git keeps. The list names what to copy, so that
+# nothing else in that folder goes into the tarball.
 DATA_FILES=(
     README.md
     fan_uniform_linear_space_16_21.mrdi
@@ -149,23 +154,17 @@ for folder in "${DATA_FOLDERS[@]}"; do
         [[ "$relative" =~ $DATA_EXCLUDED ]] || put "$file" "data/$relative"
     done < <(find "$G2/$folder" -type f -print0 | sort -z)
 done
-# The copies in data/ without their private blocks: the lines from <!-- private -->
-# to <!-- /private --> in Markdown, from # private to # /private in TOML.
+# The copies in data/ without their private blocks (the lines from <!-- private -->
+# to <!-- /private --> in Markdown, from # private to # /private in TOML), by
+# strip_private.awk.
 while IFS= read -r -d '' file; do
-    case "$file" in
-        *.md)   open='<!-- private -->'; close='<!-- /private -->' ;;
-        *.toml) open='# private';        close='# /private' ;;
-        *) continue ;;
+    status=0
+    awk -f "$ROOT/production/strip_private.awk" "$file" > "$file.public" || status=$?
+    case "$status" in
+        0) mv "$file.public" "$file" ;;
+        1) rm -f "$file.public" ;;
+        *) echo "unbalanced private block in ${file#"$OUT/"}" >&2; exit 1 ;;
     esac
-    grep -q -F -- "$open" "$file" || continue
-    awk -v opener="$open" -v closer="$close" '
-        { line = $0; sub(/^[ \t]+/, "", line); sub(/[ \t\r]+$/, "", line) }
-        line == opener { if (inside) exit 2; inside = 1; next }
-        line == closer { if (!inside) exit 2; inside = 0; next }
-        !inside { print }
-        END { if (inside) exit 2 }' "$file" > "$file.public" ||
-        { echo "unbalanced private block in ${file#"$OUT/"}" >&2; exit 1; }
-    mv "$file.public" "$file"
 done < <(find "$OUT/data" -type f -print0)
 
 cat > "$OUT/README.md" <<'EOF'
@@ -199,19 +198,19 @@ Figures and tables of the paper are cited by their labels in main.tex.
   multiplicity per maximal cell. `genus_10_method_1_pieces.mrdi` is the
   vector of the 454 polyhedra computed for Method 1 from its shift q, which
   `genus_10_method_1` is assembled from.
-- `data/`: the folder `julia/data/` of the code repository as
-  `julia/make_paper_data.jl` writes it: every stage of every computation,
-  from which the files above are copied and from which `julia/paper_results.jl`
-  checks the statements of the paper. See `data/README.md`.
+- `data/`: the folder `data/` that `make_paper_data.jl` writes in the folder
+  `julia/` of the code repository: every stage of every computation, from
+  which the files above are copied and from which `paper_results.jl` checks
+  the statements of the paper. See `data/README.md`.
 
 ## Using the data with the code
 
 The code is at https://github.com/dmg-lab/TropicalGeometryG2. Instead of running
-`julia/make_paper_data.jl` (about 1.5 hours), unpack `data/` into the folder
-`julia/` of a clone, from its root:
+`make_paper_data.jl` (about 1.5 hours), put the tarball at the root of a clone
+and unpack `data/` into its folder `julia/`; from `julia/`:
 
-    tar -xzf TropicalGeometryG2_data.tar.gz -C julia --strip-components=1 TropicalGeometryG2_data/data
-    julia --project=julia julia/paper_results.jl
+    tar -xzf ../TropicalGeometryG2_data.tar.gz --strip-components=1 TropicalGeometryG2_data/data
+    julia --project=. paper_results.jl
 
 ## Orbit correspondences
 

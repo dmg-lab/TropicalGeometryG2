@@ -1,5 +1,4 @@
 const PACKAGE_ROOT = normpath(joinpath(@__DIR__, ".."))
-const REPOSITORY_ROOT = normpath(joinpath(PACKAGE_ROOT, ".."))
 
 "Return a path relative to the Julia project, independently of the caller's cwd."
 project_path(parts...) = normpath(joinpath(PACKAGE_ROOT, parts...))

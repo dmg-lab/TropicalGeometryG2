@@ -8,7 +8,7 @@
 # the order of the rays (g2_triangle_letters); with --cell-letters the tree of
 # the cell has them too, at the same ends of the same splits.
 #
-#   julia --project=julia julia/to_tex/lettered_square_figure.jl \
+#   julia --project=. to_tex/lettered_square_figure.jl \
 #     [--rays=I,J,K,L] [--scale=FACTOR] [--taxon-scale=FACTOR] \
 #     [--bounded-length=LENGTH] [--ray-scale=FACTOR] [--ray-bounded-length=LENGTH] \
 #     [--name-below] [--cell-letters] [--standalone] [--output=FILE]
@@ -117,7 +117,7 @@ function g2_lettered_square_tex(cell=G2_SQUARE_RAYS; scale::Real=1.0, taxon_scal
 end
 
 function g2_lettered_square_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/lettered_square_figure.jl"
+    script = "julia --project=. to_tex/lettered_square_figure.jl"
     if "--help" in args
         println("Usage: $script [--rays=I,J,K,L] [--scale=FACTOR] [--taxon-scale=FACTOR] " *
                 "[--bounded-length=LENGTH] [--ray-scale=FACTOR] [--ray-bounded-length=LENGTH] " *

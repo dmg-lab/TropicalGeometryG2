@@ -1,7 +1,7 @@
 include("utils.jl")
+using TropicalGeometryG2: data_path
 
-
-directory = joinpath("julia/data/g2/grassmannian/06_canonical_interior_degenerations_objects/")
+directory = data_path("g2", "grassmannian", "06_canonical_interior_degenerations_objects")
 
 function characterize_from_directory(directory)
     for path in sort(readdir(directory; join=true))

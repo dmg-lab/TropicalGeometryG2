@@ -4,10 +4,10 @@
 # orbit of maximal cells, numbered as in the tables of maximal trees, the
 # article labels of the ray orbits of its rays.
 #
-# Run from the repository root with julia --project=julia. The script reads
-# the support cells and their ray orbits from the G2-tree atlas. It prints the
-# tabular, or writes it to --output=FILE; main.tex supplies the float and its
-# caption, and loads booktabs for its rules.
+# Run from julia/ with `julia --project=.`. The script reads the support cells
+# and their ray orbits from the G2-tree atlas. It prints the tabular, or writes
+# it to --output=FILE; main.tex supplies the float and its caption, and loads
+# booktabs for its rules.
 ###############################################################################
 
 include(joinpath(@__DIR__, "build_styled_ray_orbit_tables.jl"))
@@ -96,7 +96,7 @@ end
 
 function cell_ray_orbit_table_main(args=ARGS)
     if "--help" in args
-        println("Usage: julia --project=julia julia/to_tex/cell_ray_orbit_table.jl [--output=FILE]")
+        println("Usage: julia --project=. to_tex/cell_ray_orbit_table.jl [--output=FILE]")
         return nothing
     end
     for arg in args

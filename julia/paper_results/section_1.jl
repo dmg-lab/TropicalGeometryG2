@@ -1,4 +1,4 @@
-# Section 1 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 1 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 "The [complex] table of the stored 08_summary.toml of a census target."
 s1_stored_complex(target) = TOML.parsefile(joinpath(TARGET_DIRECTORIES[target], "08_summary.toml"))["complex"]
@@ -28,7 +28,7 @@ function section_1()
                   [(1, 7) => -1, (5, 6) => 1], [(2, 7) => -1, (4, 6) => -1], [(3, 7) => -1, (4, 5) => 1],
                   [(1, 4) => 1, (2, 5) => 1, (3, 6) => 1]]
     claim("eq:Phi2 as printed (with its signs): the coefficient of x_i in Φ(x, ., .)", as_vector.(paper_Phi2) == phi_linear_forms())
-    pfaffians = [pfaffian_of(A2[[k for k in 1:7 if k != i], [k for k in 1:7 if k != i]]) for i in 1:7]
+    pfaffians = [pfaffian(matrix(R, A2[[k for k in 1:7 if k != i], [k for k in 1:7 if k != i]])) for i in 1:7]
     claim("up to sign, the 6×6 Pfaffians of Φ(x, ., .) are x_1 q, ..., x_7 q",
           all(i -> pfaffians[i] == x[i] * q || pfaffians[i] == -x[i] * q, 1:7))
     info("the signs: Pf_i = ±x_i q for the Pfaffian without row and column i = 1, ..., 7: " *
@@ -46,7 +46,7 @@ function section_1()
     e_sl, e_gl = filter(!iszero, diagonal(snf(A_sl))), filter(!iszero, diagonal(snf(A_gl)))
     check("elementary divisors over ZZ of the SL7 and GL7 systems (35 ones for SL7: dimension 14 over every field)",
           (35, [1], [1, 3]), (length(e_sl), Int.(unique(e_sl)), sort(Int.(unique(e_gl)))))
-    for line in readlines(studies("g2", "char-p", "results", "adjoint_char.txt"))
+    for line in readlines(study_path("g2", "char-p", "results", "adjoint_char.txt"))
         startswith(line, "elementary divisors") && stored("the integer systems, by adjoint_char.jl", line)
         occursin("simple", line) && stored("E and Lie(G2), used in Section 8, by adjoint_char.jl", line)
     end
@@ -227,9 +227,9 @@ function section_1()
     stored("\"the G2 flag Dressian is the tropical prevariety defined by the 78 generators of the ideal of F\": generators " *
            "(data/g2/flag_dressian/provenance/tropicalize.toml)", provenance["metadata"]["original_generators"]; paper=78)
     info("its inputs: " * join([i["path"] for i in provenance["inputs"]], ", "))
-    # the census stamps its inputs with TropicalCensus.artifact_digest, the sha256 of the file
+    # the census stamps its inputs with TropicalGeometryG2.artifact_digest, the sha256 of the file
     recorded = only(i["sha256"] for i in provenance["inputs"] if i["path"] == "data/g2/flag/00_ideal.mrdi")
-    current = TropicalCensus.artifact_digest(g2("flag", "00_ideal.mrdi"))
+    current = TropicalGeometryG2.artifact_digest(g2("flag", "00_ideal.mrdi"))
     info("the sha256 of data/g2/flag/00_ideal.mrdi recorded there: " * (recorded == current ? "that of the current file" :
          "$(recorded[1:12])..., not that of the current file, $(current[1:12])... (an older serialization)"))
     info("the four objects of the introduction (stored 08_summary.toml; dimension and f-vector modulo lineality):")

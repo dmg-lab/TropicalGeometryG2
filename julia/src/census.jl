@@ -26,6 +26,7 @@ Base.@kwdef mutable struct CensusOptions
     bits::Int = 64
     gfan_chunksize::Int = 0
     fresh_processes::Bool = false
+    verify_final::Bool = false
     status_only::Bool = true
 end
 
@@ -34,6 +35,8 @@ Base.@kwdef struct StudyTarget
     stages::Set{CensusStage}
     callbacks::Dict{CensusStage, Function}
     artifacts::Dict{CensusStage, Vector{String}} = Dict{CensusStage, Vector{String}}()
+    # `() -> problem` of the parallel tropicalization that --verify-final rechecks.
+    tropical_problem::Union{Nothing, Function} = nothing
 end
 
 Base.@kwdef struct StudyCensus
@@ -87,6 +90,9 @@ function parse_census_options(arguments)
             options.gfan_chunksize = parse(Int, split(argument, "=", limit=2)[2])
         elseif argument == "--fresh-processes"
             options.fresh_processes = true
+        elseif argument == "--verify-final"
+            options.verify_final = true
+            options.status_only = false
         elseif argument == "--resume"
             options.resume = true
         elseif argument == "--force"
@@ -115,6 +121,16 @@ function parse_census_options(arguments)
     # Each new process would start the tropicalization again.
     options.fresh_processes && options.force &&
         throw(ArgumentError("--fresh-processes continues with --resume and cannot be combined with --force"))
+    if options.verify_final
+        # The recheck reads the finished run and writes beside it in work/ only.
+        isempty(options.stages) || throw(ArgumentError("--verify-final runs without --stage, --from or --through"))
+        options.target == "all" && throw(ArgumentError("--verify-final rechecks one target: give --target=NAME"))
+        options.force && throw(ArgumentError("--verify-final reads the finished run and cannot be combined with --force"))
+        options.fresh_processes && throw(ArgumentError("--verify-final cannot be combined with --fresh-processes"))
+        any(startswith(argument, "--bits=") for argument in arguments) && options.bits != 0 &&
+            throw(ArgumentError("--verify-final computes with exact integers, --bits=0"))
+        options.bits = 0
+    end
     return options
 end
 
@@ -133,6 +149,40 @@ function census_configuration(options::CensusOptions)
         "integer_bits" => options.bits,
         "gfan_chunksize" => options.gfan_chunksize,
     )
+end
+
+"Whether a stage keeps its `outputs`: they all exist and `--force` is not given."
+function skip_current(outputs, options::CensusOptions)
+    current = all(isfile, outputs) && !options.force
+    current && println("  using existing canonical artifact(s)")
+    return current
+end
+
+"""
+    fan_metadata(fan; with_f_vector=false, with_quotient_f_vector=false)
+
+The counts and dimensions of `fan` that a stage records in its provenance:
+rays modulo lineality, maximal cells, ambient dimension, dimension, lineality
+dimension and purity. Optionally also the f-vector (`f_vector`) and the
+f-vector modulo lineality from the zero cone on
+(`f_vector_modulo_lineality_including_zero`).
+"""
+function fan_metadata(fan; with_f_vector=false, with_quotient_f_vector=false)
+    metadata = Dict{String, Any}(
+        "rays" => length(rays_modulo_lineality(fan).rays_modulo_lineality),
+        "maximal_cells" => n_maximal_cones(fan),
+        "ambient_dimension" => ambient_dim(fan),
+        "dimension" => dim(fan),
+        "lineality_dimension" => lineality_dim(fan),
+        "pure" => is_pure(fan),
+    )
+    if with_f_vector || with_quotient_f_vector
+        counts, lineality = Int.(f_vector(fan)), lineality_dim(fan)
+        with_f_vector && (metadata["f_vector"] = counts)
+        with_quotient_f_vector && (metadata["f_vector_modulo_lineality_including_zero"] =
+            iszero(lineality) ? vcat([1], counts) : counts[lineality:end])
+    end
+    return metadata
 end
 
 function stage_dependencies(stage)
@@ -189,6 +239,95 @@ function write_provenance(
     return path
 end
 
+"The record of `--verify-final` for `problem`, beside its exact recomputation."
+verify_final_record_path(problem::TropicalProblem) =
+    joinpath(problem.default_output, "verification_bits_0", "comparison_with_run.toml")
+
+"The fan the finished run in `output` certifies, from its marker `certified_fan.txt`, or nothing."
+function certified_run_fan(output)
+    marker = joinpath(output, "certified_fan.txt")
+    return isfile(marker) ? normpath(joinpath(output, strip(read(marker, String)))) : nothing
+end
+
+"""
+Whether `--verify-final` has found the fan of the current run of `problem` again:
+the record must name the fan the run certifies now, and both fans must be
+unchanged since.
+"""
+function verify_final_state(problem::TropicalProblem)
+    record_path = verify_final_record_path(problem)
+    isfile(record_path) || return "not run"
+    record = TOML.parsefile(record_path)
+    output = problem.default_output
+    run_fan = certified_run_fan(output)
+    unchanged(name) = isfile(joinpath(output, record[name])) &&
+        artifact_digest(joinpath(output, record[name])) == record[name * "_sha256"]
+    !isnothing(run_fan) && relpath(run_fan, output) == record["run_fan"] && unchanged("run_fan") &&
+        unchanged("exact_fan") || return "stale, the run or its recheck has changed"
+    return record["same_fan"] ? "same fan as the $(record["run_bits"])-bit run" :
+        "DIFFERENT fan from the $(record["run_bits"])-bit run"
+end
+
+"""
+Whether the gfan fans `a` and `b` of `parse_gfan_fan` are the same fan: the same
+lineality space, and the same maximal cones as sets of rays modulo it. Unlike
+their texts, this depends neither on the order of rays and cones nor on the
+basis Gfan prints for the lineality space, which changes with `--bits`.
+"""
+function same_gfan_fan(a, b)
+    (a.ambient_dimension, a.dimension, a.lineality_dimension) ==
+        (b.ambient_dimension, b.dimension, b.lineality_dimension) || return false
+    length(a.orth_lineality) == a.ambient_dimension - a.lineality_dimension &&
+        length(b.lineality) == b.lineality_dimension ||
+        throw(ArgumentError("a gfan fan without a full basis of its lineality space or of its orthogonal complement"))
+    # The lineality space of `a` is where its orthogonal rows vanish; that of `b` has the same dimension.
+    all(iszero(sum(row .* v)) for v in b.lineality, row in a.orth_lineality) || return false
+    # The rays of both fans in the coordinates of `a` modulo the lineality space.
+    cones(fan) = Set(Set(gfan_ray_key(a, fan.rays[i + 1]) for i in cone) for cone in fan.maximal_cones)
+    return cones(a) == cones(b)
+end
+
+"""
+    verify_final_tropicalization(problem, options)
+
+The exact recheck of the finished parallel tropicalization of `problem`
+(`--verify-final`). Gfan computes the prevariety of the final basis, the
+checkpoint `basis_polynomials.txt` of the run, again with exact integers, and
+every cone is certified as in the run, all in `verification_bits_0/` beside the
+checkpoint. The certified fan must be the one the run certified, up to the
+order of its rays and cones and the basis of its lineality space
+(`same_gfan_fan`); the result is recorded in
+`verify_final_record_path(problem)`. The census artifacts and their provenance
+are not touched.
+"""
+function verify_final_tropicalization(problem::TropicalProblem, options::CensusOptions)
+    engine = options.engine == :auto ? problem.default_engine : options.engine
+    engine == :parallel || throw(ArgumentError(
+        "--verify-final rechecks the parallel engine; $(problem.name) is tropicalized by $engine"))
+    output = problem.default_output
+    run_fan = certified_run_fan(output)
+    isnothing(run_fan) && error("--verify-final needs the finished run in $output, with its marker certified_fan.txt")
+    policy = read(joinpath(output, "certified_policy.txt"), String)
+    run_bits = parse(Int, match(r"(?m)^GFAN_BITS (\d+)$", policy).captures[1])
+    # A recheck that fails leaves no record, rather than the result of an earlier one.
+    rm(verify_final_record_path(problem); force=true)
+    exact_fan = run_tropicalization(problem, TropicalizationConfig(
+        engine=:parallel, output=output, resume=true, verify_final=true, bits=0,
+        workers=options.workers, threads=options.threads, gfan_chunksize=options.gfan_chunksize))
+    same = read(run_fan) == read(exact_fan) || same_gfan_fan(parse_gfan_fan(run_fan), parse_gfan_fan(exact_fan))
+    record = Dict{String, Any}(
+        "run_fan" => relpath(run_fan, output), "run_fan_sha256" => artifact_digest(run_fan), "run_bits" => run_bits,
+        "exact_fan" => relpath(exact_fan, output), "exact_fan_sha256" => artifact_digest(exact_fan),
+        "same_fan" => same, "generated_at" => string(now()), "software" => software_versions(),
+    )
+    open(verify_final_record_path(problem), "w") do io
+        TOML.print(io, record; sorted=true)
+    end
+    same || error("the exact fan $exact_fan differs from the fan $run_fan of the $run_bits-bit run")
+    println("The exact fan is the fan of the $run_bits-bit run: $run_fan")
+    return exact_fan
+end
+
 function print_census_status(census::StudyCensus, io=stdout)
     println(io, "$(census.name) tropical census")
     println(io, "Choose --stage=<name> or --from=<name> --through=<name>; no computation runs implicitly.")
@@ -203,6 +342,8 @@ function print_census_status(census::StudyCensus, io=stdout)
                     iszero(present) ? "missing" : "partial ($present/$(length(files)))"
             println(io, "    $(string(stage)): $state")
         end
+        isnothing(target.tropical_problem) ||
+            println(io, "    verify-final: ", verify_final_state(target.tropical_problem()))
     end
 end
 
@@ -215,6 +356,14 @@ function run_census(census::StudyCensus, arguments=ARGS)
     target_names = options.target == "all" ? sort!(collect(keys(census.targets))) : [options.target]
     all(haskey(census.targets, target) for target in target_names) ||
         throw(ArgumentError("unknown target $(options.target)"))
+    if options.verify_final
+        target = census.targets[only(target_names)]
+        isnothing(target.tropical_problem) && throw(ArgumentError(
+            "--verify-final: the target $(target.name) has no parallel tropicalization to recheck"))
+        println("[$(census.name)/$(target.name)] verify-final")
+        verify_final_tropicalization(target.tropical_problem(), options)
+        return nothing
+    end
     for target_name in target_names
         target = census.targets[target_name]
         for stage in options.stages

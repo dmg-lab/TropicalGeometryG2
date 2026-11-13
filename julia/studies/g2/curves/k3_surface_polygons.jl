@@ -13,9 +13,9 @@
 # coordinate k attains the minimum of x - t, to the other 4-subsets of
 # S ∪ {k} in C. X18 is connected, so the search finds all of it.
 #
-#   julia --project=julia julia/studies/g2/curves/k3_surface_polygons.jl DIR [K] [--output=FILE]
+#   julia --project=. studies/g2/curves/k3_surface_polygons.jl DIR [K] [--output=FILE]
 #
-# Writes FILE, by default julia/results/curves/genus_10/k3/DIR_x18.mrdi: every
+# Writes FILE, by default results/curves/genus_10/k3/DIR_x18.mrdi: every
 # polygon (cell, S) with its edges as keys, (:wall, wall, S) or
 # (:curve, cell, T), whether it is bounded, and its vertices; the key of every
 # bounded edge of the subdivided graph of the curve; and the walls of the
@@ -110,6 +110,25 @@ function k3_polygons(G, t)
     @printf("%d polygons, %d bounded; %d pairs met across an edge were not 2-dimensional; %.0f s\n", length(polygons),
             count(p -> p.bounded, values(polygons)), length(flat), time() - started)
     return (; polygons=collect(polygons), curve_keys, cells_of_wall)
+end
+
+"""
+Save the polygons `x18` of `k3_polygons` with Oscar, flat: one
+vector per field of the polygons, which Oscar saves, unlike their pairs.
+"""
+function save_k3_polygons(path, x18)
+    P, Key = x18.polygons, Tuple{Symbol,Int,Vector{Int}}
+    save(path, (cells=[c for ((c, _), _) in P], subsets=[S for ((_, S), _) in P], bounded=[p.bounded for (_, p) in P],
+                verts=[p.verts for (_, p) in P], keys=[Key[k for k in p.keys] for (_, p) in P],
+                curve_keys=Dict{Int,Key}(x18.curve_keys), cells_of_wall=x18.cells_of_wall, t=x18.t))
+end
+
+"The polygons saved by `save_k3_polygons`, as `k3_polygons` returns them."
+function load_k3_polygons(path)
+    x = load(path)
+    polygons = [(c, S) => (; keys, bounded, verts)
+                for (c, S, bounded, verts, keys) in zip(x.cells, x.subsets, x.bounded, x.verts, x.keys)]
+    return (; polygons, curve_keys=Dict{Int,Any}(x.curve_keys), cells_of_wall=x.cells_of_wall, t=x.t)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

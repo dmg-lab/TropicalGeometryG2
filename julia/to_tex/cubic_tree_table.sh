@@ -4,7 +4,7 @@
 # with the simple G2-tree of a ray over GF(2) under each monomial: runs
 # cubic_tree_table.jl, which certifies the trees and draws the table.
 #
-#   sh julia/to_tex/cubic_tree_table.sh [--edge-length=LENGTH] [--standalone] [--output=FILE]
+#   sh to_tex/cubic_tree_table.sh [--edge-length=LENGTH] [--standalone] [--output=FILE]
 ###############################################################################
 set -eu
 

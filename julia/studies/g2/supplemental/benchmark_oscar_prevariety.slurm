@@ -1,6 +1,7 @@
 #!/bin/bash
 # Variants of benchmark_oscar_prevariety.jl in parallel on one hydra node, one
 # single-threaded process each, from julia/:
+#   mkdir -p work/oscar_prevariety
 #   sbatch studies/g2/supplemental/benchmark_oscar_prevariety.slurm
 # The cpu partition was down on 2026-11-06, so this asks for the gpu partition
 # without a GPU. Logs: work/oscar_prevariety/<job>/<variant>.log

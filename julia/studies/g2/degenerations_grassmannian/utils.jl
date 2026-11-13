@@ -1,8 +1,7 @@
 # Function for computing the fiber of a polytope
 using Oscar
 import Polymake
-include("../../../src/recursive_polytope_types.jl")
-import .RecursivePolytopeTypes
+using TropicalGeometryG2: RecursivePolytopeTypes
 
 """
 Save every unrecognized part of the description `r` of `P` with `Oscar.save`,

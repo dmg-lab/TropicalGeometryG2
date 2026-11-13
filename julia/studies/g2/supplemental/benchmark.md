@@ -41,18 +41,18 @@ timed: `tropical_variety` takes too long on it.
 
 ## Reproduction
 
-From the repository root, one case per process. The arguments are the case,
+From `julia/`, one case per process. The arguments are the case,
 the number of runs and the number of Gfan threads:
 
 ```sh
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl dressian_gfan 3 1
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl dressian_gfan 3 8
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian_gfan 2 1
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian_gfan 2 8
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl grassmannian 2
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl grassmannian_skip_decomposition 2
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl dressian 3
-julia --project=julia julia/studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian 1
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl dressian_gfan 3 1
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl dressian_gfan 3 8
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian_gfan 2 1
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian_gfan 2 8
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl grassmannian 2
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl grassmannian_skip_decomposition 2
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl dressian 3
+julia --project=. studies/g2/supplemental/benchmark_tropicalization.jl flag_dressian 1
 ```
 
 The script prints the timings and writes nothing to `data/`.
@@ -93,6 +93,7 @@ Reproduction, from `julia/` on a Slurm cluster (logs in
 `work/oscar_prevariety/<job>/`):
 
 ```sh
+mkdir -p work/oscar_prevariety
 sbatch studies/g2/supplemental/benchmark_oscar_prevariety.slurm
 julia --project=. studies/g2/supplemental/benchmark_oscar_prevariety.jl --case=flag72 --order=greedy --mode=steps
 ```

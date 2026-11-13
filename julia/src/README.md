@@ -1,4 +1,4 @@
-# Functions in `TropicalCensus` to use instead of Oscar
+# Functions in `TropicalGeometryG2` to use instead of Oscar
 
 This package was written for the tropical census of G2 homogeneous spaces, but
 several of its functions are general. Each one below either replaces an Oscar
@@ -6,16 +6,16 @@ function that is too slow or too restrictive, or fills a gap that Oscar 1.8
 leaves. All arithmetic is exact over `QQ`.
 
 ```julia
-# from the repository root
-julia --project=julia
-julia> using TropicalCensus, Oscar
+# from julia/
+julia --project=.
+julia> using TropicalGeometryG2, Oscar
 ```
 
 Tested with Oscar 1.8.2 and gfan 0.8beta, on a 20-core machine with 16 GB of memory.
 
 | Use | Instead of (Oscar) | Gain |
 |---|---|---|
-| [`gfan_prevariety`](#gfan_prevariety) | `tropical_prevariety` | Same fan in 0.8 s, where Oscar did not finish in 5 min |
+| [`gfan_prevariety`](#gfan_prevariety) | `tropical_prevariety` | The G2-Dressian in 1 s, where Oscar takes 13 min |
 | [`run_tropicalization`](#run_tropicalization) | `tropical_variety` | 2.3× faster on G2/P2; runs in parallel and can resume after a crash |
 | [`coarsen_fan`, `coarsen_prevariety_fan`](#coarsen_fan-and-coarsen_prevariety_fan) | none: Oscar only returns refined structures | Coarsest polyhedral structure, with a certificate |
 | [`canonical_initial_ideal`](#canonical_initial_ideal) | `initial` + `is_prime` + `saturation` + `degree` | One call, and detects ideals prime over `QQ` that split over `C` |
@@ -39,15 +39,9 @@ time, using a single-threaded polymake call on every pair of cells. Gfan
 instead intersects all the hypersurfaces at once, on several threads, with
 machine integers.
 
-Example: the 10 quadrics in 14 variables of one edge of the G2 hexagon.
-
-
-| Polynomials | 2 | 3 | 4 | 5 | 10 |
-|---|---|---|---|---|---|
-| `tropical_prevariety` | 0.5 s | 3.4 s | 20 s | 60 s | not finished after 5 min |
-| `gfan_prevariety` | | | | | 0.8 s |
-
-On the first 3 polynomials both functions return the same 164 maximal cones.
+Example: the G2-Dressian, the prevariety of the 42 generators of the ideal of
+G2/P2, takes 1 s with `gfan_prevariety` and 13 min with `tropical_prevariety`
+(see [`studies/g2/supplemental/benchmark.md`](../studies/g2/supplemental/benchmark.md)).
 
 - Gfan uses the max convention. `gfan_prevariety` negates the rays, so its
   result can be compared directly with Oscar's.
@@ -94,10 +88,10 @@ Gröbner cones.
 
 The ideal is read from a provider file: a module with a builder function that
 returns a named tuple with fields `ring`, `ideal` and `generators`. Copy
-`julia/studies/g2/ideals/G2GrassmannianIdeal.jl` as a template. The variable
+`studies/g2/ideals/G2GrassmannianIdeal.jl` as a template. The variable
 names are read from `ring`. Only a provider that works in a reduced torus
 chart, such as `build_flag_g2_ideal` in
-`julia/studies/g2/ideals/FlagG2Ideal.jl`, also returns
+`studies/g2/ideals/FlagG2Ideal.jl`, also returns
 `original_variable_names` and `lift_indices`: the fan is lifted back to the
 original coordinates, the `i`-th taking the value of ring coordinate
 `lift_indices[i]`. A provider may also return the Krull `dimension` of its
@@ -189,9 +183,6 @@ changing the support or the lineality space.
   of the orbit. Each generator is checked to permute the rays and the maximal
   cones; `transported_span_partitions` counts the sets that were carried.
 
-Example: the prevariety of the hexagon edge above goes from 912 to 852 maximal
-cones in 50 s, and the result is certified coarsest.
-
 ## `canonical_initial_ideal`
 
 ```julia
@@ -232,7 +223,9 @@ internal_splits(T), pendant_lengths(T), tree_edge_lengths(T), tree_distance(T, i
 Reconstructs the phylogenetic tree whose distances are `-w`, with exact
 rational edge lengths. The coordinates of `w` are ordered
 `(1,2), (1,3), …, (n-1,n)`. The function first checks the tropical Plücker
-relations, then rebuilds the tree by exact neighbour joining.
+relations, then rebuilds the tree by exact neighbour joining. The taxa are
+the vertices `1:n` and the inner vertices are numbered from `n + 1`;
+`tree_distance(T, i, j)` takes both.
 
 Oscar's `phylogenetic_tree(M, taxa)` goes through polymake, which rejects
 every distance matrix that is not ultrametric ("The dissimilarity is not
@@ -260,15 +253,25 @@ took 9 s for G2/P2 in a fresh session. Checked values: 2 for G2/P1 (a quadric),
 The same module computes the Chevalley polytopes of Spacek–Wang
 (arXiv:2411.10276), which have no Oscar counterpart:
 `chevalley_polytope(chevalley_data(:G, 2, [0, 1]))`. Its source is
-`studies/g2/degenerations_grassmannian/Spacek_Wang/chevalley_polytopes.jl`.
+`chevalley_polytopes.jl`. Its steps are exported too, for any module `V` of a
+Lie algebra `L`: `basis_weights(L, V)`, the weights of the basis of `V`;
+`torus_expansion(L, V, i, word)`, the named tuple `(ring, a, ordering, vector)`
+whose `vector` holds the coordinates of `u_-(a)·b_i` along a word, as
+polynomials in `a`; `minimal_exponent(f, o)`, the valuation of one
+coordinate; and `adapted_valuations(polys, o)`, the values of the valuation
+on their span. `affine_unimodular_equivalent(P, Q)` decides whether an affine
+unimodular map takes `P` onto `Q`, for instance a Newton–Okounkov body onto a
+Chevalley polytope; with `vertex_labels=(a, b)`, one label per vertex of each,
+the map must also keep the labels.
 
 ## `determine_polytope`
 
-This module is not loaded by `using TropicalCensus`; include it directly:
+`using TropicalGeometryG2` exports `determine_polytope` and `describe_type`; the
+other functions of their module are in `TropicalGeometryG2.RecursivePolytopeTypes`,
+for instance `unrecognized_parts`.
 
 ```julia
-include("julia/src/recursive_polytope_types.jl")
-using .RecursivePolytopeTypes
+using TropicalGeometryG2, Oscar
 describe_type(determine_polytope(cyclic_polytope(4, 7)))   # "cyclic polytope C(4, 7)"
 describe_type(determine_polytope(pyramid(cube(2))))        # "Pyramid(4-gon)"
 describe_type(determine_polytope(simplex(2) * simplex(2))) # "Δ2 × Δ2"
@@ -280,3 +283,31 @@ names the combinatorial type of a bounded polytope. It recognizes pyramids,
 prisms, wedges over a face, duals and a catalog of named types, recursively.
 Every decomposition is proved by rebuilding the full vertex–facet incidence.
 `unrecognized_parts(P, r)` returns the pieces it could not name.
+
+## Smaller helpers
+
+These serve the census and the study scripts.
+
+- `csv_rows(path; header=nothing, comments=false)` returns the rows of a CSV
+  file, each a dictionary by column name, and `csv_fields(line)` splits one
+  line. A quoted field may hold commas, and `""` in it is one quote, as the
+  census writes them. Empty lines are skipped, and with `comments=true` also
+  the lines starting with `#`; `header` checks the column names.
+- `permutation_order(p)`, `cycle_notation(p)` and `generated_subgroup(gens)`
+  take permutations of `1:n` as vectors: `permutation_order([2, 3, 1])` is
+  `3`, `cycle_notation([2, 1, 3])` is `"(1 2)"`, and `generated_subgroup`
+  lists the elements of the group, in no fixed order.
+- `symmetry_artifact_paths(prefix)`: the four files of the symmetry stage,
+  `permutations`, `rays`, `cells` and `orbits`, which
+  `TropicalGeometryG2.load_symmetry_artifacts(prefix)` reads.
+- `fan_metadata(fan; with_f_vector=false, with_quotient_f_vector=false)`: what
+  a census stage records of a fan: rays modulo lineality, maximal cells,
+  dimensions, purity, and optionally the f-vector and the f-vector modulo
+  lineality.
+- `skip_current(outputs, options)`: whether a census stage keeps its outputs,
+  that is, they all exist and `--force` is not given.
+- `TropicalGeometryG2.gfan_polynomial(f)` writes a polynomial in the syntax of
+  Gfan. Over GF(p) it lifts the coefficients to the integers, which keeps the
+  support and so the prevariety. `TropicalGeometryG2.basis_input_text(names,
+  strings)` makes a whole Gfan input of such strings, in the variables
+  `names`.

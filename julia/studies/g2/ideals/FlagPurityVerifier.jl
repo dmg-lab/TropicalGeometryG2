@@ -3,9 +3,9 @@ using TOML
 
 export verify_flag_tropical_purity
 
-const FLAG_PURITY_CERTIFICATE = TropicalCensus.work_path("g2", "flag", "purity", "flag_ideal_certificate.toml")
+const FLAG_PURITY_CERTIFICATE = TropicalGeometryG2.work_path("g2", "flag", "purity", "flag_ideal_certificate.toml")
 const FLAG_GF2_PURITY_CERTIFICATE =
-    TropicalCensus.work_path("g2", "flag_gf2", "purity", "flag_ideal_certificate.toml")
+    TropicalGeometryG2.work_path("g2", "flag_gf2", "purity", "flag_ideal_certificate.toml")
 const FLAG_PURITY_VERIFICATION_POLICY = "flag-prime-binomial-weight-initial-v1"
 const FLAG_PURITY_WEIGHT_MAX = -[6, 0, -2, 0, 5, 2, 0, -6, -8, -6, -2, -4, -6, -6,
                                -4, -8, -6, -6, -2, -10, -8, -8, -8, -6, -6, -6, -8, -6]
@@ -132,7 +132,7 @@ function verify_flag_tropical_purity(state; certificate_path=nothing, reuse_only
     certificate["initial_dimension"] = Int(dim(initial_ideal))
     certificate["initial_binomial"] = all(length(polynomial) == 2 for polynomial in reduced)
     certificate["initial_lattice_index"] = certificate["initial_binomial"] ?
-        string(TropicalCensus.binomial_lattice_index(reduced)) : "not-binomial"
+        string(TropicalGeometryG2.binomial_lattice_index(reduced)) : "not-binomial"
     certificate["status"] = "saturation_running"
     _write_flag_purity_certificate(certificate_path, certificate)
     started = time()

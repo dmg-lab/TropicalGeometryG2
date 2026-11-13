@@ -14,13 +14,13 @@
 # arrangement of the facets of C in its linear span, other points of the same
 # sector, the same points plus random vectors orthogonal to the span, of
 # relative lengths CELL_SHIFT_SCALES, and translations uniformly random in a
-# cube, as in mukai_curves/run_experiments.jl. It prints the table per orbit and
+# cube, as in run_experiments.jl. It prints the table per orbit and
 # writes it, with the sectors, to CSV files.
 #
-#   julia --project=julia julia/studies/g2/curves/shifted_bergman_cells.jl [--samples=N]
+#   julia --project=. studies/g2/curves/shifted_bergman_cells.jl [--samples=N]
 #
-# The bad subsets are cached in julia/work/curves/bad_subsets.mrdi and the
-# tables go to julia/results/curves/genus_10/.
+# The bad subsets are cached in work/curves/bad_subsets.mrdi and the
+# tables go to results/curves/genus_10/.
 ###############################################################################
 
 using Oscar
@@ -28,7 +28,7 @@ using Printf
 import Combinatorics
 import LinearAlgebra
 import Random
-using TropicalCensus: data_path, project_path, work_path
+using TropicalGeometryG2: data_path, project_path, work_path
 
 const CELL_SHIFT_SCALES = (0.1, 1.0, 10.0)
 const CELL_SHIFT_TRIALS = 20
@@ -175,7 +175,7 @@ polytope_share(cell::ShiftCell, samples, rng) = count(_ -> bounded(cell, 2 .* ra
 
 """
 The cells of `ShiftCell` of the representatives of `orbits` among `cones`,
-read from the cache julia/work/curves/bad_subsets.mrdi or computed and cached.
+read from the cache work/curves/bad_subsets.mrdi or computed and cached.
 The cache holds vectors: Oscar saves no Dict of these cells once one of them
 has no bad subsets.
 """

@@ -10,19 +10,20 @@
 #
 #   Each file is a native polymake object written with `Polymake.save` on the
 #   `pm_polytope` subobject, and carries its provenance as polymake
-#   attachments.  From polymake:
+#   attachments.  From polymake, started in julia/:
 #
-#       polytope > $p = load("data/chevalley-G2-varpi_0-1-word_2-1-2-1-2.poly");
+#       polytope > $p = load("data/chevalley/chevalley-G2-varpi_0-1-word_2-1-2-1-2.poly");
 #       polytope > print $p->get_attachment("CHEVALLEY_WORD");
 #       2 1 2 1 2
 #       polytope > print $p->N_VERTICES;
 #       6
 #
-#   Run with:   julia generate_chevalley_polytopes.jl [outdir]
+#   Run from julia/ with:
+#       julia --project=. studies/g2/degenerations_grassmannian/Spacek_Wang/generate_chevalley_polytopes.jl [outdir]
 #
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 
 const OUTDIR = length(ARGS) >= 1 ? ARGS[1] : data_path("chevalley")

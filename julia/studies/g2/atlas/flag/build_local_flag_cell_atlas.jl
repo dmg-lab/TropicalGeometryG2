@@ -16,10 +16,9 @@
 #  page draws one representative of the prevariety-only tetrahedron orbit in
 #  the same ray-at-vertex convention.
 #
-#  Run from the repository root with
+#  Run from julia/ with
 #
-#    julia --project=julia \
-#      julia/studies/g2/atlas/flag/build_local_flag_cell_atlas.jl
+#    julia --project=. studies/g2/atlas/flag/build_local_flag_cell_atlas.jl
 #
 ###############################################################################
 
@@ -33,10 +32,10 @@ const LOCAL_FLAG_CELL_TEX = joinpath(@__DIR__, "g2_tree_atlas.tex")
 const LOCAL_FLAG_CELL_CSV = joinpath(@__DIR__, "local_flag_cell_atlas.csv")
 const LOCAL_INTERSECTION_CERTIFICATE =
     joinpath(@__DIR__, "local_flag_intersection_certificate.tsv")
-const LOCAL_FLAG_CELL_PDF = TropicalCensus.project_path(
+const LOCAL_FLAG_CELL_PDF = TropicalGeometryG2.project_path(
     "..", "output", "pdf", "g2_tree_atlas.pdf",
 )
-const LOCAL_ATLAS_BUILD_DIR = TropicalCensus.work_path("tex", "g2_tree_atlas")
+const LOCAL_ATLAS_BUILD_DIR = TropicalGeometryG2.work_path("tex", "g2_tree_atlas")
 
 const LOCAL_FIGURE_X = 13.65
 const LOCAL_FIGURE_Y = 13.65

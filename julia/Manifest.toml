@@ -2,7 +2,7 @@
 
 julia_version = "1.13.3"
 manifest_format = "2.1"
-project_hash = "be340a15f1b04fd5c509ca8cf332e5e8bab9f7f2"
+project_hash = "a8ef80fe2b0ab7217971637bf74362c578b51556"
 
 [[deps.ASL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
@@ -1263,10 +1263,10 @@ registries = "General"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.11.3"
 
-[[deps.TropicalCensus]]
+[[deps.TropicalGeometryG2]]
 deps = ["Cairo", "Combinatorics", "Dates", "Distributed", "Fontconfig", "Graphs", "HiGHS", "LinearAlgebra", "Oscar", "Polymake", "Printf", "ProgressMeter", "Random", "Revise", "SHA", "TOML"]
 path = "."
-uuid = "e3a9b16e-7bd7-494b-8950-aab61602c89f"
+uuid = "f682b6e5-90c3-43be-adfb-c3973ffa8e28"
 version = "0.1.0"
 
 [[deps.UUIDs]]

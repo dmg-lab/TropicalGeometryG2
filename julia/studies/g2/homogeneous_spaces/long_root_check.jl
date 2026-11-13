@@ -5,8 +5,8 @@ L1, ..., L7 are the seven linear forms eq:7linear of main.tex. Decomposable mean
   long root eps1 - eps2, the form p14 - p25: the Pfaffians generate the unit ideal, so there is no such basis;
   control, the short root eps1, the form p14: the Pfaffians generate (a1, ..., a7), the single solution a = 0.
 
-Usage, from the repository root (a few seconds after loading Oscar):
-    julia --project=julia julia/studies/g2/homogeneous_spaces/long_root_check.jl
+Usage, from julia/ (a few seconds after loading Oscar):
+    julia --project=. studies/g2/homogeneous_spaces/long_root_check.jl
 =#
 
 using Oscar

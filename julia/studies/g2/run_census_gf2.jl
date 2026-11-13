@@ -9,7 +9,7 @@ characteristic-zero census in data/g2/grassmannian_gf2 and data/g2/flag_gf2.
 module G2GF2Census
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 using SHA
 using TOML
 
@@ -17,19 +17,10 @@ include(joinpath(@__DIR__, "ideals", "G2GrassmannianGF2Ideal.jl"))
 using .G2GrassmannianGF2Ideal
 include(joinpath(@__DIR__, "ideals", "FlagG2GF2Ideal.jl"))
 using .FlagG2GF2Ideal
-include(joinpath(@__DIR__, "supplemental", "compute_gf2_tropicalization.jl"))
-include(joinpath(@__DIR__, "flag_census_helpers.jl"))
-
-const G2_ROOT_DIRECTIONS = [
-     1  -1   0  -1   1   0  0
-    -1   0   1   1   0  -1  0
-     0   1  -1   0  -1   1  0
-]
-const G2_GAUGE = TreeGauge(7, G2_ROOT_DIRECTIONS)
-const G2_GROUP_CANDIDATES = G2_GF2_PERMUTATIONS
-const SYMMETRY_SUFFIXES = (
-    "_taxon_permutations.mrdi", "_ray_actions.mrdi", "_cell_actions.mrdi", "_cell_orbits.csv",
-)
+include(joinpath(@__DIR__, "ideals", "G2Symmetry.jl"))
+using .G2Symmetry: G2_GAUGE
+include(joinpath(@__DIR__, "census", "compute_gf2_tropicalization.jl"))
+include(joinpath(@__DIR__, "census", "flag_census_helpers.jl"))
 
 gf2_file(parts...) = data_path("g2", "grassmannian_gf2", parts...)
 gf2_work(parts...) = work_path("g2", "grassmannian_gf2", parts...)
@@ -41,30 +32,7 @@ manifest_file(target, stage) = stage_provenance_path(target_file(target)(), stag
 # The generator prevariety of the Grassmannian is the G2-Dressian. Its
 # generators have coefficients 1 and -1, so it is stored once for all fields.
 dressian_prevariety() = data_path("g2", "dressian", "01_prevariety_fan.mrdi")
-symmetry_files(target) = [target_file(target)("05_symmetry" * suffix) for suffix in SYMMETRY_SUFFIXES]
-
-function skip_current(outputs, options)
-    current = all(isfile, outputs)
-    current && !options.force && println("  using existing canonical artifact(s)")
-    return current && !options.force
-end
-
-function fan_metadata(fan)
-    data = rays_modulo_lineality(fan)
-    lineality_dimension = rank(matrix(QQ, data.lineality_basis))
-    full_f_vector = Int.(f_vector(fan))
-    quotient_f_vector = iszero(lineality_dimension) ? vcat([1], full_f_vector) :
-        full_f_vector[lineality_dimension:end]
-    return Dict{String, Any}(
-        "rays" => length(data.rays_modulo_lineality),
-        "maximal_cells" => n_maximal_cones(fan),
-        "ambient_dimension" => ambient_dim(fan),
-        "dimension" => dim(fan),
-        "lineality_dimension" => lineality_dimension,
-        "pure" => is_pure(fan),
-        "f_vector_modulo_lineality_including_zero" => quotient_f_vector,
-    )
-end
+symmetry_files(target) = collect(symmetry_artifact_paths(target_file(target)("05_symmetry")))
 
 """
 Counts and dimensions of a saved fan. The f-vector of a flag fan takes minutes
@@ -74,7 +42,7 @@ function saved_fan_metadata(path)
     cache = work_path("g2", "fan_metadata", bytes2hex(sha256(read(path))) * ".toml")
     if !isfile(cache)
         mkpath(dirname(cache))
-        metadata = fan_metadata(load(path))
+        metadata = fan_metadata(load(path); with_quotient_f_vector=true)
         open(io -> TOML.print(io, metadata; sorted=true), cache, "w")
     end
     return TOML.parsefile(cache)
@@ -120,7 +88,7 @@ function write_summary(target)
             println(io, "| $label | ", join(values, " | "), " |")
         end
         if all(isfile, symmetry_files(target))
-            action = TropicalCensus.load_symmetry_artifacts(gf2_file("05_symmetry"))
+            action = TropicalGeometryG2.load_symmetry_artifacts(gf2_file("05_symmetry"))
             println(io)
             println(io, "Taxon symmetry group order: $(length(action.permutations)). Ray orbits: $(length(action.ray_orbits)). Maximal-cell orbits: $(length(action.cell_orbits)).")
         end
@@ -313,10 +281,10 @@ function stage_trees(target, options)
         weights = canonical_cell_weights(fan, rays)
         cell_trees = is_flag(target) ?
             flag_normalized_cell_trees(fan, weights) : normalized_cell_trees(weights, G2_GAUGE)
-        TropicalCensus.save_unless_current(outputs[1], TropicalCensus.rows_matrix(weights; ring=QQ))
-        TropicalCensus.save_unless_current(outputs[2], TropicalCensus.rows_matrix(cell_trees; ring=QQ))
+        TropicalGeometryG2.save_unless_current(outputs[1], TropicalGeometryG2.rows_matrix(weights; ring=QQ))
+        TropicalGeometryG2.save_unless_current(outputs[2], TropicalGeometryG2.rows_matrix(cell_trees; ring=QQ))
         is_flag(target) ? write_flag_tree_census(outputs[3], rays, cell_trees) :
-            TropicalCensus.write_tree_census(outputs[3], rays, cell_trees)
+            TropicalGeometryG2.write_tree_census(outputs[3], rays, cell_trees)
     end
     record_stage(target, trees, options; inputs=inputs, outputs=outputs,
         metadata=saved_fan_metadata(inputs[1]))
@@ -329,20 +297,20 @@ function stage_symmetry(target, options)
     outputs = symmetry_files(target)
     if !skip_current(outputs, options)
         fan, rays = load(inputs[1]), load(inputs[2])
-        action = is_flag(target) ? flag_taxon_symmetry(fan, rays, G2_GROUP_CANDIDATES) :
-            taxon_symmetry(rays, TropicalCensus.fan_cells(fan);
-                candidates=G2_GROUP_CANDIDATES, lineality=rays_modulo_lineality(fan).lineality_basis)
+        action = is_flag(target) ? flag_taxon_symmetry(fan, rays, G2_GF2_PERMUTATIONS) :
+            taxon_symmetry(rays, TropicalGeometryG2.fan_cells(fan);
+                candidates=G2_GF2_PERMUTATIONS, lineality=rays_modulo_lineality(fan).lineality_basis)
         length(action.permutations) == 12 ||
             error("expected the order-12 G2 taxon group, found $(length(action.permutations))")
-        TropicalCensus.save_symmetry_artifacts(file("05_symmetry"), action)
+        TropicalGeometryG2.save_symmetry_artifacts(file("05_symmetry"), action)
     end
-    action = TropicalCensus.load_symmetry_artifacts(file("05_symmetry"))
+    action = TropicalGeometryG2.load_symmetry_artifacts(file("05_symmetry"))
     record_stage(target, symmetry, options; inputs=inputs, outputs=outputs,
         metadata=Dict("group_order" => length(action.permutations),
             "ray_orbits" => length(action.ray_orbits), "cell_orbits" => length(action.cell_orbits)))
 end
 
-include(joinpath(@__DIR__, "g2_chevalley.jl"))
+include(joinpath(@__DIR__, "census", "g2_chevalley.jl"))
 
 function stage_degenerations(target, options)
     file = target_file(target)
@@ -350,7 +318,7 @@ function stage_degenerations(target, options)
         ("00_ideal.mrdi", "03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi")],
         symmetry_files(target))
     all(isfile, inputs) || error("GF(2) degenerations require the ideal, normalized fan, and symmetry artifacts")
-    action = TropicalCensus.load_symmetry_artifacts(file("05_symmetry"))
+    action = TropicalGeometryG2.load_symmetry_artifacts(file("05_symmetry"))
     expected_orbits = length(action.cell_orbits)
     output = file("06_canonical_interior_degenerations.csv")
     continuing = options.resume && !options.force && isfile(output)
@@ -372,15 +340,15 @@ function stage_degenerations(target, options)
             DegenerationConfig(expected_orbits=expected_orbits,
                 coordinate_images=g2_gf2_coordinate_images, chevalley_test=g2_chevalley_simplex)
         if options.force
-            directory = TropicalCensus.degeneration_object_directory(output)
+            directory = TropicalGeometryG2.degeneration_object_directory(output)
             isdir(directory) && rm(directory; recursive=true)
         end
         mkpath(dirname(output))
         open(output, continuing ? "a" : "w") do io
-            continuing || TropicalCensus.write_degenerations_header(io)
+            continuing || TropicalGeometryG2.write_degenerations_header(io)
             classify_degenerations(ideal_value, load(inputs[2]), load(inputs[3]), action;
                 config=config, skip_orbits=completed,
-                on_record=record -> TropicalCensus.write_degenerations_record(io, output, record))
+                on_record=record -> TropicalGeometryG2.write_degenerations_record(io, output, record))
         end
     else
         skip_current([output], options)
@@ -406,14 +374,14 @@ function stage_projections(target, options)
     inputs = vcat(
         [file(name) for file in (flag_gf2_file, gf2_file)
          for name in ("03_normalized_coarsest_fan.mrdi", "03_normalized_rays.mrdi")],
-        [file("05_symmetry" * suffix) for file in (flag_gf2_file, gf2_file) for suffix in SYMMETRY_SUFFIXES],
+        [path for file in (flag_gf2_file, gf2_file) for path in symmetry_artifact_paths(file("05_symmetry"))],
     )
     all(isfile, inputs) ||
         error("projection certificates require normalized fans and symmetry artifacts for both GF(2) targets")
     source_fan, source_rays = load(inputs[1]), load(inputs[2])
     target_fan, target_rays = load(inputs[3]), load(inputs[4])
-    source_symmetry = TropicalCensus.load_symmetry_artifacts(flag_gf2_file("05_symmetry"))
-    target_symmetry = TropicalCensus.load_symmetry_artifacts(gf2_file("05_symmetry"))
+    source_symmetry = TropicalGeometryG2.load_symmetry_artifacts(flag_gf2_file("05_symmetry"))
+    target_symmetry = TropicalGeometryG2.load_symmetry_artifacts(gf2_file("05_symmetry"))
     arguments = (source_fan, source_rays, target_fan, target_rays, source_symmetry, target_symmetry)
     keywords = (
         projection_columns=8:28,
@@ -424,7 +392,7 @@ function stage_projections(target, options)
         certificate = TOML.parsefile(first(outputs))
         verify_ray_projection_certificate(certificate, arguments...; keywords...)
         orbit_io, cell_io = IOBuffer(), IOBuffer()
-        TropicalCensus.write_projection_tables(orbit_io, cell_io, certificate)
+        TropicalGeometryG2.write_projection_tables(orbit_io, cell_io, certificate)
         read(outputs[2], String) == String(take!(orbit_io)) &&
             read(outputs[3], String) == String(take!(cell_io)) ||
             error("projection tables disagree with the verified certificate; rerun with --force")
@@ -480,7 +448,7 @@ function target_definition(name; tropicalization_callback=stage_tropicalize)
         coarsen => [file("02_coarsest_fan.mrdi"), file("02_coarsest_cells.csv")],
         normalize => [file("03_normalized_coarsest_fan.mrdi"), file("03_normalized_rays.mrdi")],
         trees => [file("04_canonical_cell_weights.mrdi"), file("04_normalized_cell_trees.mrdi"), file("04_trees.csv")],
-        symmetry => [file("05_symmetry" * suffix) for suffix in SYMMETRY_SUFFIXES],
+        symmetry => collect(symmetry_artifact_paths(file("05_symmetry"))),
         degenerations => [file("06_canonical_interior_degenerations.csv")],
         summarize => [summary_path(file())],
     )
@@ -490,7 +458,8 @@ function target_definition(name; tropicalization_callback=stage_tropicalize)
         artifacts[projections] = [file("07_projection" * suffix)
                                   for suffix in ("_certificate.toml", "_orbits.csv", "_cells.csv")]
     end
-    return StudyTarget(name=name, stages=stages, callbacks=callbacks, artifacts=artifacts)
+    return StudyTarget(name=name, stages=stages, callbacks=callbacks, artifacts=artifacts,
+                       tropical_problem=name == "flag" ? flag_problem : G2GF2Tropicalization.gf2_problem)
 end
 
 const G2_GF2_CENSUS = StudyCensus(name="G2 over GF(2)",

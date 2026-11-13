@@ -1,6 +1,6 @@
 ###############################################################################
 #
-#   Validation of chevalley_polytopes.jl against Appendix A of arXiv:2411.10276
+#   Validation of src/chevalley_polytopes.jl against Appendix A of arXiv:2411.10276
 #
 #   Every example in the appendix for which the paper states a numerical
 #   answer is checked here, including the three cases where the paper reports
@@ -8,11 +8,12 @@
 #   with s_1, s_2).  The suite also records the two published volumes that the
 #   implementation does not reproduce: 63 for F_4/s_2 and 105 for C_4/s_2.
 #
-#   Run with:   julia appendix_chevalley.jl
+#   Run from julia/ with:
+#       julia --project=. studies/g2/degenerations_grassmannian/Spacek_Wang/appendix_chevalley.jl
 #
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
 
 const PASS = Ref(0)

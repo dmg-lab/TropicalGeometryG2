@@ -1,8 +1,8 @@
 # TeX fragments for the paper
 
 These scripts write figures and tables of `main.tex` from the stored data.
-Run them from the repository root with `--project=julia`. Each prints its
-TeX, or writes it to `--output=FILE`.
+Run them from `julia/` with `--project=.`. Each prints its TeX, or writes it
+to `--output=FILE`.
 
 The tables have the booktabs form, and `main.tex` loads booktabs for them.
 `\toprule` and `\bottomrule` frame a table, and a single `\midrule`
@@ -25,10 +25,13 @@ heading of a right-aligned column is centred by `\multicolumn{1}{c}{...}`.
 | [`triangle_cell_figure.jl`](triangle_cell_figure.jl) | A triangular cell, by default of orbit 21: the G2-trees of its three rays in circles at the corners of a triangle and the G2-tree of the cell in its middle, without lengths, with the inner vertices of the rays lettered in all four trees. |
 | [`lettered_square_figure.jl`](lettered_square_figure.jl) | The quadrilateral cell as the triangle figure draws a triangle: every ray its own tree with lettered inner vertices, the cell in the middle, and the hook for drawing over it. |
 | [`decorated_trees_figure.jl`](decorated_trees_figure.jl) | Three decorated G2-trees: the star tree of the lineality space with an apple on its pendant edge to taxon 1 and, of the triangle of orbit 21, the ray α3 with an apple at its inner vertex A and the tree of the cell with an apple on its edge AB, letters as in the triangle figure but not drawn. |
-| [`toric_degeneration_apple_trees.jl`](toric_degeneration_apple_trees.jl) | A standalone page of the trees of `toric_degeneration_tree_table.jl`, in color and without edge lengths, with an apple on every edge whose decorated tree is a prime cone of the tropical G2 flag variety; `--pdf` compiles it to `output/pdf/g2_toric_degeneration_apple_trees.pdf`. |
-| [`toric_degeneration_prime_edge_trees.jl`](toric_degeneration_prime_edge_trees.jl) | The figure of `figures/toric_degeneration_trees.tex` in black, with the edges that have a prime cone of the tropical G2 flag variety over them, and their lengths, in green, the others in red, and the number of prime cones and a green apple at the top right of every tree; it checks that the rest is that figure. With `--fragment` it is the figure of main.tex (`figures/toric_degeneration_prime_edge_trees.tex`), with `--standalone` that figure as the document of `standalone_figure.jl`, whose PDF main.tex includes, otherwise a standalone page with its caption (`figures/toric_degeneration_prime_edge_trees_standalone.tex`). |
+| [`toric_degeneration_apple_trees.jl`](toric_degeneration_apple_trees.jl) | A standalone page of the trees of `toric_degeneration_tree_table.jl`, in color and without edge lengths, with an apple on every edge whose decorated tree is a prime cone of the tropical G2 flag variety; `--pdf` compiles it to `../output/pdf/g2_toric_degeneration_apple_trees.pdf`. |
+| [`toric_degeneration_prime_edge_trees.jl`](toric_degeneration_prime_edge_trees.jl) | The figure of `../figures/toric_degeneration_trees.tex` in black, with the edges that have a prime cone of the tropical G2 flag variety over them, and their lengths, in green, the others in red, and the number of prime cones and a green apple at the top right of every tree; it checks that the rest is that figure. With `--fragment` it is the figure of main.tex (`../figures/toric_degeneration_prime_edge_trees.tex`), with `--standalone` that figure as the document of `standalone_figure.jl`, whose PDF main.tex includes, otherwise a standalone page with its caption (`../figures/toric_degeneration_prime_edge_trees_standalone.tex`). |
 | [`standalone_figure.jl`](standalone_figure.jl) | A figure of main.tex as a standalone document: the preamble of `main.tex` in the class `standalone`, cropped to the figure at its size in main.tex. The `--standalone` of the other scripts, and the document of a hand-drawn figure. |
 | [`local_flag_complex_table.jl`](local_flag_complex_table.jl) | The isomorphism types of the local flag complexes above the 35 orbits of maximal cells of both fields, with their maximal cells, f-vectors and orbits. |
+| [`hexagon_tree_ring.jl`](hexagon_tree_ring.jl) | The tropical hexagon of the example of Section 9 as its six G2-trees (`../figures/hexagon_tree_ring.tex`); `--complete` recomputes the hexagon. |
+| [`curve_portraits.jl`](curve_portraits.jl) | The two pictures of a genus-10 curve of Section 10, the Berkovich picture and the region atlas, drawn from one drawing of its core (`../figures/genus_10_curve*.tex`). |
+| [`build_curve_atlas.jl`](build_curve_atlas.jl) | The atlas of a decorated curve graph, whose drawing `curve_portraits.jl` uses. |
 
 ## G2-trees
 
@@ -51,16 +54,16 @@ or of one generator of its lineality space. Select it with exactly one of:
 | GF(2) | 54 | 253 | 254 |
 
 ```sh
-julia --project=julia julia/to_tex/render_maximal_cell_tree.jl \
+julia --project=. to_tex/render_maximal_cell_tree.jl \
   --lineality=1 --color --label=true --output=/tmp/g2_lineality_1.tex
 
-julia --project=julia julia/to_tex/render_maximal_cell_tree.jl \
+julia --project=. to_tex/render_maximal_cell_tree.jl \
   --ray=52 --field=GF2 --color --label=true --output=/tmp/g2_ray_52.tex
 
-julia --project=julia julia/to_tex/render_maximal_cell_tree.jl \
+julia --project=. to_tex/render_maximal_cell_tree.jl \
   --edge=13,14 --color --label=true --output=/tmp/g2_edge.tex
 
-julia --project=julia julia/to_tex/render_maximal_cell_tree.jl \
+julia --project=. to_tex/render_maximal_cell_tree.jl \
   --rays=13,14,17,18 --color --label=true --scale=1.4 \
   --bounded-length=1.0 --edge-labels=aligned --output=/tmp/g2_square.tex
 ```
@@ -83,7 +86,10 @@ in `main.tex`, and 3 is minus the sum of 1 and 2. The Pluecker vectors of any
 two of them and of generator 4 are a lattice basis of the integer points of
 the lineality space. The rows are `LINEALITY_SPACE_STAR` of
 [`find_better_gens.jl`](../studies/g2/reference/fine_groebner/find_better_gens.jl),
-in the order `G2_TREE_LINEALITY_STARS` of `render_maximal_cell_tree.jl`.
+whose rows 2–4 are `G2_ROOT_DIRECTIONS` of
+[`G2Symmetry.jl`](../studies/g2/ideals/G2Symmetry.jl), in the order
+`G2_TREE_LINEALITY_STARS` of
+[`cell_orbit_trees.jl`](../studies/g2/atlas/flag/cell_orbit_trees.jl).
 
 ### Numbering
 
@@ -144,7 +150,7 @@ loading TikZ and xcolor. `--standalone` supplies the preamble of `main.tex`.
 Include the renderer and pass the same options as Julia keywords:
 
 ```julia
-include("julia/to_tex/render_maximal_cell_tree.jl")
+include("to_tex/render_maximal_cell_tree.jl")
 source = load_g2_maximal_cell_source(; field=:gf2)
 tex = g2_maximal_cell_tree_tex(1; source, palette=:color, label=true,
     taxon_scale=0.7, bounded_length=1.0, edge_labels=:aligned)
@@ -158,7 +164,10 @@ generator. The others take `field=:qq` or `field=:gf2`, or a loaded
 `source`, which then fixes the field. The same names without `_tex` return
 the tree itself, as a `TreeMetric` with its description. `load_g2_ray_source(; field)` loads the
 rays only; `load_g2_maximal_cell_source(; field)` also loads the cells and the
-edges. Reuse a loaded source when drawing many trees.
+edges. Reuse a loaded source when drawing many trees. The trees and the
+sources are those of
+[`cell_orbit_trees.jl`](../studies/g2/atlas/flag/cell_orbit_trees.jl), which
+the renderer includes.
 `g2_tree_tikz(tree; kwargs...)` draws a supplied seven-taxon `TreeMetric`.
 `g2_tree_commands(io, tree, colors; kwargs...)` writes the same drawing
 without its picture, its heptagon centred at the origin, for a picture that
@@ -170,8 +179,11 @@ taxa on the heptagon in a cyclic `order`, clockwise from the top, such as
 the `topology_compatible_leaf_order` of another tree; every split of `tree`
 must be contiguous in it.
 
-The renderer includes the shared Grassmannian definitions in
-[`atlas_common.jl`](../studies/g2/atlas/grassmannian/atlas_common.jl). The
+Through `cell_orbit_trees.jl`, the renderer includes the shared Grassmannian
+definitions in
+[`atlas_common.jl`](../studies/g2/atlas/grassmannian/atlas_common.jl) and the
+orbit numbers of the tables in
+[`cell_orbit_labels.jl`](../studies/g2/atlas/flag/cell_orbit_labels.jl). The
 [Grassmannian atlases](../studies/g2/atlas/grassmannian/) include the renderer.
 
 
@@ -199,7 +211,7 @@ that keeps the parts of the drawing farthest apart, and it turns the drawing
 so that its longest direction is horizontal.
 
 ```sh
-julia --project=julia julia/to_tex/render_simple_tree.jl \
+julia --project=. to_tex/render_simple_tree.jl \
   --rays=7,18,41 --edge-length=0.8 --output=/tmp/g2_simple_triangle.tex
 ```
 
@@ -225,8 +237,8 @@ for a 10pt font.
 
 From Julia, `g2_simple_tree_tikz(tree; edge_length, max_lines)` draws a
 `TreeMetric`, and `g2_simple_tree_tex(g2_ray_tree(8); edge_length, max_lines,
-standalone)` a selected tree with its description. To put several trees in
-one picture, `g2_simple_tree_drawing` lays a tree out,
+standalone)` a tree of `cell_orbit_trees.jl` with its description. To put
+several trees in one picture, `g2_simple_tree_drawing` lays a tree out,
 `g2_simple_tree_commands(io, drawing; prefix)` writes its nodes and lines
 with node names starting with `prefix`, `g2_simple_tree_mirror(drawing)`
 reflects it in a vertical line, `g2_simple_tree_styles()` gives the
@@ -247,15 +259,17 @@ thickened by an outline of `pdfrender`, which `main.tex` loads, and the size
 is smaller and not bold; the tree rises beside them; with
 `--color` both, and the rules and lines of the table, are black, as the
 labels of the maximal trees below. As in every tree, the edges, the inner
-vertices, and the lengths are black. The labels and the order are
-recorded in
+vertices, and the lengths are black. The labels and the order are read
+from
+[`ray_orbit_labels.csv`](../studies/g2/atlas/grassmannian/ray_orbit_labels.csv)
+and described in
 [`ray_orbit_article_labels.md`](../studies/g2/atlas/grassmannian/ray_orbit_article_labels.md).
 `main.tex` supplies the float and the caption.
 
 ```sh
-julia --project=julia julia/to_tex/build_styled_ray_orbit_tables.jl \
+julia --project=. to_tex/build_styled_ray_orbit_tables.jl \
   --color --label=false --scale=0.95 --taxon-scale=0.75 --bounded-length=1.1 \
-  --output=figures/ray_orbits_styled_catalog.tex
+  --output=../figures/ray_orbits_styled_catalog.tex
 ```
 
 This is the figure of `main.tex`, which includes it as the PDF of `--standalone`. The drawing options are those
@@ -263,7 +277,7 @@ of the G2-trees, except that the bounded length is `0.9` by default, that
 `--edge-labels=none` is not available, and that `--scale` also scales the
 columns, the row heights, and the gaps of the table. `--standalone` supplies
 the preamble of `main.tex`. `--pdf` compiles a preview with that preamble to
-`output/pdf/g2_ray_orbits_styled_catalog.pdf` instead of printing the TeX; it
+`../output/pdf/g2_ray_orbits_styled_catalog.pdf` instead of printing the TeX; it
 needs `latexmk`.
 
 ## Cubics of the tropical basis
@@ -283,7 +297,7 @@ certifies both statements before it draws the trees, in one Julia session of
 about half a minute.
 
 ```sh
-sh julia/to_tex/cubic_tree_table.sh --edge-length=0.4 --output=FILE
+sh to_tex/cubic_tree_table.sh --edge-length=0.4 --output=FILE
 ```
 
 `--edge-length` is that of the simple trees, `0.4` by default; five trees
@@ -294,15 +308,18 @@ then fit the text width of `main.tex`.
 `toric_degeneration_table.jl` reads the stage-6 censuses of
 `data/g2/grassmannian/` and `data/g2/grassmannian_gf2/`. The G2-tree atlas
 supplies the orbit labels, their order, and the matching of the orbits of
-both fields, through `local_flag_cell_atlas.csv`. A row is numbered by the
+both fields, through `local_flag_cell_atlas.csv`, which
+[`cell_orbit_labels.jl`](../studies/g2/atlas/flag/cell_orbit_labels.jl) reads
+with the censuses. A row is numbered by the
 atlas label of its orbit, in bold black old-style figures, followed
 by the orbit size in parentheses as in the tables of trees. Its last
 column lists the characteristics in which the orbit occurs, "all" if both. The script writes a
 `tabular*` of the text width only; `main.tex` supplies the float and the
-caption. It runs in about two seconds.
+caption. It takes about four seconds after loading TropicalGeometryG2, whose CSV
+reader it uses.
 
 ```sh
-julia --project=julia julia/to_tex/toric_degeneration_table.jl --output=FILE
+julia --project=. to_tex/toric_degeneration_table.jl --output=FILE
 ```
 
 ## Trees of the toric degenerations
@@ -321,12 +338,12 @@ its tree, belongs to an orbit that is toric
 only over GF(2). `main.tex` supplies the float and the caption.
 
 ```sh
-julia --project=julia julia/to_tex/toric_degeneration_tree_table.jl \
+julia --project=. to_tex/toric_degeneration_tree_table.jl \
   --color --scale=0.88 --taxon-scale=0.75 --bounded-length=1 \
-  --output=figures/toric_degeneration_trees.tex
+  --output=../figures/toric_degeneration_trees.tex
 ```
 
-This is the fragment in `figures/`. The options are those of the ray catalog,
+This is the fragment in `../figures/`. The options are those of the ray catalog,
 whose panels the script shares; the trees have the automatic layout of
 `render_maximal_cell_tree.jl`, and the bounded length is `0.70` by default.
 
@@ -358,16 +375,16 @@ between `34` and `35`. Where such a change falls on the end
 of a row, there is no line.
 
 ```sh
-julia --project=julia julia/to_tex/toric_degeneration_tree_table.jl --non-toric \
+julia --project=. to_tex/toric_degeneration_tree_table.jl --non-toric \
   --color --scale=0.88 --taxon-scale=0.75 --bounded-length=1 \
-  --output=figures/non_toric_cell_trees.tex
+  --output=../figures/non_toric_cell_trees.tex
 ```
 
 This table has five rows of three panels: its widest heading,
 `33 char ≠ 2 3`, needed `4.7` cm with `size`, and four panels of this width would
 exceed the text width of `main.tex`. Its preview is
-`output/pdf/g2_non_toric_cell_trees.pdf`.
-The preview of `--pdf` is `output/pdf/g2_toric_degeneration_trees.pdf`.
+`../output/pdf/g2_non_toric_cell_trees.pdf`.
+The preview of `--pdf` is `../output/pdf/g2_toric_degeneration_trees.pdf`.
 
 ## Ray orbits of the maximal cells
 
@@ -375,7 +392,8 @@ The preview of `--pdf` is `output/pdf/g2_toric_degeneration_trees.pdf`.
 both fields, the ray orbits of its rays, with the numbers of the two tables of
 trees and the labels of the ray catalog. It reads the support cells and their
 `polygon_ray_orbits` from the atlas `local_flag_cell_atlas.csv`, and translates
-them with `PAPER_RAY_ARTICLE_LABELS`. The table has seven rows and five
+them with `PAPER_RAY_ARTICLE_LABELS` of the ray catalog, read from
+`ray_orbit_labels.csv`. The table has seven rows and five
 columns, filled column by column. The numbers and the labels are black, as
 the cell and ray labels of `main.tex`. The labels of a triangle are sorted in the
 order of the catalog; those of the quadrilateral `30` follow its cyclic order.
@@ -383,8 +401,8 @@ The table is a `tabular*` of the text width without heading, between
 `\toprule` and `\bottomrule`.
 
 ```sh
-julia --project=julia julia/to_tex/cell_ray_orbit_table.jl \
-  --output=tables/cell_ray_orbits.tex
+julia --project=. to_tex/cell_ray_orbit_table.jl \
+  --output=../tables/cell_ray_orbits.tex
 ```
 
 ## The quadrilateral cell
@@ -426,8 +444,8 @@ smallest that leaves a side of `1` cm between two circles and keeps the tree
 of the cell clear of the circles, the sides, and its name.
 
 ```sh
-julia --project=julia julia/to_tex/square_cell_figure.jl \
-  --output=figures/square_cell.tex
+julia --project=. to_tex/square_cell_figure.jl \
+  --output=../figures/square_cell.tex
 ```
 
 | Option | Default | Effect |
@@ -497,8 +515,8 @@ checks that the complexes of all orbits, counted with the orbit sizes, hold
 every maximal flag cell once: 2714 over QQ, 2792 over GF(2).
 
 ```sh
-julia --project=julia julia/to_tex/local_flag_complex_table.jl \
-  --output=tables/local_flag_complexes.tex
+julia --project=. to_tex/local_flag_complex_table.jl \
+  --output=../tables/local_flag_complexes.tex
 ```
 
 Its TeX comments list, for each type, the census orbit of each field, the
@@ -548,9 +566,9 @@ as `3` and `18`, the joined letters at the two ends of a shortened edge can
 touch.
 
 ```sh
-julia --project=julia julia/to_tex/triangle_cell_figure.jl \
+julia --project=. to_tex/triangle_cell_figure.jl \
   --scale=0.5 --taxon-scale=0.5 --ray-scale=0.8 --name-below \
-  --no-cell-letters --cell-overhang --height=4.3 --output=figures/triangle_cell.tex
+  --no-cell-letters --cell-overhang --height=4.3 --output=../figures/triangle_cell.tex
 ```
 
 `--orbit=N` draws the atlas cell of another orbit of triangles, over QQ if it
@@ -579,16 +597,16 @@ trees that fit in it. It takes half a minute.
 The picture ends with `\ifdefined\gtwocelloverlay\gtwocelloverlay\fi`:
 a document that defines this macro draws over the figure, in its coordinates
 with the centre of the triangle at the origin. The paper's
-`figures/triangle_projection.tex` defines it to put the hand-drawn incidence
+`../figures/triangle_projection.tex` defines it to put the hand-drawn incidence
 graph of the tetrahedra of the local flag complex and their shared triangles
-(`figures/triangle_incidence.tex`, a scope) on
+(`../figures/triangle_incidence.tex`, a scope) on
 the left of the triangle and lower than its picture, with a straight
 two-headed arrow to the left side that stops just outside it, and draws the
 whole at `0.95`. The positions are set by hand for the triangle of the paper's
 options.
-`figures/triangle_projection_5.tex` does the same for orbit `5`, the triangle
-`figures/triangle_cell_5.tex` drawn with `--orbit=5` and the same options, and
-the incidence graph `figures/triangle_incidence_5.tex` of its local flag
+`../figures/triangle_projection_5.tex` does the same for orbit `5`, the triangle
+`../figures/triangle_cell_5.tex` drawn with `--orbit=5` and the same options, and
+the incidence graph `../figures/triangle_incidence_5.tex` of its local flag
 complex, 10 tetrahedra and a triangular prism, on the left at the height of
 the arrow and lower than the triangle. The two graphs share their shapes,
 their edge lengths, and their scale `0.64`.
@@ -616,8 +634,8 @@ between vertices `10` and `11` of the cell, the tetrahedron `ABDE` of the
 atlas.
 
 ```sh
-julia --project=julia julia/to_tex/decorated_trees_figure.jl \
-  --scale=0.7 --taxon-scale=0.55 --output=figures/decorated_trees.tex
+julia --project=. to_tex/decorated_trees_figure.jl \
+  --scale=0.7 --taxon-scale=0.55 --output=../figures/decorated_trees.tex
 ```
 
 `--orbit=N`, `--scale`, `--taxon-scale` and `--standalone` are as in the
@@ -647,8 +665,8 @@ cell, `g2_triangle_trees` puts those of the rays at their vertices, for the
 square as for a triangle with `--no-cell-letters`.
 
 ```sh
-julia --project=julia julia/to_tex/lettered_square_figure.jl \
+julia --project=. to_tex/lettered_square_figure.jl \
   --scale=0.56 --taxon-scale=0.5 --name-below --ray-bounded-length=1.3 \
-  --output=figures/square_lettered.tex
+  --output=../figures/square_lettered.tex
 ```
 

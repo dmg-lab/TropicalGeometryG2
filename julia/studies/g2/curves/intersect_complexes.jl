@@ -2,39 +2,15 @@ using Oscar
 using ProgressMeter
 using HiGHS
 import LinearAlgebra
-using TropicalCensus: coarsen_prevariety_fan, SupportLinkCoarsening
+using TropicalGeometryG2: coarsen_prevariety_fan, SupportLinkCoarsening
 
-# The feasibility filters of intersection_lib.jl, kept in their own module so
-# that its Graphs imports (vertices, degree, ...) do not shadow Oscar's.
+# The H-representations and feasibility filters of intersection_lib.jl, kept in
+# their own module so that its Graphs imports (vertices, degree, ...) do not
+# shadow Oscar's.
 module IntersectionLib
-include(joinpath(@__DIR__, "..", "..", "..", "intersection_lib.jl"))
+include(joinpath(@__DIR__, "intersection_lib.jl"))
 end
-using .IntersectionLib: lp_prefilter, soplex_prefilter, hybrid_prefilter
-
-"""
-Exact H-representation of a cell: facets `F x ≤ g` and affine hull `E x = f`,
-each row scaled to integer coefficients.
-"""
-struct CellHRep
-    F :: Matrix{QQFieldElem}
-    g :: Vector{QQFieldElem}
-    E :: Matrix{QQFieldElem}
-    f :: Vector{QQFieldElem}
-end
-
-function CellHRep(P::Polyhedron)
-    function integral_rows(M)
-        M = Matrix{QQFieldElem}(M)
-        isempty(M) && return Matrix{QQFieldElem}(undef, 0, ambient_dim(P) + 1)
-        return M .* [lcm(denominator.(row)) for row in eachrow(M)]
-    end
-    facets = integral_rows(Oscar.pm_object(P).FACETS)
-    hull = integral_rows(Oscar.pm_object(P).AFFINE_HULL)
-    return CellHRep(-facets[:, 2:end], facets[:, 1], hull[:, 2:end], -hull[:, 1])
-end
-
-"The rows `A x ≤ b` of a cell, equations as pairs of inequalities, for the feasibility filters."
-inequalities(h::CellHRep) = (vcat(h.F, h.E, -h.E), vcat(h.g, h.f, -h.f))
+using .IntersectionLib: CellHRep, inequalities, lp_prefilter, soplex_prefilter, hybrid_prefilter
 
 "Rows of a ZZ-basis of the lattice points of the linear space parallel to the cell."
 direction_lattice(h::CellHRep) =
@@ -363,7 +339,7 @@ The coarsest polyhedral structure on the intersection with constant
 multiplicities. Pieces are glued across the walls of both complexes when they
 span the same affine space, have the same multiplicity and transversality, and
 their union is convex and meets every other cell in a face. The exact
-prevariety coarsener of TropicalCensus runs on the cone over the intersection.
+prevariety coarsener of TropicalGeometryG2 runs on the cone over the intersection.
 Pieces that are faces of other pieces are dropped.
 """
 function coarsen_intersection(result::ComplexIntersection; strategy=SupportLinkCoarsening())

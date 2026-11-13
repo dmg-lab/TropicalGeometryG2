@@ -1,7 +1,14 @@
 # Outputs of the scripts
 /julia/results/
 /julia/work/
-/TropicalGeometryG2_data.tar.gz
+TropicalGeometryG2_data.tar.gz
+
+# Figures and tables, which the drawing scripts write: not part of this
+# repository
+/figures/
+/tables/
+**/*.tex
+**/*.pdf
 
 # The data that julia/make_paper_data.jl writes, or that the Zenodo tarball
 # unpacks. Git cannot re-include a file below an ignored folder, so the
@@ -9,11 +16,6 @@
 /julia/data/g2/*
 !/julia/data/g2/SUMMARY.md
 !/julia/data/g2/maximal_cell_tree_metrics.csv
-!/julia/data/g2/flag/
-/julia/data/g2/flag/*
-!/julia/data/g2/flag/provenance/
-/julia/data/g2/flag/provenance/*
-!/julia/data/g2/flag/provenance/full28_benchmark.toml
 /julia/data/mukai_curves/genus_10_method_*.mrdi
 
 # LaTeX previews and build files
@@ -23,8 +25,6 @@
 **/*.fls
 **/*.fdb_latexmk
 **/*.synctex.gz
-**/*.pdf
-!figures/fig.pdf
 
 .DS_Store
 *~

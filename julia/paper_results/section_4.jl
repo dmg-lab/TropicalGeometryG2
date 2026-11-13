@@ -1,4 +1,4 @@
-# Section 4 of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Section 4 of the paper: run by paper_results.jl, which defines the helpers used here.
 
 function section_4()
     subheading("Opening of the section: the coefficient 2 in the cubics of eq:threecubics")
@@ -14,7 +14,7 @@ function section_4()
 
     subheading("Theorem thm:char2, odd p: trop_p(G) = trop(G) (sampled here, proved below)")
     for field in ("QQ", "GF2", "GF3", "GF5", "GF7", "GF11", "GF13")
-        scan = rows(studies("g2", "char-p", "supplementary", "char2", "scan-$field.csv"))
+        scan = rows(study_path("g2", "char-p", "supplementary", "char2", "scan-$field.csv"))
         cells = [r for r in scan if startswith(r["point"], "cell")]
         tetrahedra = [r for r in scan if startswith(r["point"], "tetra")]
         stored("scan over $field (char-p/supplementary/char2/scan.jl): canonical weights of the 248 cells in trop",
@@ -62,7 +62,7 @@ function section_4()
     edges_of(cell) = Combinatorics.combinations(cell, 2)
     claim("p = 2: the 4·3 facets of the tetrahedra are deleted (their barycenters lie in no closed cone of trop_2(G))",
           all(isempty(locate_closed(Lgf2, sum(drays[f]))) for cell in tetrahedra for f in facets_of(cell)))
-    gf2_scan = rows(studies("g2", "char-p", "supplementary", "char2", "scan-GF2.csv"))
+    gf2_scan = rows(study_path("g2", "char-p", "supplementary", "char2", "scan-GF2.csv"))
     check("cells of trop(G) whose canonical weight is not in trop_2(G) (Bayer test, scan-GF2.csv): the 4·3 facets", 12,
           count(r -> startswith(r["point"], "cell") && r["in_trop"] == "false", gf2_scan))
     qq_cells = Set(Set(raysqq[c]) for c in cellsqq)
@@ -99,7 +99,7 @@ function section_4()
     claim("the 42 generators of I have coefficients ±1, so trop_p(G) lies in the G2-Dressian for every p",
           ngens(I) == 42 && all(g -> all(c -> abs(c) == 1, coefficients(g)), gens(I)))
     verified = Dict{Int,Dict{String,String}}()
-    for file in readdir(studies("g2", "char-p", "results"); join=true)
+    for file in readdir(study_path("g2", "char-p", "results"); join=true)
         startswith(basename(file), "verify-") || continue
         for r in rows(file)
             verified[parse(Int, r["cone"])] = r
@@ -139,7 +139,7 @@ function section_4()
         # The certificates were written by Oscar 1.9.0-DEV; Oscar 1.8.2 warns and rethrows when a load fails.
         largest = try
             Dict(k => begin
-                     certificate = load(studies("g2", "char-p", "certificates", "cones", @sprintf("cone_%03d.mrdi", k)))
+                     certificate = load(study_path("g2", "char-p", "certificates", "cones", @sprintf("cone_%03d.mrdi", k)))
                      any(c -> k in halves[c], split_cells) && (kept[k] = (certificate["G"], certificate["w"]))
                      maximum(abs(c) for g in certificate["G"] for c in coefficients(g))
                  end for k in others)
@@ -181,7 +181,7 @@ function section_4()
            length(good); paper=251)
 
     subheading("Proof of thm:char2: the open tetrahedra for p ≥ 3 (char-p/witness.jl)")
-    witness = filter(l -> startswith(l, "tetrahedron "), readlines(studies("g2", "char-p", "results", "witness.txt")))
+    witness = filter(l -> startswith(l, "tetrahedron "), readlines(study_path("g2", "char-p", "results", "witness.txt")))
     stored("p odd, open tetrahedra: a Weyl image of the cubic f in I over ZZ whose term ±2 p17 p27 p37 is strictly minimal",
            join(witness, "\n           "))
     stored("tetrahedra with such a witness (witness.txt)",
@@ -229,19 +229,9 @@ function section_4()
     info("their orbits: $(join([get(mt, k, (0, 0))[2] for k in cell_kinds], ", ")); types of maximal cells: $(length(mt))")
     check("reduced integral homology", "H_3 = Z^324", reduced_homology("flag_gf2"))
     check("f-vector modulo D12", [31, 192, 416, 281], s["complex"]["orbit_f_vector"])
-    flag_indices(perm) = vcat(invperm(perm), 7 .+ coordinate_permutation(perm))
     certificate2 = TOML.parsefile(g2("flag_gf2", "07_projection_certificate.toml"))
-    verified2 = try
-        verify_ray_projection_certificate(certificate2,
-            fan("flag_gf2"), load(g2("flag_gf2", "03_normalized_rays.mrdi")),
-            Fgf2, load(g2("grassmannian_gf2", "03_normalized_rays.mrdi")),
-            load_symmetry_artifacts(g2("flag_gf2", "05_symmetry")), load_symmetry_artifacts(g2("grassmannian_gf2", "05_symmetry"));
-            projection_columns=8:28, source_coordinate_indices=flag_indices, target_coordinate_indices=coordinate_permutation)
-    catch error
-        info("the verification raised: " * sprint(showerror, error))
-        false
-    end
-    claim("the exact projection certificate flag_gf2/07_projection_certificate.toml is valid (ray images, cells, D12-transport)", verified2)
+    claim("the exact projection certificate flag_gf2/07_projection_certificate.toml is valid (ray images, cells, D12-transport)",
+          projection_certificate_valid("flag_gf2"))
     images2 = [c["target_cell"] for c in certificate2["cells"]]
     check("each maximal cell of trop_2(F) maps onto a maximal cell of trop_2(G); the images (onto)", [2792, 254],
           [length(images2), length(unique(images2))])
@@ -256,7 +246,7 @@ function section_4()
     info("the decorations (apples on the edges of the trees of trop_2(G)) are checked over GF(2) in section 7")
 
     subheading("Proof of thm:flagchar2")
-    fiber = reduce(vcat, [rows(f) for f in readdir(studies("g2", "char-p", "supplementary", "flag"); join=true)
+    fiber = reduce(vcat, [rows(f) for f in readdir(study_path("g2", "char-p", "supplementary", "flag"); join=true)
                           if startswith(basename(f), "fiber-")])
     for field in ("QQ", "GF3", "GF5", "GF2")
         sample = [r for r in fiber if r["field"] == field]

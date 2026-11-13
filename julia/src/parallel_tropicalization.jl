@@ -39,8 +39,7 @@ Base.@kwdef struct TropicalProblem
     # its time and memory by checking the orbits of gfan's cones directly.
     coarsen_prevariety::Bool = true
     # With verified symmetry, gfan computes one cone per orbit (--symmetry),
-    # which is expanded before the checks. On the path A-B-C of the hexagon
-    # study this cut gfan's prevariety from 71 to 15 minutes.
+    # which is expanded before the checks.
     gfan_symmetry::Bool = false
     # Gfan's threads list the rays and cones of a prevariety in a different
     # order on every run, and every later numbering follows them. true saves
@@ -112,92 +111,6 @@ Base.@kwdef mutable struct TropicalizationConfig
     fresh_processes::Bool = false
     gfan::String = something(Sys.which("gfan_tropicalprevariety"), "")
     force::Bool = false
-end
-
-function tropicalization_usage(problem::TropicalProblem, io::IO=stdout)
-    println(io, """
-    Usage:
-      julia --project=.. <problem-runner>.jl [options]
-
-    Problem:
-      $(problem.name)
-
-    Options:
-      --workers=N          Oscar/Singular worker processes (default: 2)
-      --threads=N          gfan prevariety threads (default: up to 8)
-      --witness-limit=N    New witnesses collected per round (default: 8)
-      --max-rounds=N       Stop safely after N refinement rounds
-      --output=PATH        Checkpoint/output directory
-      --resume             Continue from output/basis_polynomials.txt
-      --prepare-only       Build and export the reduced ideal, then stop
-      --bits=N             gfan integer arithmetic: 64, 32, or 0 (exact)
-      --gfan-chunksize=N   Restriction cones per orbit-restricted gfan pass (default: 1000)
-      --fresh-processes    Leave with status 75 after each phase of a round; run again with --resume
-      --verify-final       Independently recompute and certify the final basis
-      --gfan=PATH          Path to gfan_tropicalprevariety
-      --help               Show this help
-    """)
-end
-
-function parse_tropicalization_config(problem::TropicalProblem, arguments)
-    config = TropicalizationConfig(engine=problem.default_engine, output=problem.default_output)
-    for argument in arguments
-        if argument == "--help"
-            tropicalization_usage(problem)
-            exit(0)
-        elseif argument == "--resume"
-            config.resume = true
-        elseif argument == "--prepare-only"
-            config.prepare_only = true
-        elseif argument == "--verify-final"
-            config.verify_final = true
-        elseif argument == "--force"
-            config.force = true
-        elseif startswith(argument, "--engine=")
-            config.engine = Symbol(split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--workers=")
-            config.workers = parse(Int, split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--threads=")
-            config.threads = parse(Int, split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--witness-limit=")
-            config.witness_limit = parse(Int, split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--max-rounds=")
-            config.max_rounds = parse(Int, split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--output=")
-            config.output = abspath(split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--bits=")
-            config.bits = parse(Int, split(argument, "=", limit=2)[2])
-        elseif startswith(argument, "--gfan-chunksize=")
-            config.gfan_chunksize = parse(Int, split(argument, "=", limit=2)[2])
-        elseif argument == "--fresh-processes"
-            config.fresh_processes = true
-        elseif startswith(argument, "--gfan=")
-            config.gfan = abspath(split(argument, "=", limit=2)[2])
-        else
-            throw(ArgumentError("unknown option: $argument"))
-        end
-    end
-    config.workers >= 1 || throw(ArgumentError("--workers must be positive"))
-    config.threads >= 1 || throw(ArgumentError("--threads must be positive"))
-    config.witness_limit >= 1 || throw(ArgumentError("--witness-limit must be positive"))
-    config.max_rounds >= 0 || throw(ArgumentError("--max-rounds cannot be negative"))
-    config.bits in (0, 32, 64) || throw(ArgumentError("--bits must be 0, 32, or 64"))
-    config.gfan_chunksize >= 0 || throw(ArgumentError("--gfan-chunksize cannot be negative"))
-    config.engine in (:auto, :oscar, :parallel) ||
-        throw(ArgumentError("--engine must be auto, oscar, or parallel"))
-    if config.verify_final
-        config.resume || throw(ArgumentError("--verify-final requires --resume"))
-        config.bits == 0 || throw(ArgumentError("--verify-final requires --bits=0"))
-        config.prepare_only && throw(ArgumentError("--verify-final conflicts with --prepare-only"))
-    end
-    engine = config.engine == :auto ? problem.default_engine : config.engine
-    if engine == :parallel
-        isempty(config.gfan) && throw(ArgumentError("gfan_tropicalprevariety was not found"))
-        isfile(config.gfan) || throw(ArgumentError("gfan executable does not exist: $(config.gfan)"))
-    end
-    isfile(problem.provider_file) ||
-        throw(ArgumentError("ideal provider does not exist: $(problem.provider_file)"))
-    return config
 end
 
 function atomic_write(path::String, contents::AbstractString)
@@ -399,8 +312,57 @@ function cone_jobs(fan)
     return jobs
 end
 
-basis_input_text(variable_names, basis_polynomials) = "Q[" * join(variable_names, ",") * "]\n" *
-    "{\n" * join(("  " * f for f in basis_polynomials), ",\n") * "\n}\n"
+"""Render an Oscar polynomial in the syntax accepted by gfan."""
+function gfan_polynomial(f)
+    iszero(f) && return "0"
+    names = string.(symbols(parent(f)))
+    coefficient_field = coefficient_ring(f)
+    finite_coefficients = coefficient_field isa FinField
+    finite_coefficients && degree(coefficient_field) != 1 &&
+        throw(ArgumentError("gfan support export requires a prime coefficient field"))
+    pieces = String[]
+
+    for (coefficient, exponent) in zip(coefficients(f), exponents(f))
+        # gfan computes the trivial-valuation prevariety from polynomial
+        # supports. Integer lifts preserve those supports; every algebraic
+        # check and round-trip parse still uses the worker's coefficient field.
+        representative = finite_coefficients ? lift(ZZ, coefficient) : coefficient
+        negative = representative < 0
+        absolute = abs(representative)
+        numerator_string = string(numerator(absolute))
+        denominator_value = denominator(absolute)
+        coefficient_string = isone(denominator_value) ?
+            numerator_string : numerator_string * "/" * string(denominator_value)
+
+        factors = String[]
+        for (name, power) in zip(names, exponent)
+            iszero(power) && continue
+            push!(factors, power == 1 ? name : name * "^" * string(power))
+        end
+        monomial = join(factors, "*")
+        body = if isempty(monomial)
+            coefficient_string
+        elseif isone(absolute)
+            monomial
+        else
+            coefficient_string * "*" * monomial
+        end
+
+        if isempty(pieces)
+            push!(pieces, negative ? "-" * body : body)
+        else
+            push!(pieces, negative ? " - " * body : " + " * body)
+        end
+    end
+    return join(pieces)
+end
+
+"The gfan input of the polynomial strings `basis_polynomials` in the variables `variable_names`; the set must not be empty."
+function basis_input_text(variable_names, basis_polynomials)
+    isempty(basis_polynomials) && throw(ArgumentError("the polynomial set is empty"))
+    return "Q[" * join(variable_names, ",") * "]\n" *
+        "{\n" * join(("  " * f for f in basis_polynomials), ",\n") * "\n}\n"
+end
 
 write_basis_input(path, variable_names, basis_polynomials) =
     atomic_write(path, basis_input_text(variable_names, basis_polynomials))
@@ -644,7 +606,7 @@ function initialize_workers(count::Int, problem::TropicalProblem)
             # closures defined in it. Including the module source directly
             # creates an unregistered Main module that cannot deserialize
             # package-owned closures.
-            remotecall_fetch(Core.eval, worker, Main, :(using TropicalCensus; nothing))
+            remotecall_fetch(Core.eval, worker, Main, :(using TropicalGeometryG2; nothing))
             remote_include(worker, worker_file)
             # Provider loading is a separate remote call so Julia 1.12 sees
             # its bindings in the worker's current world age.
@@ -1232,96 +1194,76 @@ function write_verification_marker(marker_path, basis_input_path, fan_path, bits
     ], '\n'))
 end
 
-function verify_final_basis(config, export_data, basis_polynomials; strategy::Symbol=:groebner,
-                            whole_interior_pruning::Bool=false, canonical::Bool=false)
-    verification_directory = joinpath(config.output, "verification_bits_$(config.bits)")
-    mkpath(verification_directory)
-    input_path = joinpath(verification_directory, "basis.gfan")
-    fan_path = joinpath(verification_directory, "prevariety.gfan")
-    log_path = joinpath(verification_directory, "gfan.log")
-    witness_path = joinpath(verification_directory, "new_witnesses.txt")
-    marker_path = joinpath(verification_directory, "certified_fan.txt")
-    result_path = strategy == :balanced_support ?
-        joinpath(verification_directory, "certified_support.gfan") : fan_path
-    pruned_result_path = joinpath(verification_directory, "interior_pruning", "certified_support.gfan")
-    whole_interior_pruning && isfile(pruned_result_path) && (result_path = pruned_result_path)
+"""
+The exact recheck of `--verify-final`: one more round of the run on its final
+basis, with the gfan arithmetic of `config.bits`, in `verification_bits_<bits>/`
+beside the checkpoint. As in the run, gfan uses the symmetry if the problem
+asks for it, and a symmetric problem is certified one orbit at a time; the
+round must certify the prevariety without a new witness. Returns the certified
+fan; a recheck whose basis, fan and policy are current is not run again.
+"""
+function verify_final_basis(config, problem, export_data, basis_polynomials; canonical::Bool=false)
+    strategy = problem.certification_strategy
+    directory = joinpath(config.output, "verification_bits_$(config.bits)")
+    mkpath(directory)
+    input_path = joinpath(directory, "basis.gfan")
+    fan_path = joinpath(directory, "prevariety.gfan")
+    log_path = joinpath(directory, "gfan.log")
+    witness_path = joinpath(directory, "new_witnesses.txt")
+    # As in the run: the certified fan, and the policy it was certified under.
+    certificate_path = joinpath(directory, "certified_fan.txt")
+    policy_path = joinpath(directory, "certified_policy.txt")
     purity_signature = purity_certificate_signature(export_data.purity_certificate)
     write_basis_input(input_path, export_data.variable_names, basis_polynomials)
 
-    if verification_marker_is_current(
-        marker_path,
-        input_path,
-        result_path,
-        config.bits,
-        strategy=strategy,
-        purity_signature=purity_signature,
-        canonical=canonical,
-    )
-        fan = parse_gfan_fan(result_path)
-        println(
-            "Using exact final-verification checkpoint $result_path " *
-            "($(length(fan.maximal_cones)) maximal cones).",
-        )
-        return result_path
+    if isfile(certificate_path)
+        result_path = normpath(joinpath(directory, strip(read(certificate_path, String))))
+        if verification_marker_is_current(policy_path, input_path, result_path, config.bits;
+                                          strategy=strategy, purity_signature=purity_signature, canonical=canonical)
+            println("Using the finished recheck $result_path.")
+            return result_path
+        end
     end
 
-    println(
-        "Verifying the final $(length(basis_polynomials))-polynomial basis " *
-        "with gfan --bits $(config.bits)...",
-    )
-    fan = run_prevariety(config, input_path, fan_path, log_path; canonical=canonical)
-    if strategy == :balanced_support
-        prepared = prepare_symmetric_round(fan_path, verification_directory, export_data; strategy=strategy)
-        certification = collect_symmetric_witnesses(prepared, export_data, Set(basis_polynomials),
-            config, verification_directory; strategy=strategy, source_fan_path=fan_path,
-            whole_interior_pruning=whole_interior_pruning)
-        certification.complete || error("exact support verification requires further tropical-basis refinement")
-        result_path = hasproperty(certification, :certified_fan_path) ? certification.certified_fan_path : fan_path
-        write_verification_marker(marker_path, input_path, result_path, config.bits;
-                                  strategy=strategy, purity_signature=purity_signature, canonical=canonical)
-        println("Arbitrary-precision tropical support certified exactly: $result_path")
-        return result_path
-    end
-    jobs = if isnothing(export_data.symmetry_permutations)
-        result = cone_jobs(fan)
-        Random.seed!(0x510e527f)
-        shuffle!(result)
-        result
+    println("Rechecking the final $(length(basis_polynomials))-polynomial basis with gfan --bits $(config.bits)")
+    symmetric = !isnothing(export_data.symmetry_permutations)
+    fan = if symmetric && problem.gfan_symmetry
+        run_symmetric_prevariety(config, input_path, fan_path, log_path, export_data; canonical=canonical)
     else
-        min_fan = save_lifted_fan(fan_path, joinpath(verification_directory, "fine_tree_fan.mrdi"),
-                                  export_data.lift_indices).fan
-        result = tree_orbit_jobs(min_fan, export_data.symmetry_permutations; action=export_data.symmetry_action)
-        save_symmetry_artifacts(joinpath(verification_directory, "fine_symmetry"), result.symmetry)
-        result.jobs
+        run_prevariety(config, input_path, fan_path, log_path; canonical=canonical)
     end
-    println(
-        "  exact candidate fan: dim=$(fan.dimension), " *
-        "lineality=$(fan.lineality_dimension), $(length(jobs)) maximal cones",
-    )
-
-    certification = collect_witnesses(jobs, Set(basis_polynomials), config)
-    atomic_write(
-        witness_path,
-        join(certification.witnesses, "\n") *
-        (isempty(certification.witnesses) ? "" : "\n"),
-    )
-    if certification.failures != 0
-        error(
-            "arbitrary-precision final verification found " *
-            "$(certification.failures) non-tropical cone(s); artifacts retained in " *
-            verification_directory,
-        )
+    println("  candidate fan: dim=$(fan.dimension), lineality=$(fan.lineality_dimension), ",
+            "$(length(fan.maximal_cones)) maximal cones")
+    basis_set = Set(basis_polynomials)
+    jobs = nothing
+    certification = if symmetric
+        prepared = prepare_symmetric_round(fan_path, directory, export_data; strategy=strategy,
+                                           coarsen=problem.coarsen_prevariety)
+        collect_symmetric_witnesses(prepared, export_data, basis_set, config, directory;
+                                    strategy=strategy, source_fan_path=fan_path,
+                                    whole_interior_pruning=problem.whole_interior_pruning)
+    else
+        jobs = cone_jobs(fan)
+        Random.seed!(0x510e527f)
+        shuffle!(jobs)
+        collect_witnesses(jobs, basis_set, config)
     end
-    certification.checked == length(jobs) || error(
-        "arbitrary-precision final verification stopped before checking every cone",
-    )
-    write_verification_marker(marker_path, input_path, fan_path, config.bits;
+    atomic_write(witness_path, join(certification.witnesses, "\n") *
+                               (isempty(certification.witnesses) ? "" : "\n"))
+    isempty(certification.witnesses) && certification.failures == 0 || error(
+        "the recheck found $(length(certification.witnesses)) new witness(es) and " *
+        "$(certification.failures) non-tropical cone(s); its files are in $directory")
+    if symmetric
+        certification.complete || error("the recheck stopped before certifying every orbit")
+    else
+        certification.checked == length(jobs) || error("the recheck stopped before checking every cone")
+    end
+    result_path = hasproperty(certification, :certified_fan_path) ? certification.certified_fan_path : fan_path
+    atomic_write(certificate_path, relpath(result_path, directory) * "\n")
+    write_verification_marker(policy_path, input_path, result_path, config.bits;
                               strategy=strategy, purity_signature=purity_signature, canonical=canonical)
-    println(
-        "All $(length(jobs)) arbitrary-precision cone representatives certified exactly. " *
-        "Verification marker: $marker_path",
-    )
-    return fan_path
+    println("The recheck certified $result_path")
+    return result_path
 end
 
 function collect_initial_ideal_groups(jobs, config)
@@ -1707,12 +1649,10 @@ function run_parallel_tropicalization(
 
     if config.verify_final
         try
-            verify_final_basis(config, export_data, basis_polynomials; strategy=strategy,
-                               whole_interior_pruning=problem.whole_interior_pruning, canonical=canonical)
+            return verify_final_basis(config, problem, export_data, basis_polynomials; canonical=canonical)
         finally
             rmprocs(worker_ids)
         end
-        return
     end
 
     atomic_write(basis_path, join(basis_polynomials, "\n") * "\n")

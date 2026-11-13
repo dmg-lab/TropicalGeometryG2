@@ -9,16 +9,15 @@
 # in every field in which the orbit occurs, with its f-vector modulo lineality
 # and its combinatorial type, and groups the orbits by isomorphism type.
 #
-# Run from the repository root with julia --project=julia. The script reads
-# the normalized coarsest flag fan, the projection census and the stage-6
-# Grassmannian census of each field, and takes the orbit numbers from the
-# G2-tree atlas. It prints the tabularx, or writes it to --output=FILE;
-# main.tex supplies the table float and its caption, and loads the packages
-# tabularx and booktabs.
+# Run from julia/ with `julia --project=.`. The script reads the normalized
+# coarsest flag fan, the projection census and the stage-6 Grassmannian census
+# of each field, and takes the orbit numbers from the G2-tree atlas. It prints
+# the tabularx, or writes it to --output=FILE; main.tex supplies the table
+# float and its caption, and loads the packages tabularx and booktabs.
 ###############################################################################
 
 using Oscar
-using TropicalCensus
+using TropicalGeometryG2
 
 include(joinpath(@__DIR__, "toric_degeneration_table.jl"))
 
@@ -42,7 +41,7 @@ const LOCAL_FLAG_CELL_WORDS = Dict(
 )
 
 local_flag_data_file(field, target, name) =
-    TropicalCensus.data_path("g2", LOCAL_FLAG_DIRECTORIES[field][target], name)
+    TropicalGeometryG2.data_path("g2", LOCAL_FLAG_DIRECTORIES[field][target], name)
 
 """
 The flag fan of `field` modulo lineality: its rays, its lineality, its
@@ -54,15 +53,15 @@ fans, as in the projection stage.
 function local_flag_field_data(field::Symbol)
     fan = load(local_flag_data_file(field, :flag, "03_normalized_coarsest_fan.mrdi"))
     data = rays_modulo_lineality(fan)
-    cells = TropicalCensus.fan_cells(fan)
+    cells = TropicalGeometryG2.fan_cells(fan)
     over = Dict{Int,Vector{Int}}()
-    for row in TropicalCensus.csv_rows(local_flag_data_file(field, :flag, "07_projection_cells.csv"))
+    for row in TropicalGeometryG2.csv_rows(local_flag_data_file(field, :flag, "07_projection_cells.csv"))
         push!(get!(over, parse(Int, row["grassmannian_cell"]), Int[]), parse(Int, row["flag_cell"]))
     end
     sum(length, values(over)) == length(cells) || error("the projection census misses flag cells over $field")
-    census = TropicalCensus.csv_rows(local_flag_data_file(field, :grassmannian, "06_canonical_interior_degenerations.csv"))
+    census = TropicalGeometryG2.csv_rows(local_flag_data_file(field, :grassmannian, "06_canonical_interior_degenerations.csv"))
     orbits = Dict(parse(Int, row["orbit"]) => parse.(Int, split(row["cells"], ';')) for row in census)
-    symmetry = TropicalCensus.load_symmetry_artifacts(local_flag_data_file(field, :grassmannian, "05_symmetry"))
+    symmetry = TropicalGeometryG2.load_symmetry_artifacts(local_flag_data_file(field, :grassmannian, "05_symmetry"))
     issetequal(Set.(values(orbits)), Set.(symmetry.cell_orbits)) ||
         error("the census and the symmetry orbits of the Grassmannian over $field disagree")
     return (
@@ -83,7 +82,7 @@ function local_flag_complex(data, cell::Int)
     faces = [Set{Vector{Int}}() for _ in 0:3]
     types = Dict{String,Int}()
     for flag_cell in flag_cells
-        levels, incidence = TropicalCensus.cell_faces(data.cells[flag_cell], data.rays, data.lineality)
+        levels, incidence = TropicalGeometryG2.cell_faces(data.cells[flag_cell], data.rays, data.lineality)
         length(levels) == 4 || error("flag cell $flag_cell over $(data.field) is not 3-dimensional")
         for (level, list) in enumerate(levels)
             union!(faces[level], list)
@@ -271,7 +270,7 @@ end
 
 function local_flag_complex_table_main(args=ARGS)
     if "--help" in args
-        println("Usage: julia --project=julia julia/to_tex/local_flag_complex_table.jl [--output=FILE]")
+        println("Usage: julia --project=. to_tex/local_flag_complex_table.jl [--output=FILE]")
         return nothing
     end
     for arg in args

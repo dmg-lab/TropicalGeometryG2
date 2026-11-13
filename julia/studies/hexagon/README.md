@@ -17,7 +17,7 @@ convention throughout.
 | `certificate/` | **The proof of Theorem `thm:completing_hexagons`**: `hexagon_certificate.mrdi`, `compute_certificate.jl`, `verify_certificate.jl`; see `certificate/README.md` |
 | `tests/test_tropical_hexagon.jl` | Membership tests (`is_tropical_hexagon`, `check_tropical_incidences`) and tests of the above: `run_all_tests` |
 | `tests/hexagon_expressions.jl` | Tests of the incidences of Lemma `lem:complete_hexagon` for `hexagon_expressions`, modulo I and at random points over several fields |
-| `figures/hexagon_tree_ring.jl` | Writes `figures/hexagon_tree_ring.tex` of the repository (`fig:tropical_hexagon`) and a preview pdf |
+| `../../to_tex/hexagon_tree_ring.jl` | Writes `../figures/hexagon_tree_ring.tex` of the repository (`fig:tropical_hexagon`) |
 | `figures/hexagon_example_figure.jl` | Writes `figures/hexagon_example.tex` (six decorated G2-trees per hexagon) and `figures/hexagon_examples.md` (the coordinates) |
 
 Include chain: `tropical_complete_hexagon.jl` → `complete_hexagon.jl` → `polynomial_expressions.jl`, and
@@ -48,7 +48,7 @@ fans in `../../data/g2/flag/` and `../../data/g2/grassmannian/`, and is over QQ.
 ```sh
 julia --project=. studies/hexagon/tests/test_tropical_hexagon.jl
 julia --project=. studies/hexagon/tests/hexagon_expressions.jl
-julia --project=. studies/hexagon/figures/hexagon_tree_ring.jl [--complete]
+julia --project=. to_tex/hexagon_tree_ring.jl [--complete]
 julia --project=. studies/hexagon/figures/hexagon_example_figure.jl
 bash studies/hexagon/certificate/run_compute_overnight.sh          # many hours
 bash studies/hexagon/certificate/run_verification_overnight.sh     # about 15 h

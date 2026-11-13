@@ -29,26 +29,20 @@
 #   i.e. b_1 -> -e_1, b_2 -> e_5, b_3 -> e_6, b_4 -> e_7, b_5 -> e_3,
 #        b_6 -> e_2, b_7 -> e_4.
 #
-#   Run with:  julia g2_oscar_notation.jl
+#   Run from julia/ with:  julia --project=. studies/g2/supplemental/g2_oscar_notation.jl
 #
 ###############################################################################
 
-using TropicalCensus
+using TropicalGeometryG2
 using Oscar
-const CP = TropicalCensus.ChevalleyPolytopes
-
-L  = lie_algebra(QQ, :G, 2)
-V7 = simple_module(L, [1, 0])
-W  = exterior_power(V7, 2)[1]
-pos, neg, hs = chevalley_basis(L)
-prs = [(i, j) for i in 1:7 for j in (i+1):7]
+include(joinpath(@__DIR__, "g2_chevalley_valuation.jl"))   # L, V7, W, the fixed SIGMA
+include(joinpath(@__DIR__, "exterior_forms.jl"))           # sortsign
 idx = Dict(prs[t] => t for t in 1:21)
 
-wt(V, j) = [Int(numerator(QQ(collect(coefficients(hs[i] * basis(V, j)))[j]))) for i in 1:2]
 println("="^75)
 println("Oscar's weight basis of V_7")
 println("="^75)
-println("  weights of b_1..b_7: ", [wt(V7, j) for j in 1:7])
+println("  weights of b_1..b_7: ", basis_weights(L, V7))
 
 # --- the two invariants of Oscar's basis, solved for ------------------------
 A7 = [begin
@@ -62,13 +56,10 @@ A7 = [begin
 
 triples = [(i, j, k) for i in 1:7 for j in (i+1):7 for k in (j+1):7]
 tix = Dict(t => n for (n, t) in enumerate(triples))
-function alt(F, i, j, k)
+function alt(F::AbstractVector, i, j, k)
     (i == j || j == k || i == k) && return zero(QQ)
-    v = [i, j, k]; s = 1
-    for _ in 1:3, b in 1:2
-        v[b] > v[b+1] && ((v[b], v[b+1]) = (v[b+1], v[b]); s = -s)
-    end
-    return s * F[tix[(v[1], v[2], v[3])]]
+    t, s = sortsign((i, j, k))
+    return s * F[tix[t]]
 end
 
 rows = Vector{QQFieldElem}[]
@@ -123,11 +114,9 @@ println("  distinguished index (in three terms of Phi_osc): ",
 
 # --- the signed permutations to ../main.tex ---------------------------------
 Phi_main = Dict((1,2,3) => 1, (4,5,6) => 1, (1,4,7) => 1, (2,5,7) => 1, (3,6,7) => 1)
-allperms(x) = length(x) <= 1 ? [x] :
-    [vcat(x[i], p) for i in 1:length(x) for p in allperms(vcat(x[1:i-1], x[i+1:end]))]
 function signed_matches()
     out = Tuple{Vector{Int},Vector{Int}}[]
-    for s in allperms(collect(1:7))
+    for s in all_permutations(1:7)
         Set([Tuple(sort([s[t[1]], s[t[2]], s[t[3]]])) for t in triples if !iszero(Phi_osc[tix[t]])]) ==
             Set(keys(Phi_main)) || continue
         for bits in 0:127, u in (1, -1)
@@ -135,11 +124,8 @@ function signed_matches()
             ok = true
             for t in triples
                 iszero(Phi_osc[tix[t]]) && continue
-                v = [s[t[1]], s[t[2]], s[t[3]]]; sg = 1
-                for _ in 1:3, b in 1:2
-                    v[b] > v[b+1] && ((v[b], v[b+1]) = (v[b+1], v[b]); sg = -sg)
-                end
-                u * Phi_osc[tix[t]] * sg * c[t[1]] * c[t[2]] * c[t[3]] == Phi_main[(v[1],v[2],v[3])] ||
+                v, sg = sortsign((s[t[1]], s[t[2]], s[t[3]]))
+                u * Phi_osc[tix[t]] * sg * c[t[1]] * c[t[2]] * c[t[3]] == Phi_main[v] ||
                     (ok = false; break)
             end
             ok && push!(out, (s, u == 1 ? c : -c))
@@ -152,7 +138,7 @@ sigmas = sort(unique(first.(matches)))
 println("\n  signed permutations b_i -> c_i e_{sigma(i)} carrying Phi_osc to ../main.tex's Phi: ",
         length(matches), ", on ", length(sigmas), " permutations")
 println("  all send Oscar's index 4 to ../main.tex's index 7: ", all(s[4] == 7 for s in sigmas))
-const SIGMA = sigmas[1]
+@assert sigmas[1] == SIGMA                  # the dictionary fixed in g2_chevalley_valuation.jl
 signs = first([c for (s, c) in matches if s == SIGMA])
 println("  the representative fixed for all scripts: sigma = ", SIGMA, ",  c = ", signs)
 println("    ", join(["b$i -> $(signs[i] < 0 ? "-" : "")e$(SIGMA[i])" for i in 1:7], ",  "))
@@ -167,17 +153,9 @@ for row in 1:7
 end
 
 # --- the valuations, in both labellings -------------------------------------
-hw = only([t for t in 1:21 if wt(W, t) == [0, 1] &&
-           iszero(pos[1] * basis(W, t)) && iszero(pos[2] * basis(W, t))])
-r = [2, 1, 2, 1, 2]; l = 5
-Fcol = CP._lowering_columns(L, W, 2)
-Ra, gs = polynomial_ring(QQ, ["a$k" for k in l:-1:1])
-a = Any[gs[l+1-k] for k in 1:l]; o = degrevlex(Ra)
-v = Any[zero(Ra) for _ in 1:21]; v[hw] = one(Ra)
-for k in 1:l
-    global v = CP._exp_f(Fcol[r[k]], a[k], v, Ra)
-end
-nu = [CP._min_exponent(v[t], o) for t in 1:21]
+hw = highest_vector(W, [0, 1])
+r = [2, 1, 2, 1, 2]
+_, nu = chevalley_valuations(W, [0, 1], r)
 println("\n  highest weight vector of the g_2-summand of /\\^2 V_7 in Oscar's labels: p",
         prs[hw])
 println("\n  the Chevalley valuations, in both labellings:")

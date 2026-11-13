@@ -13,7 +13,7 @@
 # that. With --no-cell-letters the cell has no letters, and those of a ray
 # simply stand at their vertices, as in lettered_square_figure.jl.
 #
-#   julia --project=julia julia/to_tex/triangle_cell_figure.jl \
+#   julia --project=. to_tex/triangle_cell_figure.jl \
 #     [--orbit=N | --rays=I,J,K] [--field=QQ|GF2] [--scale=FACTOR] \
 #     [--taxon-scale=FACTOR] [--bounded-length=LENGTH] [--ray-scale=FACTOR] \
 #     [--ray-bounded-length=LENGTH] [--name-below] [--standalone] [--output=FILE]
@@ -152,13 +152,6 @@ function g2_triangle_letter_places(tree, coordinates, letters; preferred=Dict{Ve
         places[(a, b)] = place(a, b, side)
     end
     return places, chosen
-end
-
-"""The distance from the point `p` to the segment from `a` to `b`."""
-function g2_segment_distance(p, a, b)
-    d = b .- a
-    t = clamp(((p[1] - a[1]) * d[1] + (p[2] - a[2]) * d[2]) / (d[1]^2 + d[2]^2), 0, 1)
-    return g2_simple_distance(p, a .+ t .* d)
 end
 
 """
@@ -493,7 +486,7 @@ function g2_triangle_cell_tex(cell; field::Symbol=:qq,
 end
 
 function g2_triangle_cell_main(args=ARGS)
-    script = "julia --project=julia julia/to_tex/triangle_cell_figure.jl"
+    script = "julia --project=. to_tex/triangle_cell_figure.jl"
     if "--help" in args
         println("Usage: $script [--orbit=N | --rays=I,J,K] [--field=QQ|GF2] [--scale=FACTOR] " *
                 "[--taxon-scale=FACTOR] [--bounded-length=LENGTH] [--ray-scale=FACTOR] " *

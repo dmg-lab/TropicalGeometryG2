@@ -4,7 +4,7 @@
 # of its file leave around it. The PDF of the document is the figure at its
 # size in main.tex with a border, which \figurepdf in main.tex trims.
 #
-#   julia julia/to_tex/standalone_figure.jl FIGURE.tex [--output=FILE]
+#   julia to_tex/standalone_figure.jl FIGURE.tex [--output=FILE]
 #
 # writes the document of a hand-drawn figure; the to_tex scripts write theirs
 # with --standalone, through g2_standalone_figure. A document compiles from
@@ -80,7 +80,7 @@ function g2_standalone_fragment(document::AbstractString)
 end
 
 function g2_standalone_figure_main(args=ARGS)
-    usage = "Usage: julia julia/to_tex/standalone_figure.jl FIGURE.tex [--output=FILE]"
+    usage = "Usage: julia to_tex/standalone_figure.jl FIGURE.tex [--output=FILE]"
     if "--help" in args
         println(usage)
         return nothing

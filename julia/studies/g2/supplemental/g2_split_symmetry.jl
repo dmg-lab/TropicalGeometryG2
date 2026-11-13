@@ -18,7 +18,7 @@
 #   Everything is exact: rationals, and Gaussian rationals where the old Zorn
 #   normalisation needs them.  No Oscar, no external packages.
 #
-#   Run with:  julia g2_split_symmetry.jl
+#   Run from julia/ with:  julia --project=. studies/g2/supplemental/g2_split_symmetry.jl
 #
 ###############################################################################
 
@@ -26,21 +26,8 @@ const Q = Rational{BigInt}
 const C = Complex{Rational{BigInt}}
 
 # ---------------------------------------------------------------- 3-forms ---
-"sort a triple, returning the sorted triple and the sign of the permutation"
-function sortsign(t::NTuple{3,Int})
-    v = [t...]; s = 1
-    for _ in 1:3, b in 1:2
-        v[b] > v[b+1] && ((v[b], v[b+1]) = (v[b+1], v[b]); s = -s)
-    end
-    return (v[1], v[2], v[3]), s
-end
-
-"value of an alternating 3-form on an arbitrary (unsorted, possibly repeating) triple"
-function alt(phi::Dict{NTuple{3,Int},T}, i, j, k) where {T}
-    (i == j || j == k || i == k) && return zero(T)
-    t, s = sortsign((i, j, k))
-    return s * get(phi, t, zero(T))
-end
+# sortsign, alt, permsign, subsets, top, contract and allperms
+include(joinpath(@__DIR__, "exterior_forms.jl"))
 
 "apply a relabelling to a 3-form"
 function relabel(phi::Dict{NTuple{3,Int},T}, sig::Dict{Int,Int}) where {T}
@@ -183,9 +170,6 @@ println("    they form the hexagon ", join(hexcyc, "-"), "-", hexcyc[1],
         "   (a single 6-cycle: ", length(hexcyc) == 6, ")")
 
 # --- (5) the two symmetry groups --------------------------------------------
-allperms(x) = length(x) <= 1 ? [x] :
-    [vcat(x[i], p) for i in 1:length(x) for p in allperms(vcat(x[1:i-1], x[i+1:end]))]
-
 "permutations with sigma.phi = lambda*phi for a global scalar lambda"
 function stab_scalar(phi::Dict{NTuple{3,Int},T}, idx) where {T}
     out = Tuple{Vector{Int},T}[]
@@ -314,36 +298,8 @@ println("    is the cyclic Z/6 while ../main.tex's is the S_3.  In ../main.tex's
 println("    group is S_3, and the note now uses those labels throughout.")
 
 # --- (7) the two ways of recovering q from Phi -------------------------------
-"sign of the permutation given by a list of distinct indices, or 0 if repeated"
-function permsign(v::Vector{Int})
-    length(unique(v)) == length(v) || return 0
-    w = copy(v); s = 1
-    for i in 1:length(w), j in 1:(length(w)-1)
-        w[j] > w[j+1] && ((w[j], w[j+1]) = (w[j+1], w[j]); s = -s)
-    end
-    return s
-end
-
-subsets(n, k) = k == 0 ? [Int[]] :
-    [vcat(i, t) for i in 1:n for t in subsets(n, k-1) if isempty(t) || i < t[1]]
-
-"coefficient of e^{1..7} in alpha /\\ beta /\\ gamma, for a 2-, 2- and 3-form"
-function top(alpha::Dict, beta::Dict, gamma::Dict)
-    tot = zero(Q)
-    for a in subsets(7, 2), b in subsets(7, 2), c in subsets(7, 3)
-        length(union(a, b, c)) == 7 || continue
-        ca = get(alpha, (a[1], a[2]), zero(Q)); iszero(ca) && continue
-        cb = get(beta,  (b[1], b[2]), zero(Q)); iszero(cb) && continue
-        cg = get(gamma, (c[1], c[2], c[3]), zero(Q)); iszero(cg) && continue
-        tot += permsign(vcat(a, b, c)) * ca * cb * cg
-    end
-    return tot
-end
-
-contract(a::Int) = Dict{NTuple{2,Int},Q}((j, k) => alt(Phi, a, j, k)
-                                         for (j, k) in prs if !iszero(alt(Phi, a, j, k)))
 println("\n(7) recovering q from Phi")
-g = Dict((a, b) => top(contract(a), contract(b), Phi) // 6 for a in 1:7 for b in a:7)
+g = Dict((a, b) => top(contract(Phi, a), contract(Phi, b), Phi) // 6 for a in 1:7 for b in a:7)
 nz = sort([(k, v) for (k, v) in g if !iszero(v)], by = x -> x[1])
 println("    eq:metric-from-phi, g(e_a,e_b) = (1/6)(i_a Phi)^(i_b Phi)^Phi:")
 println("      ", join(["g(e$(k[1]),e$(k[2])) = $v" for (k, v) in nz], ",  "))
@@ -358,7 +314,7 @@ println("    proportional to the polarisation of q = x1x4+x2x5+x3x6-x7^2, factor
 # ../main.tex's own formula q(x) = (x _| Phi) ^ (x _| Phi) ^ Phi, as a quadratic form
 coef = Dict{Tuple{Int,Int},Q}()
 for a in 1:7, b in 1:7
-    v = top(contract(a), contract(b), Phi)
+    v = top(contract(Phi, a), contract(Phi, b), Phi)
     iszero(v) || (coef[(min(a,b), max(a,b))] = get(coef, (min(a,b), max(a,b)), Q(0)) + v)
 end
 println("    ../main.tex's formula (x _| Phi)^(x _| Phi)^Phi gives the quadratic form")

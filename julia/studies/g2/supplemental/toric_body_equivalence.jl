@@ -2,10 +2,10 @@
 # tropical G2-Grassmannian over QQ, for the table of Newton--Okounkov polytopes in main.tex.
 # Row k is the k-th toric orbit of 06_canonical_interior_degenerations.csv.
 #
-#   julia --project=julia julia/studies/g2/supplemental/toric_body_equivalence.jl \
-#     > julia/studies/g2/reports/toric_body_equivalence.txt
+#   julia --project=. studies/g2/supplemental/toric_body_equivalence.jl \
+#     > studies/g2/reports/toric_body_equivalence.txt
 using Oscar
-using TropicalCensus: affine_unimodular_equivalent
+using TropicalGeometryG2: affine_unimodular_equivalent
 
 const DIR = joinpath(@__DIR__, "..", "..", "..", "data", "g2", "grassmannian")
 

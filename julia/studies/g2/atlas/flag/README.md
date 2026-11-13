@@ -10,6 +10,16 @@ flag fans over QQ and over GF(2). It writes `g2_tree_atlas.tex`,
 | `local_flag_fields.jl` | The second field: the GF(2) support cells in the ray numbering of the atlas, matched to the QQ support orbits. |
 | `local_flag_degenerations.jl` | The stage-6 censuses of both fields, the page order, the polytope notation, and the polymake drawings. |
 
+The tables of main.tex number the support orbits by the labels of
+`local_flag_cell_atlas.csv`. Two files hold this numbering for the scripts of
+`to_tex/` and for `../grassmannian/export_maximal_cell_tree_metrics.jl`;
+the build does not use them.
+
+| File | Contents |
+|---|---|
+| `cell_orbit_labels.jl` | The stage-6 census rows of both fields, and the label, the census orbits, the orbit size and the support cell of every support orbit, in atlas order. It reads CSV files only. |
+| `cell_orbit_trees.jl` | The trees of the lineality generators, the rays, the edges and the maximal cells of the coarsest Grassmannian fans of both fields, which `to_tex/render_maximal_cell_tree.jl` draws, and the tree of the support cell of every numbered orbit. |
+
 ## The two fields
 
 Rays `R_1`, ..., `R_51` are those of the QQ census. The three rays that occur
@@ -27,7 +37,7 @@ only over QQ, and 4 only over GF(2).
 Run the census stages through `../../run_census.jl` (QQ) and
 `../../run_census_gf2.jl` (GF(2)). The renderer reads the coarsest fans
 `02_coarsest_fan.mrdi` of `data/g2/flag/` and `data/g2/flag_gf2/` and the
-Grassmannian data of both fields through `TropicalCensus.data_path`.
+Grassmannian data of both fields through `TropicalGeometryG2.data_path`.
 
 ## Pages
 
@@ -68,11 +78,11 @@ atlas label, `fields` the fields of the support orbit, `qq_orbit` and
 `gf2_orbit` its census numbers, and `qq_flag_rays` and `gf2_flag_rays` the rays
 of the cell in each flag fan.
 
-Run the renderer from the repository root:
+Run the renderer from `julia/`:
 
 ```sh
-julia --project=julia julia/studies/g2/atlas/flag/build_local_flag_cell_atlas.jl --no-pdf
+julia --project=. studies/g2/atlas/flag/build_local_flag_cell_atlas.jl --no-pdf
 ```
 
 It takes about two minutes and under three gigabytes of memory. When built
-without `--no-pdf`, the PDF is written to `output/pdf/g2_tree_atlas.pdf`.
+without `--no-pdf`, the PDF is written to `../output/pdf/g2_tree_atlas.pdf`.

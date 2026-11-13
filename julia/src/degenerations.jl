@@ -278,8 +278,12 @@ is one fixed isomorphism followed by a combinatorial automorphism of the
 target, so testing those compositions is complete. A vertex-edge graph
 isomorphism cannot serve as the fixed one: for non-simple polytopes it need
 not preserve faces.
+
+With `vertex_labels = (source_labels, target_labels)`, one label per vertex in
+the order of `vertices`, the map must also send each vertex to a vertex with
+its label.
 """
-function affine_unimodular_equivalent(source_polytope, target_polytope)
+function affine_unimodular_equivalent(source_polytope, target_polytope; vertex_labels=nothing)
     dim(source_polytope) == dim(target_polytope) || return false
     f_vector(source_polytope) == f_vector(target_polytope) || return false
     source = matrix(QQ, vertices(source_polytope))
@@ -302,8 +306,9 @@ function affine_unimodular_equivalent(source_polytope, target_polytope)
     initial = (vertex_permutation, invperm(vertex_permutation))[seed]
     target_group = automorphism_group(target_polytope; action=:on_vertices)
     for automorphism in target_group
-        action = [Int(automorphism(index)) for index in 1:nrows(target)]
-        affine_map_is_unimodular(source, target, action[initial]) && return true
+        mapping = [Int(automorphism(index)) for index in 1:nrows(target)][initial]
+        isnothing(vertex_labels) || first(vertex_labels) == last(vertex_labels)[mapping] || continue
+        affine_map_is_unimodular(source, target, mapping) && return true
     end
     return false
 end

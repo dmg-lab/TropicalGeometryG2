@@ -14,16 +14,16 @@
 # 2 is simple, trivalent and 3-connected, so by Steinitz's theorem it is the
 # edge graph of a simple 3-polytope.
 #
-#   julia --project=julia julia/studies/g2/curves/k3_fins.jl DIR [K] [--input=FILE]
+#   julia --project=. studies/g2/curves/k3_fins.jl DIR [K] [--input=FILE]
 #
 # DIR and K as for k3_surface_polygons.jl, whose output FILE is read, by
-# default julia/results/curves/genus_10/k3/DIR_x18.mrdi. The polygons are
+# default results/curves/genus_10/k3/DIR_x18.mrdi. The polygons are
 # exact; only the cyclic order of the vertices of a polygon is found in
 # floating point, and the edges it gives are checked against the exact edge
 # keys of the polygon.
 ###############################################################################
 
-include(joinpath(@__DIR__, "decorated_curve_graph.jl"))
+include(joinpath(@__DIR__, "k3_surface_polygons.jl"))
 import Combinatorics
 using Printf
 
@@ -73,8 +73,6 @@ function n_classes(n, pairs)
     foreach(((a, b),) -> parent[find_root!(parent, a)] = find_root!(parent, b), pairs)
     return count(x -> find_root!(parent, x) == x, 1:n)
 end
-
-histogram(values) = join(("$k^$(count(==(k), values))" for k in sort!(unique(values))), " ")
 
 function k3_fins(x18, G)
     t = x18.t

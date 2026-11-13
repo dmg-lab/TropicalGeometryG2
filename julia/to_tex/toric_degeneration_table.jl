@@ -2,22 +2,21 @@
 # The paper table of the Newton--Okounkov polytopes of the toric degenerations
 # of the G2-Grassmannian, in characteristic 0 and in characteristic 2.
 #
-# Run from the repository root with julia --project=julia. The script reads
-# the stage-6 censuses of both fields and takes the orbit labels, their order,
-# and the matching of the orbits of both fields from the G2-tree atlas. It
-# prints the tabular, or writes it to --output=FILE; main.tex supplies the
-# table float and its caption, and loads booktabs for its rules.
+# Run from julia/ with `julia --project=.`. The script reads the stage-6
+# censuses of both fields and takes the orbit labels, their order, and the
+# matching of the orbits of both fields from the G2-tree atlas, by
+# studies/g2/atlas/flag/cell_orbit_labels.jl. It prints the tabular, or
+# writes it to --output=FILE; main.tex supplies the table float and its
+# caption, and loads booktabs for its rules.
 ###############################################################################
 
-const TORIC_TABLE_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const TORIC_TABLE_CENSUS = (
-    qq="julia/data/g2/grassmannian/06_canonical_interior_degenerations.csv",
-    gf2="julia/data/g2/grassmannian_gf2/06_canonical_interior_degenerations.csv",
-)
-const TORIC_TABLE_ATLAS = "julia/studies/g2/atlas/flag/local_flag_cell_atlas.csv"
-const TORIC_TABLE_FIELDS = (:qq, :gf2)
+# The censuses, the atlas labels and their numbers, unless a script that
+# includes this file has included them already.
+isdefined(@__MODULE__, :toric_table_support_rows) || include(joinpath(
+    @__DIR__, "..", "studies", "g2", "atlas", "flag", "cell_orbit_labels.jl",
+))
+
 const TORIC_TABLE_CHARACTERISTIC = (qq=0, gf2=2)
-const TORIC_TABLE_FIELD_NAMES = (qq="QQ", gf2="GF(2)")
 # The color of the orbit labels, which are bold old-style numbers, as in the
 # table of maximal trees of toric_degeneration_tree_table.jl and \celltype in
 # main.tex: black.
@@ -30,48 +29,6 @@ const TORIC_TABLE_WIDTH = "\\linewidth"
 # The census marks the Chevalley polytope of G2/P2; the atlas build certifies
 # that it is unimodularly equivalent to this lecture hall simplex.
 const TORIC_TABLE_CHEVALLEY = "Lecture hall simplex \$P_{(1,3,2,3,1)}\$, Chevalley polytope"
-
-"""Split one CSV line, honouring double quotes."""
-function toric_table_csv_fields(line)
-    fields = String[]
-    buffer = IOBuffer()
-    quoted = false
-    characters = collect(line)
-    index = 1
-    while index <= length(characters)
-        character = characters[index]
-        if character == '"'
-            if quoted && index < length(characters) && characters[index + 1] == '"'
-                print(buffer, '"')
-                index += 1
-            else
-                quoted = !quoted
-            end
-        elseif character == ',' && !quoted
-            push!(fields, String(take!(buffer)))
-        else
-            print(buffer, character)
-        end
-        index += 1
-    end
-    quoted && error("unterminated CSV quote")
-    push!(fields, String(take!(buffer)))
-    return fields
-end
-
-"""The rows of a CSV file of the repository, each a dictionary by column name."""
-function toric_table_csv_rows(path)
-    lines = readlines(joinpath(TORIC_TABLE_ROOT, path))
-    isempty(lines) && error("empty CSV: $path")
-    header = toric_table_csv_fields(first(lines))
-    rows = Dict{String,String}[]
-    for line in lines[2:end]
-        fields = toric_table_csv_fields(line)
-        length(fields) == length(header) || error("unexpected column count: $path")
-        push!(rows, Dict(zip(header, fields)))
-    end
-    return rows
-end
 
 """The argument of `name(...)` if `description` has this form."""
 function toric_table_argument(description, name)
@@ -178,61 +135,6 @@ function toric_table_type_tex(description, f_vector, chevalley::Bool)
     return uppercasefirst(phrase)
 end
 
-"""The rows of the census of each field, by the number of their orbit."""
-function toric_table_census()
-    return map(TORIC_TABLE_CENSUS) do path
-        Dict(parse(Int, row["orbit"]) => row for row in toric_table_csv_rows(path))
-    end
-end
-
-"""The number of the atlas `label` of an orbit, by which the paper labels it."""
-toric_table_label_number(label::AbstractString) = parse(Int, label)
-
-"""
-The support orbits of both fields in atlas order that are toric in some
-field or, with `toric=false`, that are not toric in some field. A row has the
-atlas `label`, the `census` `orbits` of these fields, their `orbit_size`, and
-the atlas rays of the `support` cell that the atlas draws.
-"""
-function toric_table_support_rows(census=toric_table_census(); toric::Bool=true)
-    pages = Dict{String,String}[]
-    for row in toric_table_csv_rows(TORIC_TABLE_ATLAS)
-        all(field -> field in ("qq", "gf2"), split(row["fields"], '+')) || continue
-        any(page -> page["label"] == row["label"], pages) || push!(pages, row)
-    end
-    rows = []
-    for page in pages
-        orbits = Pair{Symbol,Int}[]
-        for field in TORIC_TABLE_FIELDS
-            orbit = page["$(field)_orbit"]
-            (string(field) in split(page["fields"], '+')) == !isempty(orbit) ||
-                error("atlas label $(page["label"]) has inconsistent fields")
-            isempty(orbit) && continue
-            (census[field][parse(Int, orbit)]["toric"] == "true") == toric &&
-                push!(orbits, field => parse(Int, orbit))
-        end
-        isempty(orbits) && continue
-        sizes = unique!([parse(Int, census[field][orbit]["orbit_size"])
-                         for (field, orbit) in orbits])
-        length(sizes) == 1 ||
-            error("the orbit of atlas label $(page["label"]) differs between the fields")
-        push!(rows, (
-            label=page["label"], orbits=orbits, orbit_size=only(sizes),
-            support=parse.(Int, split(page["support"], ';')),
-        ))
-    end
-    for field in TORIC_TABLE_FIELDS
-        expected = sort!([orbit for (orbit, row) in census[field]
-                          if (row["toric"] == "true") == toric])
-        listed = sort!([orbit for row in rows for (other, orbit) in row.orbits if other == field])
-        expected == listed || error(
-            "$TORIC_TABLE_ATLAS does not list the $(toric ? "toric" : "other") orbits of the " *
-            "$(TORIC_TABLE_FIELD_NAMES[field]) census once each; rebuild the atlas",
-        )
-    end
-    return rows
-end
-
 """
 The toric support orbits of both fields in atlas order: the rows of
 `toric_table_support_rows`, each with the data of its polytope, which must
@@ -318,7 +220,7 @@ end
 
 function toric_degeneration_table_main(args=ARGS)
     if "--help" in args
-        println("Usage: julia --project=julia julia/to_tex/toric_degeneration_table.jl " *
+        println("Usage: julia --project=. to_tex/toric_degeneration_table.jl " *
                 "[--output=FILE]")
         return nothing
     end

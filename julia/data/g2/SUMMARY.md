@@ -36,9 +36,11 @@ modulo lineality.
 
 ## How it is computed
 
+From julia/:
+
 ```bash
-julia --project=julia julia/studies/g2/run_census.jl --target=all --stage=summarize
-julia --project=julia julia/studies/g2/run_census_gf2.jl --target=all --stage=summarize
+julia --project=. studies/g2/run_census.jl --target=all --stage=summarize
+julia --project=. studies/g2/run_census_gf2.jl --target=all --stage=summarize
 ```
 
 The stage reads the normalized coarsest fan, the symmetry artifacts and the
@@ -47,4 +49,4 @@ multiplies by the orbit sizes. Faces come from the facets of each
 representative's cone. Homology comes from the simplicial complex on the
 vertex sets of the maximal cells, which has the same nerve, and is checked
 against the f-vector through the Euler characteristic. The code is in
-`julia/src/summary.jl`; see `julia/studies/g2/README.md`.
+`src/summary.jl`; see `studies/g2/README.md`.

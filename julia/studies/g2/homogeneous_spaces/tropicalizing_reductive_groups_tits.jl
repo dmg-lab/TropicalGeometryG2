@@ -5,9 +5,9 @@ The signed permutation matrices in G2 (in the coordinates of main.tex) lying ove
 N(T)(ZZ), of order 48, and it contains complements isomorphic to D12. A signed permutation matrix g, with
 g e_i = s_i e_{π(i)}, lies in G2 when it fixes Φ = e123 + e456 + e147 + e257 + e367 and has determinant 1.
 
-Usage, from the repository root (a few seconds):
-    julia --project=julia julia/studies/g2/homogeneous_spaces/tropicalizing_reductive_groups_tits.jl \
-        > julia/studies/g2/homogeneous_spaces/tropicalizing_reductive_groups_tits.txt
+Usage, from julia/ (a few seconds):
+    julia --project=. studies/g2/homogeneous_spaces/tropicalizing_reductive_groups_tits.jl \
+        > studies/g2/homogeneous_spaces/tropicalizing_reductive_groups_tits.txt
 =#
 
 using LinearAlgebra

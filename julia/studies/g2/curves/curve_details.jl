@@ -17,7 +17,7 @@
 # core gets its girth, its diameter, its connectivity and the order of its
 # automorphism group.
 #
-#   julia --project=julia julia/studies/g2/curves/curve_details.jl EXPERIMENT_DIR
+#   julia --project=. studies/g2/curves/curve_details.jl EXPERIMENT_DIR
 #
 # writes core_edges.csv, core_vertices.csv and point_places.csv in
 # EXPERIMENT_DIR and prints a summary.
@@ -29,7 +29,7 @@ include(joinpath(@__DIR__, "hyperplane_intersection_census.jl"))
 function lattice_length(a, b)
     d = b .- a
     all(iszero, d) && return QQ(0)
-    p = primitive_direction(d)
+    p = primitive(d)
     i = findfirst(!iszero, p)
     return d[i] // p[i]
 end

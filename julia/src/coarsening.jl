@@ -1,6 +1,7 @@
 module CoarsestFan
 
 using Oscar
+import ..rational_key
 
 export LinkCoarseningResult,
        MergeRound,
@@ -548,12 +549,7 @@ function output_order(fan, cells, signature_to_ray, quotient_basis)
     return order, output_to_original
 end
 
-rational_string(::Nothing) = ""
-function rational_string(x)
-    q = QQ(x)
-    denominator(q) == 1 && return string(numerator(q))
-    return "$(numerator(q))/$(denominator(q))"
-end
+rational_string(x) = isnothing(x) ? "" : rational_key(x)
 
 quoted_list(xs) = "\"" * join(xs, ';') * "\""
 

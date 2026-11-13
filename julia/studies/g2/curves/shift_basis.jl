@@ -8,7 +8,7 @@
 # its canonical weight is; an orthogonal basis of the orthogonal complement of
 # W, the six normals e_b - e_a, on disjoint pairs of coordinates; and an integral
 # basis of the lineality space. The translation of an experiment is a random
-# integral combination of it, see mukai_curves/run_experiments.jl.
+# integral combination of it, see run_experiments.jl.
 #
 # The cells are chosen by how often the part of the curve in them is a
 # polytope, see shifted_bergman_cells.jl. First come the orbits without
@@ -17,15 +17,16 @@
 # CELL_BASIS_SAMPLES translations uniformly random in a cube giving a polytope.
 # A cell is kept when its weight is independent of those kept before.
 #
-#   julia --project=julia julia/studies/g2/curves/shift_basis.jl [--output=FILE.mrdi]
+#   julia --project=. studies/g2/curves/shift_basis.jl [--output=FILE.mrdi]
 #
 # By default the basis, its rows in this order, goes to
-# julia/data/mukai_curves/genus_10_shift_basis.mrdi, with the cells kept, the
+# data/mukai_curves/genus_10_shift_basis.mrdi, with the cells kept, the
 # numbers of normals and of lineality vectors, and for every orbit, in the
 # order of the choice, its transverse bad subsets and its share of polytopes.
 ###############################################################################
 
 include(joinpath(@__DIR__, "shifted_bergman_cells.jl"))
+import TropicalGeometryG2
 
 const CELL_BASIS_SAMPLES = 2000
 
@@ -41,13 +42,7 @@ function orthogonal_rows(M)
 end
 
 "The rows of `M` scaled to primitive integral vectors."
-function primitive_rows(M)
-    rows = map(1:size(M, 1)) do i
-        r = M[i, :] .* lcm(denominator.(M[i, :]))
-        r .// gcd(numerator.(r))
-    end
-    return reduce(vcat, permutedims.(rows))
-end
+primitive_rows(M) = reduce(vcat, permutedims.([TropicalGeometryG2.primitive_integer(M[i, :]) for i in 1:size(M, 1)]))
 
 if abspath(PROGRAM_FILE) == @__FILE__
     outputs = [split(arg, '='; limit=2)[2] for arg in ARGS if startswith(arg, "--output=")]

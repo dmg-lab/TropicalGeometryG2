@@ -1,9 +1,12 @@
-# Appendix A of the paper: run by julia/paper_results.jl, which defines the helpers used here.
+# Appendix A of the paper: run by paper_results.jl, which defines the helpers used here.
 
 import SHA
 import Tar
 
-const sA_TARBALL = repository("TropicalGeometryG2_data.tar.gz")
+"The Zenodo tarball: at the repository root (..), or else in julia/."
+const sA_TARBALL = let name = "TropicalGeometryG2_data.tar.gz", paths = [repository(name), project_path(name)]
+    paths[something(findfirst(isfile, paths), 1)]
+end
 const sA_PIECES = data_path("mukai_curves", "genus_10_method_1_pieces.mrdi")
 const sA_IDEALS = ("pointspace", "pointspace_gf2", "grassmannian", "grassmannian_gf2", "flag", "flag_gf2")
 const sA_FANS = ("dressian", "flag_dressian", "grassmannian", "grassmannian_gf2", "flag", "flag_gf2")
@@ -51,7 +54,7 @@ function sA_tarball_heads(tarball; bytes=300)
     end
 end
 
-"The source of each file of the tarball but README.md, as production/make_zenodo_tarball.sh copies it: name => path."
+"The source of each file of the tarball but README.md, as ../production/make_zenodo_tarball.sh copies it: name => path."
 function sA_sources()
     folder(target, field) = replace(target, "_gf2" => "") * "_" * field
     ideals = ["00_ideals/$(s)_$(f).mrdi" for s in ("pointspace", "linespace", "flagspace") for f in ("qq", "gf2")]
@@ -110,24 +113,6 @@ end
 function sA_normalized_rays(target)
     M = Matrix{QQFieldElem}(load(joinpath(TARGET_DIRECTORIES[target], "03_normalized_rays.mrdi")))
     return [M[i, :] for i in 1:size(M, 1)]
-end
-
-"The curve of a stored complex: vertices, bounded edges and rays (as curve_graph of section 10)."
-function sA_curve_graph(complex)
-    vertex = Dict{Vector{QQFieldElem},Int}()
-    index(v) = get!(vertex, v, length(vertex) + 1)
-    edges, rays = Tuple{Int,Int}[], Tuple{Int,Vector{QQFieldElem}}[]
-    for P in maximal_polyhedra(complex)
-        V = [QQ.(collect(v)) for v in vertices(P)]
-        if is_bounded(P)
-            push!(edges, (index(V[1]), index(V[2])))
-        else
-            push!(rays, (index(V[1]), QQ.(collect(first(Oscar.rays(P))))))
-        end
-    end
-    points = Vector{Vector{QQFieldElem}}(undef, length(vertex))
-    foreach(((v, k),) -> points[k] = v, vertex)
-    return (; points, edges, rays)
 end
 
 "The number of connected components of the graph on the vertices of `edges`."
@@ -204,7 +189,7 @@ end
 sA_ends(points, directions) = vcat([("point", p) for p in points], [("ray", sA_direction(r)) for r in directions])
 
 function sA_files()
-    subheading("The 222 files of the Zenodo data, and its copy of julia/data/")
+    subheading("The 222 files of the Zenodo data, and its copy of data/")
     polytopes = [summary(t)["degenerations"]["toric_orbits"] for (t, _) in sA_TORIC]
     files = 6 + 4 + 2 + 4 + sum(polytopes) + 1 + 3 + 1
     check("files of Table tab:data: 6 ideals, 4 orbit tables, 2 Dressians, 4 tropical varieties, the polytopes, the hexagon, 3 curve files, README",
@@ -213,11 +198,13 @@ function sA_files()
     heads = nothing
     if isfile(sA_TARBALL)
         all_heads = sA_tarball_heads(sA_TARBALL)
-        # The top level holds the files of Table tab:data; data/ a copy of julia/data/ (production/make_zenodo_tarball.sh).
+        # The top level holds the files of Table tab:data; its data/ a copy of data/
+        # (../production/make_zenodo_tarball.sh).
         heads = [(name, h) for (name, h) in all_heads if !startswith(name, "data/")]
         copies = Dict(name[length("data/")+1:end] => h.digest for (name, h) in all_heads if startswith(name, "data/"))
         names = first.(heads)
-        check("files at the top level of TropicalGeometryG2_data.tar.gz (production/make_zenodo_tarball.sh)", 222, length(names))
+        check("files at the top level of TropicalGeometryG2_data.tar.gz (../production/make_zenodo_tarball.sh)", 222,
+              length(names))
         expected = sA_table_names()
         claim("the files of the tarball are named as in Table tab:data, with orbit_NNN for the toric orbits NNN of the censuses",
               sort(expected) == sort(names),
@@ -227,7 +214,7 @@ function sA_files()
         foreach(name -> counts[folder(name)] = get(counts, folder(name), 0) + 1, names)
         info("files per folder: " * join(("$f $(counts[f])" for f in sort(collect(keys(counts)))), ", ") *
              "; and $(length(copies)) files in data/")
-        # The numbers of this appendix are computed from julia/data: the files of the table must be copies of its files.
+        # The numbers of this appendix are computed from data/: the files of the table must be copies of its files.
         source = Dict(sources)
         data_name(path) = relpath(path, data_path())
         mismatched = [name for (name, h) in heads if haskey(source, name) && get(copies, data_name(source[name]), "") != h.digest]
@@ -242,20 +229,22 @@ function sA_files()
         differ = sort!([name for (name, path) in local_files if bytes2hex(open(SHA.sha256, path)) != copies[name]])
         kinds = Dict{String,Int}()
         foreach(name -> kinds[splitext(name)[2]] = get(kinds, splitext(name)[2], 0) + 1, differ)
-        info("data/ against julia/data/: $(length(local_files) - length(differ)) of the $(length(local_files)) files " *
-             "identical, $(length(differ)) different, $(length(copies) - length(present)) absent from julia/data/" *
+        info("data/ of the tarball against data/: $(length(local_files) - length(differ)) of the " *
+             "$(length(local_files)) files identical, $(length(differ)) different, " *
+             "$(length(copies) - length(present)) absent from data/" *
              (length(present) == length(local_files) ? "" : ", $(length(present) - length(local_files)) with private blocks") *
              (isempty(differ) ? "" : length(differ) <= 5 ? ": " * join(differ, ", ") :
                                      ", by extension " * join(("$e $n" for (e, n) in sort!(collect(kinds))), ", ") *
-                                     " (a computed julia/data/ has new identifiers in its .mrdi files and new times and " *
+                                     " (a computed data/ has new identifiers in its .mrdi files and new times and " *
                                      "hashes in its provenance)"))
     else
-        skipped("files in TropicalGeometryG2_data.tar.gz", "download it from Zenodo, DOI 10.5281/zenodo.24104003, to the repository root")
+        skipped("files in TropicalGeometryG2_data.tar.gz", "not at the repository root (..) nor in julia/: " *
+                "download it from Zenodo, DOI 10.5281/zenodo.24104003, to the repository root")
     end
     # main.tex: "All files except the four tables *_orbits.csv are written by OSCAR 1.8.2 in its format .mrdi".
-    if heads === nothing   # the sources of the tarball in julia/data/
+    if heads === nothing   # the sources of the tarball in data/
         paths = [path for (name, path) in sources if !endswith(name, "_orbits.csv")]
-        versions = [relpath(p, repository()) => sA_oscar_version(String(read(p, 300))) for p in paths]
+        versions = [relpath(p, project_path()) => sA_oscar_version(String(read(p, 300))) for p in paths]
         scope = "of the data (no tarball)"
     else
         versions = [name => sA_oscar_version(h.head) for (name, h) in heads if !endswith(name, "_orbits.csv")]
@@ -316,11 +305,10 @@ function sA_orbit_tables()
           "and D12 (dihedral of order 12) permutes them", all(groups))
     # The actions are those of the permutations of the taxa on the coordinates (x1..x7 first in R^28); the orbits of
     # load_symmetry_artifacts are those of the actions.
-    flag_indices(p) = vcat(invperm(p), 7 .+ coordinate_permutation(p))
     geometric = map(sA_FANS) do t
         try
-            data = TropicalCensus.projection_fan_data(fan(t), load(joinpath(TARGET_DIRECTORIES[t], "03_normalized_rays.mrdi")))
-            TropicalCensus.verify_projection_symmetry(data, symmetry[t], ambient_dim(fan(t)) == 28 ? flag_indices : coordinate_permutation)
+            data = TropicalGeometryG2.projection_fan_data(fan(t), load(joinpath(TARGET_DIRECTORIES[t], "03_normalized_rays.mrdi")))
+            TropicalGeometryG2.verify_projection_symmetry(data, symmetry[t], p -> tropical_coordinate_permutation(p, ambient_dim(fan(t))))
         catch error
             info("$t: " * sprint(showerror, error))
             false
@@ -400,17 +388,9 @@ function sA_orbit_tables()
         certificate = TOML.parsefile(g2(target, "07_projection_certificate.toml"))
         images = [(parse(Int, r["flag_cell"]), parse(Int, r["grassmannian_cell"])) for r in rows(g2(target, "07_projection_cells.csv"))]
         if target == "flag_gf2"   # Section 3 verifies the certificate over QQ
-            valid = try
-                verify_ray_projection_certificate(certificate, fan(target), load(g2(target, "03_normalized_rays.mrdi")),
-                    fan("grassmannian_gf2"), load(g2("grassmannian_gf2", "03_normalized_rays.mrdi")),
-                    symmetry[target], symmetry["grassmannian_gf2"];
-                    projection_columns=8:28, source_coordinate_indices=flag_indices, target_coordinate_indices=coordinate_permutation)
-            catch error
-                info("the verification raised: " * sprint(showerror, error))
-                false
-            end
             claim("flag_gf2/07_projection_certificate.toml is valid (ray images, cells, D12-transport), and " *
-                  "07_projection_cells.csv lists its images", valid && images == [(c["source_cell"], c["target_cell"]) for c in certificate["cells"]])
+                  "07_projection_cells.csv lists its images",
+                  projection_certificate_valid(target) && images == [(c["source_cell"], c["target_cell"]) for c in certificate["cells"]])
         end
         rays_ok = all(r -> flag_types[("ray", r["source_ray"])] ==
                            (r["target_ray"] == 0 ? "star" : grass_types[("ray", r["target_ray"])]), certificate["rays"])
@@ -421,13 +401,13 @@ function sA_orbit_tables()
     end
     # The flag Dressian over the Dressian: the image of the p-part of a ray modulo the lineality space of D is a ray of D
     # (then of trop(G)), or 0.
-    Dprojection = TropicalCensus.projection_fan_data(D, load(g2("dressian", "03_normalized_rays.mrdi")))
+    Dprojection = TropicalGeometryG2.projection_fan_data(D, load(g2("dressian", "03_normalized_rays.mrdi")))
     Dray = Dict(s => k for (k, s) in enumerate(Dprojection.signatures))
     FDnormal = Matrix{QQFieldElem}(load(g2("flag_dressian", "03_normalized_rays.mrdi")))
     below = map(1:size(FDnormal, 1)) do k   # the ray of trop(G) below, 0 over the lineality space, -1 if none
         p = FDnormal[k, 8:28]
         all(iszero, permutedims(p) * Dprojection.quotient) && return 0
-        j = get(Dray, TropicalCensus.quotient_ray_signature(p, Dprojection.quotient), 0)
+        j = get(Dray, TropicalGeometryG2.quotient_ray_signature(p, Dprojection.quotient), 0)
         return j > 0 ? to_G[j] : -1
     end
     fdtype = types_of(flag_dressian_file)
@@ -515,11 +495,9 @@ function sA_hexagon_and_curves()
     claim("tropicalized_hexagon: fields points (6 vectors in QQ^7) and lines (6 vectors in QQ^21), each with minimum 0",
           keys(hexagon) == (:points, :lines) && length(hexagon.points) == 6 && length(hexagon.lines) == 6 &&
           all(v -> length(v) == 7 && iszero(minimum(v)), hexagon.points) && all(v -> length(v) == 21 && iszero(minimum(v)), hexagon.lines))
-    s9 = run_in_module(joinpath(@__DIR__, "section_9.jl"); name=:sA_Section9)   # the vectors displayed in Section 9
     maxconv(v) = Int.(maximum(v) .- v)
     claim("max(v)1 - v gives the a^(1), ..., a^(6) and d^(12), ..., d^(61) displayed in Section 9",
-          [maxconv(v) for v in hexagon.points] == latest(s9, :HEXAGON_POINTS) &&
-          [maxconv(v) for v in hexagon.lines] == latest(s9, :HEXAGON_LINES))
+          [maxconv(v) for v in hexagon.points] == HEXAGON_POINTS && [maxconv(v) for v in hexagon.lines] == HEXAGON_LINES)
     for (name, vectors) in (("point", hexagon.points), ("line", hexagon.lines)), (k, v) in enumerate(vectors)
         info("stored $name $k: ($(join(string.(v), ", ")))")
     end
@@ -529,7 +507,7 @@ function sA_hexagon_and_curves()
         curve = load(data_path("mukai_curves", file))
         C = curve.complex
         file == "genus_10_method_1.mrdi" && (method_1 = C)
-        graph = sA_curve_graph(C)
+        graph = curve_graph(C)
         used = unique(vcat(first.(graph.edges), last.(graph.edges)))
         genus = length(graph.edges) - length(used) + sA_components(graph.edges)
         check("$file: maximal cells, unbounded ones, vertices of the graph of the bounded ones, its genus", expected,
@@ -561,7 +539,7 @@ function sA_hexagon_and_curves()
         end
     end
 
-    # The pieces, from julia/data/ or else from the tarball.
+    # The pieces, from data/ or else from the tarball.
     pieces_text = isfile(sA_PIECES) ? read(sA_PIECES, String) :
                   isfile(sA_TARBALL) ? read(`tar -xzOf $sA_TARBALL TropicalGeometryG2_data/05_curves/genus_10_method_1_pieces.mrdi`, String) :
                   nothing
@@ -588,13 +566,13 @@ function sA_hexagon_and_curves()
               [454, 449, 5], [length(pieces), length(cells), count(k -> length(k) == 2, inside)])
         claim("each one-dimensional piece lies in exactly one maximal cell, and the pieces in a cell make it up",
               all(c -> length(c) == 1, containing) && made_up)
-        info("$(isfile(sA_PIECES) ? relpath(sA_PIECES, repository()) : "from the tarball"): " *
+        info("$(isfile(sA_PIECES) ? relpath(sA_PIECES, project_path()) : "from the tarball"): " *
              "$(stored_pieces.total) polyhedra, $(stored_pieces.empty) of them empty; the one-dimensional ones: " *
              "$(count(p -> isempty(p.directions), pieces)) bounded, $(count(p -> !isempty(p.directions), pieces)) unbounded; " *
              "cells of two pieces: " * join(findall(k -> length(k) == 2, inside), ", "))
     else
-        skipped("the pieces of Method 1", "julia/data/mukai_curves/genus_10_method_1_pieces.mrdi is missing: run " *
-                "julia/make_paper_data.jl or unpack the Zenodo tarball")
+        skipped("the pieces of Method 1", "data/mukai_curves/genus_10_method_1_pieces.mrdi is missing: run " *
+                "make_paper_data.jl or unpack the Zenodo tarball")
     end
 end
 
