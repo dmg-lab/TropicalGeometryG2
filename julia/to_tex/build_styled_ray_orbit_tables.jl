@@ -307,33 +307,38 @@ function styled_tree_tikz(tree::TreeMetric, options; layout_coordinates=nothing)
     )
 end
 
-# The labels of the orbits in a table: large and bold, thickened by an outline
-# of this width (pdfrender, loaded by main.tex).
+# The labels of the orbits in a table: bold, thickened by an outline of this
+# width (pdfrender, loaded by main.tex).
 const STYLED_TREE_LABEL_OUTLINE = ".5pt"
+# The sizes of the label of an orbit and of its size: at the size of the text,
+# so that a heading ends before the heart at the top of a narrow panel.
+const STYLED_TREE_LABEL_FONTS = (label=raw"\normalsize", size=raw"\small")
 
 """
 The heading TeX of an orbit, in the color of its table: its label `tex`,
-followed by its `size` in parentheses, smaller and not bold. Its depth is
-dropped: a descender, as of a parenthesis, would lower the tree of its panel.
+followed by its `size` in parentheses, not bold. Its depth is dropped: a
+descender, as of a parenthesis, would lower the tree of its panel.
 """
 function styled_tree_label(tex::AbstractString, size::Int, options)
+    fonts = STYLED_TREE_LABEL_FONTS
     label = "\\smash[b]{\\textpdfrender{TextRenderingMode=FillStroke," *
-            "LineWidth=$STYLED_TREE_LABEL_OUTLINE}{\\Large\\bfseries\\boldmath $tex}" *
-            "{\\large($size)}}"
+            "LineWidth=$STYLED_TREE_LABEL_OUTLINE}{$(fonts.label)\\bfseries\\boldmath $tex}" *
+            "{$(fonts.size)($size)}}"
     options.palette == :color || return label
     return "\\textcolor[HTML]{$(options.color)}{$label}"
 end
 
 # The thickness of the rule over a panel and of the line between two panels.
 const STYLED_TREE_RULE = "1pt"
-# The tree of a panel rises by this length beside its heading.
-const STYLED_TREE_RAISE = "2.5mm"
+# The tree of a panel rises by this length in millimetres beside its heading.
+const STYLED_TREE_RAISE_MM = 2.5
 # The height in centimetres of a panel of the ray catalog at scale 1.
 const STYLED_TREE_PANEL_HEIGHT = 4.35
 
 """
 One panel of a table of trees: a rule, the heading TeX `label` of an orbit,
-and its tree `tikz`, which rises beside the heading. A `note` stands at the
+and its tree `tikz`, which rises by `raise` millimetres beside the heading;
+a negative `raise` lowers it below the heading line. A `note` stands at the
 bottom left of the panel, below the tree: at the bottom of a panel of fixed
 height, and on a line of its own in a panel fitted to its tree, whose leaves
 would meet it beside the tree. With `note_beside`, the note takes no line: it
@@ -343,10 +348,10 @@ The rule has the color `g2TreeRule` of `styled_tree_grid`.
 """
 function styled_tree_panel(io::IO, label::AbstractString, tikz::AbstractString;
                            note::AbstractString="", note_beside::Bool=false,
-                           corner::AbstractString="")
+                           corner::AbstractString="", raise::Real=STYLED_TREE_RAISE_MM)
     println(io, "\\noindent\\textcolor{g2TreeRule}{\\rule{\\linewidth}{$STYLED_TREE_RULE}}\\par")
     println(io, "\\noindent$label", isempty(corner) ? "" : "\\hfill$corner", "\\par")
-    println(io, "\\vskip -$STYLED_TREE_RAISE")
+    @printf(io, "\\vskip %gmm\n", -raise)
     println(io, raw"{\centering")
     print(io, tikz)
     println(io, raw"\par}")
@@ -374,12 +379,14 @@ The tabular of a table of trees: `count` panels in rows of `columns`, where
 width and the height of the ray catalog, which leave room around a tree. A
 `tight` table fits them to their trees instead: a panel is as wide as the
 trees, and at least `minimum_width` centimetres for its heading, and it is as
-high as its content. `groups` has the group of every panel: a vertical line
+high as its content; its rows are `row_gap` centimetres apart, by default a
+quarter of the scale. `groups` has the group of every panel: a vertical line
 separates two panels of a row that belong to different groups. The rules of
 the panels and the lines have the color of the table, as `g2TreeRule`.
 """
 function styled_tree_grid(panel, io::IO, count::Int, options; columns::Int=3,
-                          tight::Bool=false, minimum_width::Real=0, groups=nothing)
+                          tight::Bool=false, minimum_width::Real=0, groups=nothing,
+                          row_gap::Union{Real,Nothing}=nothing)
     # Keep the table geometry proportional to the tree renderer's scale.
     width = tight ? max(styled_tree_width(options), minimum_width) : 5.25 * options.scale
     gap = (tight ? .25 : .35) * options.scale
@@ -422,7 +429,7 @@ function styled_tree_grid(panel, io::IO, count::Int, options; columns::Int=3,
         if !tight
             @printf(io, "\\\\[%gmm]\n", .2 * options.scale)
         elseif first_position + columns <= count
-            @printf(io, "\\\\\\noalign{\\vskip %gcm}\n", .25 * options.scale)
+            @printf(io, "\\\\\\noalign{\\vskip %gcm}\n", something(row_gap, .25 * options.scale))
         else
             println(io, "\\\\")
         end
@@ -474,14 +481,16 @@ end
 The command line of a table of trees. `table_tex(; options...)` returns the
 table; `script` is its file, `bounded_length` its default bounded length, and
 `stem` and `caption` are those of its preview. The script reads its own
-`flags` from `args`.
+`flags`, and its own `options` with a value, named without their dashes, from
+`args`.
 """
 function styled_tree_table_main(table_tex, args; script::AbstractString,
                                 bounded_length::Real, stem::AbstractString,
-                                caption::AbstractString, flags=())
+                                caption::AbstractString, flags=(), options=())
     if "--help" in args
         println("Usage: julia --project=. to_tex/$script " *
                 join("[$flag] " for flag in flags) *
+                join("[--$name=$(uppercase(name))] " for name in options) *
                 "[--color|--grayscale] " *
                 "[--label=true|false] [--scale=FACTOR] [--taxon-scale=FACTOR] " *
                 "[--bounded-length=LENGTH] [--edge-labels=disk|aligned] " *
@@ -492,7 +501,7 @@ function styled_tree_table_main(table_tex, args; script::AbstractString,
     end
     allowed = ("--color", "--grayscale", "--label=true", "--label=false",
                "--standalone", "--pdf", flags...)
-    valued = ("scale", "taxon-scale", "bounded-length", "edge-labels", "output")
+    valued = ("scale", "taxon-scale", "bounded-length", "edge-labels", "output", options...)
     for arg in args
         arg in allowed || any(name -> startswith(arg, "--$name="), valued) ||
             throw(ArgumentError("unknown option $arg; use --help"))
@@ -523,6 +532,13 @@ end
 # The ray catalog
 ###############################################################################
 
+# The panels of the ray catalog: as high as their trees, and at least
+# `minimum_width` centimetres wide, which spreads four of them over the text
+# width of main.tex. A tree, in the middle of its panel, rises by `raise`
+# millimetres, up to the rule above it, beside its heading at the left; the
+# rows are `row_gap` centimetres apart.
+const PAPER_RAY_CATALOG_PANEL = (minimum_width=3.9, raise=4.0, row_gap=0.2)
+
 function styled_ray_catalog_entry(io::IO, data, index::Int, options)
     orbit = data.orbits[index]
     tree = data.records[first(orbit)].tree
@@ -530,21 +546,23 @@ function styled_ray_catalog_entry(io::IO, data, index::Int, options)
     styled_tree_panel(
         io, styled_tree_label("\\($(paper_ray_article_label(index))\\)", length(orbit), options),
         styled_tree_tikz(tree, options; layout_coordinates=layout);
-        note=index == PAPER_RAY_CHARACTERISTIC_2_ORBIT ? raw"char\ 2" : "",
-        note_beside=true,
+        note=index == PAPER_RAY_CHARACTERISTIC_2_ORBIT ? raw"{\small char\ 2}" : "",
+        note_beside=true, raise=PAPER_RAY_CATALOG_PANEL.raise,
     )
 end
 
 """
     styled_ray_orbit_tables_tex(; palette=:grayscale, label=false, scale=1.0,
                                 taxon_scale=1.0, bounded_length=0.90,
-                                edge_labels=:disk, standalone=false)
+                                edge_labels=:disk, columns=3, standalone=false)
 
-Return the input-ready ray catalog. The drawing options are those of
-`g2_tree_tikz`; `scale` also scales the table columns, row heights, and gaps.
-Pass `standalone=true` for the document of `g2_standalone_figure`.
+Return the input-ready ray catalog, in rows of `columns` panels. The drawing
+options are those of `g2_tree_tikz`; `scale` also scales the table columns,
+row heights, and gaps. Pass `standalone=true` for the document of
+`g2_standalone_figure`.
 """
-function styled_ray_orbit_tables_tex(; standalone::Bool=false, drawing...)
+function styled_ray_orbit_tables_tex(; columns::Int=3, standalone::Bool=false, drawing...)
+    columns >= 1 || throw(ArgumentError("the catalog has at least one column"))
     options = styled_tree_table_options(;
         bounded_length=PAPER_CATALOG_BOUNDED_EDGE_LENGTH, drawing...,
     )
@@ -552,7 +570,9 @@ function styled_ray_orbit_tables_tex(; standalone::Bool=false, drawing...)
     entries = paper_ray_catalog_entries(data.orbits)
     fragment = sprint() do io
         println(io, "% Generated by build_styled_ray_orbit_tables.jl from exact G2 ray metrics.")
-        styled_tree_grid(io, length(entries), options;
+        styled_tree_grid(io, length(entries), options; columns, tight=true,
+                         minimum_width=PAPER_RAY_CATALOG_PANEL.minimum_width,
+                         row_gap=PAPER_RAY_CATALOG_PANEL.row_gap,
                          groups=entries .== PAPER_RAY_CHARACTERISTIC_2_ORBIT) do io, position
             styled_ray_catalog_entry(io, data, entries[position], options)
         end
@@ -561,8 +581,11 @@ function styled_ray_orbit_tables_tex(; standalone::Bool=false, drawing...)
 end
 
 styled_ray_tables_main(args=ARGS) = styled_tree_table_main(
-    styled_ray_orbit_tables_tex, args;
+    (; drawing...) -> styled_ray_orbit_tables_tex(;
+        columns=parse(Int, something(g2_tree_option(args, "columns"), "3")), drawing...),
+    args;
     script="build_styled_ray_orbit_tables.jl",
+    options=("columns",),
     bounded_length=PAPER_CATALOG_BOUNDED_EDGE_LENGTH,
     stem="g2_ray_orbits_styled_catalog",
     caption="Representatives of the 12 Grassmannian ray orbits; " *

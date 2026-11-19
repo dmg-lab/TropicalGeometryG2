@@ -123,6 +123,23 @@ function section_4()
         push!(get!(halves, c, Int[]), k)
     end
     split_cells = sort([c for (c, ks) in halves if length(ks) > 1])
+    # main.tex: "the leading coefficients appearing in G are 1 or 2. They are 1 unless C is a facet of a tetrahedron. ...
+    # These have a common zero in {±1}^21 for 237 cones. For the 12 facets of the tetrahedra and the two cones of type 21,
+    # ... a Gröbner basis over ZZ without constant whose leading coefficients are powers of 2, all 1 for type 21".
+    lcs(r, column) = Set(parse.(Int, split(r[column], ';'; keepempty=false)))
+    check("the leading coefficients of the stored Gröbner bases over ZZ (verify-*.csv, column lcs), and the cones off the " *
+          "facets of the tetrahedra where one is not 1", ([1, 2], Int[]),
+          (sort(collect(union((lcs(r, "lcs") for r in values(verified))...))), sort([k for k in others if lcs(verified[k], "lcs") != Set([1])])))
+    dressian_type = Dict(parse(Int, m) => r["orbit_type"] for r in rows(g2("dressian", "dressian_orbits.csv"))
+                         if r["kind"] == "cell" for m in split(r["members"], ';'))
+    type21 = sort(reduce(vcat, [ks for (c, ks) in halves if dressian_type[c] == "21"]; init=Int[]))
+    slices = sort([k for (k, r) in verified if r["torus_kind"] == "slice"])
+    check("cones with a common zero of the in_w(g) in {±1}^21; the others are the 12 facets of the tetrahedra and the two raw " *
+          "cones of type 21 ($(join(type21, ", ")))", (237, true, 2),
+          (count(r -> r["torus_kind"] == "pm1", values(verified)), slices == sort(vcat(on_tetrahedra, type21)), length(type21)))
+    check("the leading coefficients of the Gröbner bases of the slices are powers of 2, all 1 for type 21 (verify-*.csv, " *
+          "column slice_lcs)", (true, [Set([1])]),
+          (all(k -> all(ispow2, lcs(verified[k], "slice_lcs")), slices), unique([lcs(verified[k], "slice_lcs") for k in type21])))
     # main.tex: "(i) the Gr\"obner basis and the $42$ generators generate the same ideal over $\ZZ$, (ii) all leading
     # coefficients are $1$, (iii) the same Gr\"obner basis works for every $w$ in $\relint(C)$".
     stored("(ii) the other 251 − 4·3 cones: all leading coefficients 1 (verify-*.csv, column lcs)",
@@ -134,7 +151,7 @@ function section_4()
     end
     kept = Dict{Int,Any}()   # the stored Gröbner basis G and interior point w of the raw cones in split_cells
     if QUICK
-        skipped("largest coefficients of the stored Gröbner bases", "--quick")
+        skipped("largest coefficients of the stored Gröbner bases")
     else
         # The certificates were written by Oscar 1.9.0-DEV; Oscar 1.8.2 warns and rethrows when a load fails.
         largest = try
@@ -151,7 +168,7 @@ function section_4()
             info("largest |coefficient| of the stored Gröbner basis over ZZ, over the other 251 − 4·3 cones: " *
                  join(["$m for $(count(==(m), values(largest)))" for m in sort(unique(values(largest)))], ", "))
         else
-            skipped("largest coefficients of the stored Gröbner bases", "the certificates do not load: " * first(largest, 200))
+            claim("the stored Gröbner bases load (char-p/certificates/cones)", false, first(largest, 200))
         end
     end
     stored("(i) the Gröbner basis and the 42 generators generate the same ideal over ZZ, and every S-pair reduces, raw cones " *
@@ -166,14 +183,15 @@ function section_4()
          "$(join(unique(length(dcells[c]) for c in split_cells), ", ")) vertices, unions of the raw cones " *
          join([join(halves[c], ";") for c in split_cells], ", "))
     if QUICK
-        skipped("the stored Gröbner basis of each raw cone of a quadrilateral fails (iii) on the other one", "--quick")
+        skipped("the stored Gröbner basis of each raw cone of a quadrilateral fails (iii) on the other one")
     elseif length(kept) == sum(c -> length(halves[c]), split_cells; init=0)
         moves(a, b) = any(g -> initial_terms(g, kept[a][2]) != initial_terms(g, kept[b][2]), kept[a][1])
         claim("the stored Gröbner basis of each raw cone of a quadrilateral has other initial forms at the interior point of the " *
               "other raw cone (char-p/certificates/cones)",
               all(c -> all(moves(a, b) for a in halves[c] for b in halves[c] if a != b), split_cells))
     else
-        skipped("the stored Gröbner basis of each raw cone of a quadrilateral fails (iii) on the other one", "the certificates do not load")
+        claim("the stored Gröbner basis of each raw cone of a quadrilateral fails (iii) on the other one", false,
+              "the certificates of the quadrilaterals did not load")
     end
     good = [r for r in values(verified) if r["spairs_failed"] == "0" &&
             all(r[c] == "true" for c in ("in_I", "I_in_G", "lcs_powers_of_2", "lin_hom", "H", "I", "torus"))]
@@ -182,10 +200,19 @@ function section_4()
 
     subheading("Proof of thm:char2: the open tetrahedra for p ≥ 3 (char-p/witness.jl)")
     witness = filter(l -> startswith(l, "tetrahedron "), readlines(study_path("g2", "char-p", "results", "witness.txt")))
-    stored("p odd, open tetrahedra: a Weyl image of the cubic f in I over ZZ whose term ±2 p17 p27 p37 is strictly minimal",
+    stored("p odd, open tetrahedra: a cubic in I over ZZ whose term ±2 p17 p27 p37 is strictly minimal (char-p/witness.jl; " *
+           "the paper argues with the cubics of eq:threecubics, \"verbatim\" from Corollary cor:tropicalbasis)",
            join(witness, "\n           "))
     stored("tetrahedra with such a witness (witness.txt)",
            count(l -> occursin("2-term strictly minimal on the open cell; in I over ZZ with cofactors: true", l), witness); paper=3)
+
+    # main.tex: "For odd primes p, the proof of Corollary cor:tropicalbasis applies verbatim, as 2 ≠ 0 in K": the cubics of
+    # eq:threecubics over ZZ, and their 2-terms on the open tetrahedra (char-p/char2.jl).
+    char2 = readlines(study_path("g2", "char-p", "results", "char2.txt"))
+    stored("the three cubics of eq:threecubics in I over ZZ with integer cofactors, each with a dominant 2-term on the open " *
+           "tetrahedron where it is the witness (char-p/results/char2.txt)",
+           (count(==("   in I over ZZ with integer cofactors: true"), char2),
+            count(l -> startswith(l, "   dominant 2-term on the open tetrahedron"), char2)); paper=(3, 3))
 
     subheading("Proof of thm:char2: the cubics in characteristic 2")
     check("terms of each cubic modulo 2", [4, 4, 4], [count(c -> isodd(numerator(c)), coefficients(f)) for f in cubics])
@@ -219,9 +246,19 @@ function section_4()
         check("the cubic mod 2 attains its minimum twice on the 6 triangles at ε", fill(2, 18), edge_minima)
         check("and once on the 4 facets of its tetrahedron", fill(1, 12), facet_minima)
     end
+    # main.tex: "Conversely, each of these 18 triangles satisfies the criterion, with a Gröbner basis of I_{F_2} and the common
+    # zero (1,...,1)".
+    triangles2 = rows(study_path("g2", "char-p", "results", "char2.csv"))
+    stored("cones of trop_2(G) on the 18 triangles that satisfy the criterion with a Gröbner basis over GF(2) and the zero " *
+           "(1,...,1) (char-p/results/char2.csv)",
+           count(r -> all(r[c] == "true" for c in ("lin_hom", "H", "I", "torus")) && r["torus_kind"] == "ones", triangles2); paper=18)
 
     subheading("Theorem thm:flagchar2: trop_2(F)")
     s = summary("flag_gf2")
+    purity2 = TOML.parsefile(g2("flag_gf2", "00_ideal_purity.toml"))
+    stored("Algorithm alg:balanced_support over GF(2) requires J prime of dimension 8 (affine), as over QQ: " *
+           "(prime, dimension) by FlagPurityVerifier.jl (data/g2/flag_gf2/00_ideal_purity.toml)",
+           (purity2["prime"], purity2["dimension"]); paper=(true, 8))
     check("f-vector modulo lineality (length 4: a 3-dimensional complex)", [156, 1445, 3758, 2792], f_vector_of("flag_gf2"))
     mt = maximal_types("flag_gf2")
     cell_kinds = [(3, "3-simplex"), (3, "Pyramid(4-gon)"), (3, "Δ1 × Δ2")]
@@ -256,8 +293,68 @@ function section_4()
                "$(count(r -> r["perturbed_on_line"] == "false" && r["perturbed_in_trop"] == "true", sample)) of " *
                "$(count(r -> r["perturbed_on_line"] == "false", sample))")
     end
-    skipped("odd p: trop_p(F) = trop(F), a certificate like verify.jl",
-            "the stored check char-p/supplementary/flag/fstep2.jl covers an older raw flag fan of 3879 cones")
+
+    subheading("Proof of thm:flagchar2, p ≥ 3: trop_p(F) ⊆ trop(F), the cells of the flag Dressian outside trop(F)")
+    Jflag = load(g2("flag", "00_ideal.mrdi"))
+    claim("the 78 generators of J have coefficients ±1, so trop_p(F) lies in the flag Dressian for every p",
+          ngens(Jflag) == 78 && all(g -> all(c -> abs(c) == 1, coefficients(g)), gens(Jflag)))
+    FD, F = fan("flag_dressian"), fan("flag")
+    lineality_FD = matrix(QQ, rays_modulo_lineality(FD).lineality_basis)
+    q = Matrix{QQFieldElem}(kernel(lineality_FD; side=:right))
+    ray_of = Dict(quotient_ray_signature(r, q) => QQ.(collect(r)) for r in rays_modulo_lineality(FD).rays_modulo_lineality)
+    Fcells = [Set(c) for c in TropicalGeometryG2.cell_signatures(F, q)]
+    FDcells = [(Set(c), dim(C)) for (c, C) in zip(TropicalGeometryG2.cell_signatures(FD, q), maximal_cones(FD))]
+    in_F(c) = any(e -> issubset(c, e), Fcells)
+    flag_simplices = [c for (c, d) in FDcells if d == dim(FD)]
+    simplex_faces(k) = unique(Set(f) for s in flag_simplices for f in Combinatorics.combinations(collect(s), k))
+    outside = [filter(!in_F, simplex_faces(k)) for k in 1:5]
+    check("maximal 3-cells of the flag Dressian outside trop(F); so the cells outside trop(F) are faces of the 4-simplices, " *
+          "by dimension 0, 1, 2, 3, 4 modulo lineality (the 33 open 4-simplices and 15 of their facets)",
+          (0, [0, 0, 0, 15, 33]), (count(((c, d),) -> d < dim(FD) && !in_F(c), FDcells), length.(outside)))
+    position = [7 + PAIR_INDEX[(parse(Int, n[2]), parse(Int, n[3]))] for n in names]   # p_ij in R^7 x R^21
+    term_weight(e, v) = sum(e[k] * v[position[k]] for k in eachindex(e))
+    lineality_rows = [[lineality_FD[k, j] for j in 1:ncols(lineality_FD)] for k in 1:nrows(lineality_FD)]
+    claim("the terms of each cubic have equal weight on the lineality space of the flag Dressian",
+          all(f -> all(l -> allequal([term_weight(e, l) for e in exponents(f)]), lineality_rows), cubics))
+    # The first cubic whose term with coefficient 2 is strictly minimal on the relative interior of the cone over rs (min
+    # convention of the files): every other term is ≥ on the rays and > on their sum.
+    function two_term_cubic(rs)
+        for (i, f) in enumerate(cubics)
+            es, cs = collect(exponents(f)), collect(coefficients(f))
+            t = only(findall(c -> abs(c) == 2, cs))
+            gap(e, v) = term_weight(e, v) - term_weight(es[t], v)
+            all(e -> all(r -> gap(e, r) >= 0, rs) && gap(e, sum(rs)) > 0, es[setdiff(eachindex(es), [t])]) && return i
+        end
+        return 0
+    end
+    witnesses = [two_term_cubic([ray_of[r] for r in c]) for c in vcat(outside[4], outside[5])]
+    check("cells outside trop(F) on whose relative interior the initial form of a cubic of eq:threecubics is its term " *
+          "with coefficient 2", 48, count(!iszero, witnesses))
+    info("witnessed by cubic 1, 2, 3 on $(join([count(==(i), witnesses) for i in 1:3], ", ")) cells")
+    basis_report = readlines(study_path("g2", "char-p", "flag", "results", "basis.txt"))
+    stored("D12 acts by signed permutations preserving J over ZZ; the cubics lie in J over ZZ (char-p/flag/basis.jl)",
+           only(l for l in basis_report if startswith(l, "all 12 taxon permutations")) * "; cubics with integer cofactors: " *
+           "$(count(l -> startswith(l, "cubic ") && endswith(l, "integer cofactors: true"), basis_report)) of 3")
+
+    subheading("Proof of thm:flagchar2, p ≥ 3: trop(F) ⊆ trop_p(F), one cone per orbit (char-p/flag/compute.jl, verify.jl)")
+    pieces = rows(study_path("g2", "char-p", "flag", "results", "verify.csv"))
+    by_cone = Dict{String,Vector{Any}}()
+    foreach(r -> push!(get!(by_cone, r["cone"], Any[]), r), pieces)
+    check("orbits certified (one cone each) and their cones; orbits whose cone is subdivided into Gröbner cones, and pieces",
+          [270, 2714, 44, 389], [length(by_cone), sum(parse(Int, first(v)["orbit_size"]) for v in values(by_cone)),
+                                 count(v -> parse(Int, first(v)["pieces"]) > 1, values(by_cone)), length(pieces)])
+    check("leading coefficients of the Gröbner bases over ZZ, over all pieces", ["1", "2", "4"],
+          sort(unique(vcat([split(r["lcs"], ';') for r in pieces]...))))
+    check("torus points: ±1-points or slices", ["pm1", "slice"], sort(unique(r["torus_kind"] for r in pieces)))
+    info("pieces with a ±1-point: $(count(r -> r["torus_kind"] == "pm1", pieces)), with a slice: " *
+         "$(count(r -> r["torus_kind"] == "slice", pieces))")
+    claim("every piece passes every check of verify.jl (cover, G ⊆ J, J ⊆ ⟨G⟩, S-polynomials, leading coefficients powers " *
+          "of 2, homogeneity for the lineality, rays, torus point)",
+          all(r -> all(c -> r[c] == "true", ("cover", "in_I", "J_in_G", "lcs_powers_of_2", "lin_hom", "rays", "torus")) &&
+                   r["spairs_failed"] == "0", pieces),
+          "$(sum(parse(Int, r["spairs_checked"]) for r in pieces)) S-polynomials")
+
+    subheading("Proof of thm:flagchar2, p = 2: Algorithm alg:balanced_support over GF(2)")
     support = TOML.parsefile(g2("flag_gf2", "01_support_certificate.toml"))
     stored("p = 2: Algorithm alg:balanced_support over GF(2) (01_support_certificate.toml)",
            "$(support["certification_strategy"]): $(support["proof"]); orbits checked $(support["checked_orbits"]), kept $(support["selected_orbits"])")

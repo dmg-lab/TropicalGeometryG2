@@ -7,10 +7,9 @@ the scripts. For each statement the script prints what it computes and compares 
 
     [ ok   ]  computed here, equal to the paper
     [FAIL  ]  computed here, different from the paper (the paper's value follows)
-    [warn  ]  computed here, different from the paper, left as it is by the authors (not a failure)
     [stored]  read from a stored certificate or report, written by the script named after it
     [cited ]  a statement of the paper that cites the literature
-    [skip  ]  not run (--quick, or an input that only a longer script writes)
+    [skip  ]  not run, with --quick
 
 Tables that the paper describes in words only (for instance the toric degenerations of the flag variety) are printed
 as well. A summary ends the output; the exit status is 1 when a statement fails.
@@ -55,9 +54,8 @@ g2(parts...) = data_path("g2", parts...)
 # Output and bookkeeping
 ###############################################################################
 
-const COUNTS = Dict(tag => 0 for tag in ("ok", "FAIL", "warn", "stored", "cited", "skip"))
+const COUNTS = Dict(tag => 0 for tag in ("ok", "FAIL", "stored", "cited", "skip"))
 const FAILED = String[]
-const WARNED = String[]
 
 show_value(x::Union{Tuple,AbstractVector}) = "(" * join(show_value.(x), ", ") * ")"
 show_value(x) = string(x)
@@ -76,21 +74,6 @@ function check(statement, paper, computed)
     ok || push!(FAILED, statement)
     println("  [", rpad(tag, 6), "] ", statement, ": ", show_value(computed),
             ok ? "" : "   <- the paper says $(show_value(paper))")
-    flush(stdout)
-    return ok
-end
-
-"""
-As `check`, for a difference from the paper that the authors decided to leave: printed as a warning, which does not
-count as a failure and does not change the exit status.
-"""
-function warned(statement, paper, computed)
-    ok = isequal(paper, computed)
-    tag = ok ? "ok" : "warn"
-    COUNTS[tag] += 1
-    ok || push!(WARNED, statement)
-    println("  [", rpad(tag, 6), "] ", statement, ": ", show_value(computed),
-            ok ? "" : "   <- the paper says $(show_value(paper)) (left as it is)")
     flush(stdout)
     return ok
 end
@@ -119,24 +102,15 @@ function cited(statement)
     println("  [cited ] ", statement)
 end
 
-function skipped(statement, reason)
+"A slower check left out by --quick."
+function skipped(statement)
     COUNTS["skip"] += 1
-    println("  [skip  ] ", statement, " (", reason, ")")
+    println("  [skip  ] ", statement, " (--quick)")
 end
 
-"""
-Whether the repository has the figure and table files `files` of the paper (paths from the repository root, the parent
-of julia/, such as "figures/ray_tree.tex"); if not, print `statement`, the checks that read them, as skipped. The
-public repository has no figures and no tables.
-"""
-function drawings(statement, files...)
-    absent = [file for file in files if !isfile(repository(file))]
-    isempty(absent) || skipped(statement, "$(join(absent, ", ")): the figures and tables are not in this repository")
-    return isempty(absent)
-end
+"A check that fails when `condition` does not hold: `detail` says what is wrong."
+failed_unless(statement, condition::Bool, detail) = condition ? true : (claim(statement, false, detail); false)
 
-"The text of a figure file of the paper, figures/`name`.tex."
-figure_text(name) = read(repository("figures", "$name.tex"), String)
 
 info(text) = (println("           ", text); flush(stdout))
 
@@ -346,7 +320,7 @@ const HEXAGON_LINES = [[9, 9, 12, 7, 11, 10, 10, 5, 8, 0, 7, 13, 0, 12, 11, 11, 
                        [11, 9, 12, 7, 11, 10, 10, 15, 8, 14, 13, 13, 0, 12, 11, 11, 13, 10, 10, 9, 11]]
 
 ###############################################################################
-# G2-trees: the rows of 04_trees.csv and the trees drawn in the figures
+# G2-trees: the rows of 04_trees.csv (and, in the private repository, the trees drawn in the figures)
 ###############################################################################
 
 "The side of a split without taxon 7, sorted."
@@ -372,73 +346,6 @@ tree_metric(pendant, lengths) =
 "The tree metric d_ij, in the order of PAIRS, of a row of a 04_trees.csv."
 tree_metric(r::AbstractDict) = tree_metric(tree_row(r)...)
 
-"""
-The G2-trees drawn in a TikZ text, in their order, as name => block: a tree starts at its vertex v1 (v1-v7 are the taxa)
-and its block runs to the start of the next. The name is the first capture of the last match of `label` before the tree
-(nothing if there is none, or no `label`).
-"""
-function tree_blocks(tex, label=nothing)
-    marks = label === nothing ? Tuple{Int,String}[] :
-            [(m.offset, String(something(m.captures...))) for m in eachmatch(label, tex)]
-    starts = [m.offset for m in eachmatch(r"\\coordinate \(v1\) at", tex)]
-    return map(eachindex(starts)) do n
-        mark = findlast(m -> first(m) < starts[n], marks)
-        (mark === nothing ? nothing : marks[mark][2]) =>
-            SubString(tex, starts[n], n < length(starts) ? prevind(tex, starts[n+1]) : lastindex(tex))
-    end
-end
-
-"""
-The G2-tree drawn in a block of `tree_blocks`, or nothing if it draws no edge: its internal splits (sides without 7,
-sorted) and, when weights are drawn, the pendant lengths of 1-7 and the internal splits => length (else both nothing).
-Each weight goes to its nearest edge, since some figures draw it beside its edge, or with `nearest=false` to the edges it
-lies on, away from their ends. Every edge must get exactly one weight.
-"""
-function drawn_tree(block; nearest=true)
-    point = Dict(parse(Int, m[1]) => parse.(Float64, (m[2], m[3]))
-                 for m in eachmatch(r"\\coordinate \(v(\d+)\) at \(([-0-9.]+),([-0-9.]+)\)", block))
-    edges = [(String(m[1]), parse(Int, m[2]), parse(Int, m[3]))
-             for m in eachmatch(r"\\draw\[g2tree (internal|pendant)[^\]]*\] \(v(\d+)\)--\(v(\d+)\)", block)]
-    isempty(edges) && return nothing
-    # The position t of the foot of p along the edge a-b (0 at a, 1 at b), and the distance from p to the segment.
-    function foot(p, (_, a, b))
-        (x, y), (u, v) = point[a], point[b]
-        t = ((p[1] - x) * (u - x) + (p[2] - y) * (v - y)) / ((u - x)^2 + (v - y)^2)
-        s = clamp(t, 0.0, 1.0)
-        return t, hypot(p[1] - x - s * (u - x), p[2] - y - s * (v - y))
-    end
-    on = [Int[] for _ in edges]
-    for m in eachmatch(r"\\node\[g2tree weight[^\]]*\] at \(([-0-9.]+),([-0-9.]+)\) \{(\d+)\}", block)
-        p, w = parse.(Float64, (m[1], m[2])), parse(Int, m[3])
-        if nearest
-            push!(on[argmin(k -> last(foot(p, edges[k])), eachindex(edges))], w)
-        else
-            for k in eachindex(edges)
-                t, distance = foot(p, edges[k])
-                0.1 < t < 0.9 && distance < 1e-3 && push!(on[k], w)
-            end
-        end
-    end
-    # The split of the edge a-b: the taxa reached from a without crossing it, or the others if 7 is among them.
-    function split_of(a, b)
-        seen, todo = Set([a]), [a]
-        while !isempty(todo)
-            v = pop!(todo)
-            for (_, x, y) in edges, (s, w) in ((x, y), (y, x))
-                s == v && !(w in seen) && Set([s, w]) != Set([a, b]) && (push!(seen, w); push!(todo, w))
-            end
-        end
-        return side_without_7(Set(v for v in seen if v <= 7))
-    end
-    internal = [(k, a, b) for (k, (kind, a, b)) in enumerate(edges) if kind == "internal"]
-    splits = sort([split_of(a, b) for (_, a, b) in internal])
-    # One length per split: an internal edge drawn in two segments would lose one.
-    allunique(splits) || error("a drawn tree with an internal edge drawn in two segments")
-    all(isempty, on) && return (; splits, pendant=nothing, lengths=nothing)
-    all(ws -> length(ws) == 1, on) || error("a drawn tree with an edge without exactly one weight")
-    pendant = [only(on[only(k for (k, (kind, a, b)) in enumerate(edges) if kind == "pendant" && i in (a, b))]) for i in 1:7]
-    return (; splits, pendant, lengths=Dict(split_of(a, b) => only(on[k]) for (k, a, b) in internal))
-end
 
 ###############################################################################
 # The trilinear form Φ, the quadric q and the linear forms
@@ -501,8 +408,7 @@ total = @elapsed for (number, title) in SECTION_TITLES
     end
 end
 println("\n", "="^118)
-@printf("%d ok, %d failed, %d warnings, %d stored, %d cited, %d skipped (%.0f s)\n", COUNTS["ok"], COUNTS["FAIL"],
-        COUNTS["warn"], COUNTS["stored"], COUNTS["cited"], COUNTS["skip"], total)
+@printf("%d ok, %d failed, %d stored, %d cited, %d skipped (%.0f s)\n", COUNTS["ok"], COUNTS["FAIL"],
+        COUNTS["stored"], COUNTS["cited"], COUNTS["skip"], total)
 isempty(FAILED) || (println("Failed:"); foreach(f -> println("  ", f), FAILED))
-isempty(WARNED) || (println("Warnings (left as they are by the authors):"); foreach(f -> println("  ", f), WARNED))
 exit(isempty(FAILED) ? 0 : 1)

@@ -1,0 +1,33 @@
+generators: 78, all coefficients +-1: true
+bidegrees (x, p) of the generators: [(0, 1) => 7, (0, 2) => 35, (1, 1) => 35, (2, 0) => 1]
+sigma = [1, 2, 3, 4, 5, 6, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [1, 3, 2, 4, 6, 5, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [2, 1, 3, 5, 4, 6, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [2, 3, 1, 5, 6, 4, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [3, 1, 2, 6, 4, 5, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [3, 2, 1, 6, 5, 4, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [4, 5, 6, 1, 2, 3, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [4, 6, 5, 1, 3, 2, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [5, 4, 6, 2, 1, 3, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [5, 6, 4, 2, 3, 1, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [6, 4, 5, 3, 1, 2, 7], signs = [-1, 1, 1, -1, 1, 1, 1]: every generator maps into J over ZZ
+sigma = [6, 5, 4, 3, 2, 1, 7], signs = [1, 1, 1, 1, 1, 1, 1]: every generator maps into J over ZZ
+all 12 taxon permutations act by signed permutations preserving J over ZZ
+cubic 1: coefficients [-1, -1, 1, 1, 2], in J over ZZ with integer cofactors: true
+cubic 2: coefficients [-1, -1, 1, 1, 2], in J over ZZ with integer cofactors: true
+cubic 3: coefficients [-1, -1, 1, 1, 2], in J over ZZ with integer cofactors: true
+images of the cubics under the signed action: 12 cubics up to sign, coefficients [-2, -1, 1, 2]
+D: 2627 maximal cones; lineality of D = lineality of trop(F): true
+all terms of each cubic have equal weight on the lineality space: true
+maximal cones of D by dimension: [8 => 2594, 9 => 33]
+cells of D of dimension 8: 2729; every maximal cone of trop(F) is one of them: true
+maximal cones of D outside trop(F): [8 => 0, 9 => 33]
+cells of D outside trop(F), by dimension: [5 => 0, 6 => 0, 7 => 0, 8 => 15, 9 => 33]
+cells of D outside trop(F) with a strictly minimal cubic term: 48 of 48; coefficients of the minimal terms: [2]; witnessed by the three cubics of eq:threecubics themselves: 48
+  cubic 1 of eq:threecubics: strictly minimal 2-term on 5 cells of dimension 8
+  cubic 2 of eq:threecubics: strictly minimal 2-term on 5 cells of dimension 8
+  cubic 3 of eq:threecubics: strictly minimal 2-term on 5 cells of dimension 8
+  cubic 1 of eq:threecubics: strictly minimal 2-term on 11 cells of dimension 9
+  cubic 2 of eq:threecubics: strictly minimal 2-term on 11 cells of dimension 9
+  cubic 3 of eq:threecubics: strictly minimal 2-term on 11 cells of dimension 9
+RESULT: trop_p(F) is contained in trop(F) for every odd p

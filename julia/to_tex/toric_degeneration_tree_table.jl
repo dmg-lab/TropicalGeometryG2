@@ -15,17 +15,21 @@ include(joinpath(@__DIR__, "build_styled_ray_orbit_tables.jl"))
 include(joinpath(@__DIR__, "toric_degeneration_table.jl"))
 
 # The columns of the two tables, and the width in centimetres that their widest
-# headings needed at the 12pt of main.tex when they still read "size":
-# "18 char 2 6" and "33 char ≠ 2 3". Four panels of the second width
-# would exceed the text width of main.tex.
+# heading needs at the 12pt of main.tex: "17(12)" and "8" with its apple at the
+# right, in the figure with prime edges. The headings of the other table are
+# narrower.
 const TORIC_TREE_TABLE_LAYOUT = (
-    toric=(columns=4, minimum_width=3.9),
-    other=(columns=3, minimum_width=4.7),
+    toric=(columns=5, minimum_width=2.2),
+    other=(columns=5, minimum_width=2.2),
 )
+# The space in centimetres between two rows of trees, and how far in
+# millimetres a tree rises beside its heading.
+const TORIC_TREE_TABLE_ROW_GAP_CM = 0.485
+const TORIC_TREE_TABLE_RAISE_MM = 1.2
 
 # The note of a panel whose orbit belongs to one field only. By main.tex the
 # fan over QQ is that of every characteristic other than 2.
-const TORIC_TREE_TABLE_NOTE = (qq=raw"char\ \(\neq 2\)", gf2=raw"char\ 2")
+const TORIC_TREE_TABLE_NOTE = (qq=raw"{\small char\ \(\neq 2\)}", gf2=raw"{\small char\ 2}")
 
 # The mark at the top right of the panel of a quadrilateral cell; the other
 # maximal cells are triangles and have none. It is as high as the digits of
@@ -43,6 +47,7 @@ function toric_tree_table_panel(io::IO, row, options)
         note=length(fields) == length(TORIC_TABLE_FIELDS) ? "" :
              TORIC_TREE_TABLE_NOTE[only(fields)],
         corner=length(row.support) == 4 ? TORIC_TREE_TABLE_SQUARE : "",
+        raise=TORIC_TREE_TABLE_RAISE_MM,
     )
 end
 
@@ -72,6 +77,7 @@ function toric_degeneration_tree_table_tex(; toric::Bool=true, standalone::Bool=
                 toric ? "the panels are the rows of toric_degeneration_table.jl." :
                         "the panels are the atlas orbits that are not toric (--non-toric).")
         styled_tree_grid(io, length(rows), options; tight=true, layout...,
+                         row_gap=TORIC_TREE_TABLE_ROW_GAP_CM,
                          groups=[first.(row.orbits) for row in rows]) do io, position
             toric_tree_table_panel(io, rows[position], options)
         end

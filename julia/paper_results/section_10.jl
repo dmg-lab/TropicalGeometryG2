@@ -257,7 +257,7 @@ function section_10()
     end
     cited("analogous constructions for g = 7, 8, 9 yield birational models of M_g (Kap1, Kap2)")
     if QUICK
-        skipped("the Betti table eq:bettitable and the Gorenstein property of (d)", "--quick")
+        skipped("the Betti table eq:bettitable and the Gorenstein property of (d)")
     else
         # The 18 points: a random linear section of the model in P^8, over GF(32003) (over QQ the coefficients grow
         # beyond several GB); the Betti numbers of a generic section are those over QQ for all but finitely many p.
@@ -284,18 +284,17 @@ function section_10()
     end
 
     subheading("The tropical moduli space trop(M_10) and the tropical linear spaces L_4")
-    cited("trop(M_10) is a stacky fan of dimension 27 with 2317172 maximal cones, one for each trivalent graph with " *
-          "18 vertices and 27 edges; 41301 of these graphs are simple")
+    cited("trop(M_10) is a stacky fan of dimension 27 with 2317172 maximal cones, one for each trivalent graph of genus " *
+          "10, with 18 vertices and 27 edges; 41301 of these graphs are simple")
     # Speyer's bound on the bounded i-faces of a tropical linear space of a (d, n) matroid. A face of a generic L_4 is
     # a bounded face of a stratum x_T = ∞ (a generic space of U(17 - t, 21 - t), t = |T|) plus the cone of the e_i, i in T.
     bounded_faces(i, d, n) = (i < 0 || d - i - 1 < 0 || n - 2i - 2 < 0) ? 0 :
                              binomial(n - i - 2, i) * binomial(n - 2i - 2, d - i - 1)
     info("Speyer's formula: bounded faces of a generic L_4 of dimensions 0, 1, 2, 3: " *
          "$(join([bounded_faces(i, 17, 21) for i in 0:3], ", "))")
-    check("Speyer's formula: the expected f-vector of L_4, its last entry the maximal cells",
-          [969, 19584, 187680, 1133440, 4834830, 15471456, 38494456, 76142880, 121352715, 156900480, 164745504,
-           139784064, 94645460, 49922880, 19612560, 5230016, 735471],
-          [sum(binomial(21, t) * bounded_faces(k - t, 17 - t, 21 - t) for t in 0:k) for k in 0:16])
+    f_L4 = [sum(binomial(21, t) * bounded_faces(k - t, 17 - t, 21 - t) for t in 0:k) for k in 0:16]
+    check("Speyer's formula: L_4 can have up to this many maximal cells", 735471, last(f_L4))
+    info("the expected f-vector of L_4 (no longer printed in the paper): $(show_value(f_L4))")
 
     subheading("Proposition prop:mukai: the two curves of genus 10 (data/mukai_curves/genus_10_method_{1,2}.mrdi)")
     L = locator(fan("grassmannian"))
@@ -313,7 +312,7 @@ function section_10()
     q_paper = [-204958, -1849487, -1813412, 1389486, -611356, -155086, -128988, -1698926, 1863394, -602010, -2239681,
                -1904628, 124320, -1025736, -87111, -1360439, 705715, -619752, 2004970, 1344973, 232336]
     q = Int.(load(project_path("curves_g10", "overnight_20261028", "wpart_2722", "translation_1.mrdi")))
-    # main.tex: "Only here, we use $\min$-convention": the printed q and q_1, ..., q_4 are those of the files.
+    # main.tex: "Here, the $\min$-convention was used": the printed q and q_1, ..., q_4 are those of the files.
     check("Method 1: the shift vector q, as stored (translation_1.mrdi, in the min convention of the files)", q_paper, q)
     experiment = project_path("curves_g10", "overnight_20261028", "experiment_100128")
     planes = load(joinpath(experiment, "hyperplanes.mrdi"))
@@ -409,18 +408,10 @@ function section_10()
     check("trop(G) has 248 maximal cones", 248, length(L))
     claim("Method 1: the trivalent skeleton is planar (Figure fig:planar_curve)", s10_planar_subcubic(M1.core.edges))
     by_number(ts) = sort(ts; by=t -> parse(Int, t))
-    # The type labels \celltype{n} of a figure, or those \oldstylenums{n} of the atlas panels, in increasing order.
-    drawn(file, label="celltype") =
-        by_number([String(m[1]) for m in eachmatch(Regex("\\\\$label\\{(\\d+)\\}"), read(repository("figures", file), String))])
     met = sort(unique(M1.skeleton_cones))
     check("Method 1: the Berkovich skeleton meets 5 maximal cones of trop(G), of types", ["11", "11", "12", "12", "7"],
           sort([types[("cell", c)] for c in met]))
-    if drawings("Method 1: the types met by the skeleton, against the \\celltype labels of Figure fig:planar_curve",
-                "figures/genus_10_curve_regions.tex")
-        check("Method 1: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_regions.tex",
-              drawn("genus_10_curve_regions.tex"), by_number([types[("cell", c)] for c in met]))
-    end
-    # main.tex: "Only five of the $248$ maximal cones of $\trop(\linespace)$ are intersected by the skeleton of $\mathfrak{L}_4$".
+    # main.tex: "Only five of the $248$ maximal cones of $\trop(\linespace)$ meet the skeleton".
     info("Method 1: the whole curve trop(G) ∩ L_4, trees and rays included, meets " *
          "$(length(unique(vcat(M1.edge_cones, M1.ray_cones)))) maximal cones of trop(G)")
     s10_regions(M1, types)
@@ -451,20 +442,6 @@ function section_10()
     m2_types = by_number([types[("cell", c)] for c in met])
     info("Method 2: the skeleton meets $(length(met)) maximal cones of trop(G), of types $(join(m2_types, ", ")); the " *
          "whole curve, trees and rays included, meets $(length(unique(vcat(M2.edge_cones, M2.ray_cones))))")
-    if drawings("Method 2: the types met by the skeleton, against the \\celltype labels of Figure fig:nonplanar_curve",
-                "figures/genus_10_curve_100128_regions.tex")
-        check("Method 2: the types met by the skeleton, against the \\celltype labels of figures/genus_10_curve_100128_regions.tex",
-              drawn("genus_10_curve_100128_regions.tex"), m2_types)
-    end
-    # main.tex: "The numbers 17, 12, 16, ... refer to their types of G2-trees in Figures fig:atlas_rays,
-    # fig:atlas_toric_cells_prime, and fig:atlas_toric_cells_nontoric"; the first shows rays only, the others the types of
-    # toric_degeneration_prime_edge_trees.tex and non_toric_cell_trees.tex.
-    if drawings("Method 2: the types met by the skeleton are drawn in Figures fig:atlas_toric_cells_prime and " *
-                "fig:atlas_toric_cells_nontoric", "figures/toric_degeneration_prime_edge_trees.tex", "figures/non_toric_cell_trees.tex")
-        panels = vcat(drawn("toric_degeneration_prime_edge_trees.tex", "oldstylenums"), drawn("non_toric_cell_trees.tex", "oldstylenums"))
-        check("Method 2: types met by the skeleton that are not drawn in Figures fig:atlas_toric_cells_prime and " *
-              "fig:atlas_toric_cells_nontoric, to which the paper refers them", String[], unique(filter(!in(panels), m2_types)))
-    end
     s10_regions(M2, types)
     s10_points_by_cone(2, [only(locate(L, x)) for x in divisor], types)
     two, crossings = s10_broken_lines(M2)

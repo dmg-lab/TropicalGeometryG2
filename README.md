@@ -1,10 +1,10 @@
 # Tropical Geometry of G2: code
 
-Code for the paper *Tropical Geometry of G2* by Michael Joswig, Kevin Kuehn, Bernd Sturmfels and Mathieu Vallée. It
-computes the data of the paper, which are also on Zenodo,
+Code for the paper *Tropical Geometry of G2* by Michael Joswig, Kevin Kuehn, Bernd Sturmfels and Mathieu Vallée,
+[arXiv:2611.24456](https://arxiv.org/abs/2611.24456). It computes the data of the paper, which are also on Zenodo,
 [10.5281/zenodo.24104003](https://doi.org/10.5281/zenodo.24104003), and checks every computational statement of the
-paper against them. Section and theorem numbers below are those of the paper; comments in the code that mention
-`main.tex` refer to its source.
+paper against them. Section and theorem numbers below are those of arXiv:2611.24456v1; comments in the code that
+mention `main.tex` refer to its source.
 
 Run everything from `julia/`: `cd julia` after cloning; the commands and paths below assume it.
 
@@ -52,8 +52,9 @@ julia --project=. paper_results.jl --sections=3,9
 
 It goes through the paper in order, computes each statement from `data/` and the certificates stored next to
 the scripts, compares it with the paper, and prints the tables that the paper describes in words. The exit status is 1
-if a statement fails. The figures and tables of the paper are not in this repository, so the checks that read their
-files are skipped.
+if a statement fails. Every check runs in both ways of getting `data/` (computed, or unpacked from Zenodo); only
+`--quick` leaves some out. With the Zenodo tarball at the repository root, Appendix A also compares its files with
+`data/`.
 
 ## Quick examples
 

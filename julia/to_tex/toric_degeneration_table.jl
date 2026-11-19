@@ -22,8 +22,17 @@ const TORIC_TABLE_CHARACTERISTIC = (qq=0, gf2=2)
 # main.tex: black.
 const TORIC_TABLE_LABEL_COLOR = "000000"
 # The table has the booktabs form of the tables of main.tex: the \arraystretch
-# of its rows, and the width that its column gaps stretch to fill.
-const TORIC_TABLE_STRETCH = 0.9
+# of its rows, and the width that its column gaps stretch to fill. The stretch
+# is larger than in the other tables, so that the rows whose polytope takes two
+# lines stand apart: it spaces the rows, not the lines within an entry. (1.1
+# since 2026-11-14, as main.tex has it.)
+const TORIC_TABLE_STRETCH = 1.1
+# Entries of the type column shortened in main.tex (2026-11-14), so that they fit
+# on one line: the phrase of toric_table_type_tex => the printed entry.
+const TORIC_TABLE_SHORTENED = Dict(
+    "Wedge at a triangular face of the pyramid over the multiplex \$M^{3,5}\$" =>
+        "Wedge at a triangular face of the pyramid over \$M^{3,5}\$",
+)
 const TORIC_TABLE_WIDTH = "\\linewidth"
 
 # The census marks the Chevalley polytope of G2/P2; the atlas build certifies
@@ -130,9 +139,9 @@ function toric_table_type_tex(description, f_vector, chevalley::Bool)
     simplex && return "Simplex"
     phrase = toric_table_phrase(description, f_vector)
     for article in ("the ", "an ", "a ")
-        startswith(phrase, article) && return uppercasefirst(chopprefix(phrase, article))
+        startswith(phrase, article) && (phrase = chopprefix(phrase, article); break)
     end
-    return uppercasefirst(phrase)
+    return get(TORIC_TABLE_SHORTENED, uppercasefirst(phrase), uppercasefirst(phrase))
 end
 
 """

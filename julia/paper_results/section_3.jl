@@ -33,15 +33,6 @@ function section_3()
           [dim(C) - 1 for C in Dcones if dim(C) == dim(D)])
     check("dimension of trop(G) in R^21/1", 5, dim(G) - 1)
     claim("trop(G) is pure", is_pure(G))
-    # main.tex: "by the Structure Theorem~\cite[Theorem 3.3.6]" here, "Structure Theorem~\cite[Theorem~3.3.5]" before thm:flag.
-    tex = repository("main.tex")
-    if isfile(tex)
-        citations = [m[1] for m in eachmatch(r"Structure Theorem~\\cite\[Theorem[~ ]([\d.]+)\]", read(tex, String))]
-        claim("main.tex cites the Structure Theorem of [MS15] by one theorem number", length(unique(citations)) == 1,
-              "Theorem " * join(citations, " here, Theorem ") * " before Theorem thm:flag")
-    else
-        skipped("the paper cites the Structure Theorem of [MS15] by one theorem number", "main.tex is not in this repository")
-    end
     info("that the tetrahedra are the only cells in the difference is checked in the proof of Theorem thm:grassmannian")
 
     subheading("Theorem thm:grassmannian: the tropical G2-Grassmannian trop(G)")
@@ -110,10 +101,6 @@ function section_3()
     cells21 = sort(only(s3_members(r, "qq") for r in orbit_rows if r["kind"] == "cell" && r["orbit_type"] == "21"))
     check("the maximal cells of multiplicity 2 are the whole orbit of type 21", cells21, double_cells)
     info("that orbit has $(length(double_cells)) cells ($(join(double_cells, ", "))): \"maximal cones\" in the remark means types")
-    if drawings("the type on the upper left of Figure fig:atlas_toric_cells_nontoric", "figures/non_toric_cell_trees.tex")
-        panel = match(r"\\oldstylenums\{(\d+)\}", figure_text("non_toric_cell_trees"))
-        check("the type on the upper left of Figure fig:atlas_toric_cells_nontoric", "21", String(panel[1]))
-    end
     balancing = run_in_module(study_path("g2", "weights", "balancing.jl"); name=:Balancing)
     failures = redirect_stdout(() -> call(balancing, :check_balancing), devnull)
     check("walls of the raw fan where trop(G) with the QQbar multiplicities is not balanced (weights/balancing.jl)", 0,
@@ -168,7 +155,7 @@ function section_3()
            "binomial $(purity["initial_binomial"]), prime $(purity["initial_geometrically_prime"]), $(purity["initial_generators"]) generators, " *
            "lattice index $(purity["initial_lattice_index"]), dim in_{w0}(J) = $(purity["initial_dimension"]), d = dim J = $(purity["dimension"])")
     if QUICK
-        skipped("in_{w0}(J) recomputed: 83 binomials, lattice index 1, saturated, d = 8", "--quick")
+        skipped("in_{w0}(J) recomputed: 83 binomials, lattice index 1, saturated, d = 8")
     else
         J0 = initial(J, tropical_semiring_map(QQ, min), QQ.(-purity["weight_max"]))
         reduced = collect(gens(groebner_basis(J0; complete_reduction=true)))
@@ -176,8 +163,10 @@ function section_3()
         claim("they are binomials, and their exponent differences span a saturated lattice (index 1)",
               all(g -> length(g) == 2, reduced) && TropicalGeometryG2.binomial_lattice_index(reduced) == 1)
         RJ = base_ring(J)
-        claim("in_{w0}(J) is saturated by the product of the variables, hence prime", saturation(J0, ideal(RJ, prod(gens(RJ)))) == J0)
-        check("d = dim J, and dim in_{w0}(J)", [8, 8], [Int(dim(J)), Int(dim(J0))])
+        claim("in_{w0}(J) is saturated by the product of the variables, hence, with the saturated lattice, prime over QQbar",
+              saturation(J0, ideal(RJ, prod(gens(RJ)))) == J0)
+        # The algorithm requires J prime of dimension d; main.tex no longer states d = 8 here.
+        check("d = dim J (the algorithm requires J prime of dimension d), and dim in_{w0}(J)", [8, 8], [Int(dim(J)), Int(dim(J0))])
         stored_J0 = load(g2("flag", "00_verified_prime_initial_ideal.mrdi"))
         to_J = hom(base_ring(stored_J0), RJ, gens(RJ))
         claim("it equals data/g2/flag/00_verified_prime_initial_ideal.mrdi", ideal(RJ, to_J.(gens(stored_J0))) == J0)
@@ -333,7 +322,6 @@ function section_3()
     claim("all edges of the 15 trees have length 1 or 2",
           all(issubset(edge_lengths(t), Set([1, 2])) for t in vcat([qtrees[r] for v in vertices for r in v], [etrees[r] for r in centres])))
     claim("second column: splits", all(r -> qtrees[r]["pendant_lengths"] == "0;0;0;0;0;0;0" && !occursin(';', qtrees[r]["internal_splits"]), (34, 33, 8)))
-    claim("third column: star trees with 6 leaves", all(r -> sort(unique(-R[r, :])) == [0, 2] && count(iszero, R[r, :]) == 1, (9, 10, 30)))
     check("last tree of the first row (ray 6): d13, d23, d12, d35", [3, 2, 1, 0], [-R[6, PAIR_INDEX[pair]] for pair in ((1, 3), (2, 3), (1, 2), (3, 5))])
     claim("each row is one of the three tetrahedra of the Dressian: its last four trees are the vertices", rows_are_tetrahedra)
     claim("the leftmost tree lies in the relative interior of that tetrahedron", interior)

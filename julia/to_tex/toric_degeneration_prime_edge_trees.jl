@@ -24,13 +24,7 @@ include(joinpath(@__DIR__, "toric_degeneration_apple_trees.jl"))
 
 # The figure of main.tex and its drawing options, from ../figures/generate_figures.sh.
 const PRIME_EDGE_PAPER_FIGURE = "figures/toric_degeneration_trees.tex"
-const PRIME_EDGE_OPTIONS = (scale=0.88, taxon_scale=0.75, bounded_length=1.0)
-# The space in centimetres between two rows of trees, and how far a tree rises
-# beside its heading, less than in the figure of main.tex. With them, a tree
-# keeps 0.5 cm from the rule above it and from the rule below it, on the page
-# of main.tex; with more space, the figure no longer fits on that page.
-const PRIME_EDGE_ROW_GAP_CM = 0.485
-const PRIME_EDGE_RAISE = "1.2mm"
+const PRIME_EDGE_OPTIONS = (scale=0.75, taxon_scale=0.6, bounded_length=1.0)
 # The edges with a prime cone over them, and the others.
 const PRIME_EDGE_COLOR = "2E7D32"
 const BARREN_EDGE_COLOR = "C62828"
@@ -72,7 +66,7 @@ green of these edges, and a green apple at its top right.
 function prime_edge_tree_panel(io::IO, row, options, prime; recolor::Bool=true)
     fields = first.(row.orbits)
     square = length(row.support) == 4 ? TORIC_TREE_TABLE_SQUARE : ""
-    apples = "\\textcolor{g2Prime}{\\large$(length(prime))}\\,\\smash[b]{\\tikz[baseline=0pt]\\pic[scale=$PRIME_EDGE_APPLE_SCALE] at " *
+    apples = "\\textcolor{g2Prime}{$(STYLED_TREE_LABEL_FONTS.label)$(length(prime))}\\,\\smash[b]{\\tikz[baseline=0pt]\\pic[scale=$PRIME_EDGE_APPLE_SCALE] at " *
              "(0,$(g2_simple_number(5.8 * PRIME_EDGE_APPLE_SCALE))mm) {g2apple};}"
     styled_tree_panel(
         io, styled_tree_label("\\oldstylenums{$(toric_table_label_number(row.label))}",
@@ -80,6 +74,7 @@ function prime_edge_tree_panel(io::IO, row, options, prime; recolor::Bool=true)
         prime_edge_tree_tikz(row.tree, prime, options; recolor);
         note=length(fields) == length(TORIC_TABLE_FIELDS) ? "" : TORIC_TREE_TABLE_NOTE[only(fields)],
         corner=recolor ? (isempty(square) ? "" : square * "\\quad") * apples : square,
+        raise=TORIC_TREE_TABLE_RAISE_MM,
     )
 end
 
@@ -116,20 +111,12 @@ function toric_degeneration_prime_edge_trees_tex(; fragment::Bool=false,
                                for (row, prime) in zip(rows, primes) if field in first.(row.orbits))
                   for field in TORIC_TABLE_FIELDS)
     layout = TORIC_TREE_TABLE_LAYOUT.toric
-    function table(options, recolor)
-        tex = sprint() do io
-            styled_tree_grid(io, length(rows), options; tight=true, layout...,
-                             groups=[first.(row.orbits) for row in rows]) do io, position
-                prime_edge_tree_panel(io, rows[position], options, primes[position]; recolor)
-            end
+    table(options, recolor) = sprint() do io
+        styled_tree_grid(io, length(rows), options; tight=true, layout...,
+                         row_gap=TORIC_TREE_TABLE_ROW_GAP_CM,
+                         groups=[first.(row.orbits) for row in rows]) do io, position
+            prime_edge_tree_panel(io, rows[position], options, primes[position]; recolor)
         end
-        recolor || return tex
-        gap = @sprintf("\\noalign{\\vskip %gcm}", .25 * options.scale)
-        count(gap, tex) == cld(length(rows), layout.columns) - 1 || error("unexpected rows of trees")
-        raise = "\n\\vskip -$STYLED_TREE_RAISE\n"
-        count(raise, tex) == length(rows) || error("unexpected panels of trees")
-        return replace(tex, gap => @sprintf("\\noalign{\\vskip %gcm}", PRIME_EDGE_ROW_GAP_CM),
-                       raise => "\n\\vskip -$PRIME_EDGE_RAISE\n")
     end
     # Without these colors, the table is the figure of main.tex after its
     # comment line.

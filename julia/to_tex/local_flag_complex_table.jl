@@ -33,11 +33,13 @@ const LOCAL_FLAG_TYPE_SEP = "\\quad"
 # The \arraystretch of the rows, in the booktabs form of the tables of main.tex.
 const LOCAL_FLAG_TABLE_STRETCH = 0.9
 
-# The words of the maximal-cell types of the census, singular and plural.
+# The words of the maximal-cell types of the census, singular and plural, short
+# enough for one line: the only pyramids are square pyramids and the only
+# prisms triangular prisms, as main.tex says.
 const LOCAL_FLAG_CELL_WORDS = Dict(
     "3-simplex" => ("tetrahedron", "tetrahedra"),
-    "Pyramid(4-gon)" => ("square pyramid", "square pyramids"),
-    "Δ1 × Δ2" => ("triangular prism", "triangular prisms"),
+    "Pyramid(4-gon)" => ("pyramid", "pyramids"),
+    "Δ1 × Δ2" => ("prism", "prisms"),
 )
 
 local_flag_data_file(field, target, name) =
@@ -175,14 +177,12 @@ end
 
 """
 The maximal cells of a complex in words, in the order of the census types,
-one line for each type.
+on one line.
 """
 function local_flag_cells_tex(counts)
     issubset(keys(counts), keys(LOCAL_FLAG_CELL_WORDS)) || error("unknown maximal-cell type in $(keys(counts))")
-    lines = ["$(counts[type]) $(LOCAL_FLAG_CELL_WORDS[type][counts[type] == 1 ? 1 : 2])"
-             for type in ("3-simplex", "Pyramid(4-gon)", "Δ1 × Δ2") if haskey(counts, type)]
-    length(lines) == 1 && return only(lines)
-    return "\\makecell[tl]{" * join(lines, ",\\\\ ") * "}"
+    return join(("$(counts[type]) $(LOCAL_FLAG_CELL_WORDS[type][counts[type] == 1 ? 1 : 2])"
+                 for type in ("3-simplex", "Pyramid(4-gon)", "Δ1 × Δ2") if haskey(counts, type)), ", ")
 end
 
 """

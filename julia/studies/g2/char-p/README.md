@@ -2,7 +2,8 @@
 
 Code and data for the proof of Theorem `thm:char2` of `main.tex` (Section "Characteristic
 Two"): trop_p(G) = trop(G) for every odd prime p, and the fan trop_2(G); plus cross-checks for
-Theorem `thm:flag`.
+Theorem `thm:flag`.  The certificates for the flag variety (Theorem `thm:flagchar2`, odd p) are
+in `flag/` (see `flag/README.md`).
 
 ## Running
 

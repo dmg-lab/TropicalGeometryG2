@@ -11,6 +11,7 @@
 # Run from julia/:   julia --project=. to_tex/hexagon_tree_ring.jl [--complete]
 #   [--output=FILE]   (write FILE instead of ../figures/hexagon_tree_ring.tex)
 #   [--standalone]    (with --output: the document of g2_standalone_figure, whose PDF main.tex includes)
+#   [--scale=F]       (the drawing at F times its size, the labels at full size)
 
 include(joinpath(@__DIR__, "..", "studies", "hexagon", "tropical_complete_hexagon.jl"))
 include(joinpath(@__DIR__, "decorated_trees_figure.jl"))   # taxa, apples, trees.jl
@@ -39,7 +40,8 @@ const HEX_FLATTEN = 0.72               # the corners lie on an ellipse, flattene
 const HEX_RADIUS = 3.7              # the corners p_k of the hexagon; its sides have the same length
 const BOUNDED_CM = 0.38                # drawn length of a hanging bounded edge per unit of length
 const BOUNDED_MIN_CM = 0.55
-const PENDANT_CM = 1.15                # drawn length of a pendant edge (or of its part beyond a point)
+const PENDANT_CM = 1.15                # drawn length of the part of a pendant edge beyond a point
+const LEAF_CM = 0.7                    # drawn length of a pendant edge without a point
 const BOW = -15                      # angle of the path to the side at p_k (positive: outwards)
 const SPREAD_PER_LEAF = 22             # angle per taxon of the hanging subtrees
 const MAX_FAN = 120                    # largest angle of the subtrees hanging at an inner vertex of the path
@@ -48,12 +50,29 @@ const LEAN = 30                        # how much they lean away from the nearer
 const CORNER_FAN = 70                  # largest angle of the subtrees hanging at a corner
 const TAXON_SCALE = 0.55
 const APPLE_SCALE = 0.75
+# The labels a^(k) and d^(ij) start on their apple and on the middle of their path, and move into the hexagon until their
+# ink keeps LABEL_GAP (printed cm) from every edge and apple. Their ink: boxes (x0, x1, y0, y1) of the letter, "(", the
+# digits and ")", in pt from the left end of the baseline, and the width and height of the label, measured from a render
+# of \small\(a^{(2)}\) and \(d^{(34)}\) at 12pt (the fonts of hex point label and hex line label).
+const LABEL_GAP = 0.07
+const POINT_LABEL_INK = (size=(17.15, 9.97), glyphs=[(0.44, 5.45, 0.0, 4.85), (6.6, 8.6, 1.99, 9.97),
+                                                     (9.51, 12.91, 3.99, 9.3), (13.82, 15.81, 1.99, 9.97)])
+const LINE_LABEL_INK = (size=(21.72, 10.35), glyphs=[(0.48, 6.07, 0.0, 8.34), (6.92, 8.92, 2.36, 10.35),
+                                                     (9.76, 17.66, 4.19, 9.76), (18.39, 20.38, 2.36, 10.35)])
+# The body of an apple, as a disc about the point at APPLE_BODY[1] from its stem, of radius APPLE_BODY[2] (cm at scale 1).
+const APPLE_BODY = (0.38, 0.21)
 # Clearances kept by the taxa, in cm, from each other, from the apples and from the edges; the pendant edges turn by
 # steps of RELAX_STEP degrees, at most MAX_TURN, to keep them.
 const TAXON_GAP, APPLE_GAP, EDGE_GAP = 0.55, 0.5, 0.28
 const RELAX_STEP, MAX_TURN = 3, 50
 const CROSSING_PENALTY = 10.0          # for each two edges crossing
 const FAN_TURN, FAN_STEP = 60, 5       # the fans of hanging subtrees turn by at most FAN_TURN, in steps of FAN_STEP
+# The bounding box is symmetric about x = 0 (see document_body), so a taxon far to one side widens the figure on both:
+# WIDTH_WEIGHT times the square of the excess of |x| over WIDTH_LIMIT, for each taxon. The fans beyond apples bend only as
+# far as this needs: at 6.2 the black one stays straight and the magenta one bends by 25 degrees.
+const WIDTH_LIMIT, WIDTH_WEIGHT = 6.2, 1.0
+# The printed size: the drawing (positions, line widths, taxa, apples) is scaled by this, the labels are not. `--scale=F`.
+const FIGURE_SCALE = Ref(1.0)
 # p^(12), ..., p^(61): purple, teal, black, magenta, slate, brown; neighbours differ in hue and lightness
 const TREE_COLORS = ("7B1FA2", "00897B", "212121", "D81B60", "78909C", "8D5524")
 
@@ -169,8 +188,9 @@ corner(k) = (a = 90 - 60 * (mod1(k, 6) - 1); (HEX_RADIUS * cosd(a), HEX_FLATTEN 
 direction(θ) = (cosd(θ), sind(θ))
 plus(a, b, s=1.0) = (a[1] + s * b[1], a[2] + s * b[2])
 
-"Drawn length of an edge hanging off the path."
-drawn_length(G, a, b) = G.bounded[(a, b)] ? max(BOUNDED_MIN_CM, BOUNDED_CM * Float64(G.len[(a, b)])) : PENDANT_CM
+"Drawn length of an edge hanging off the path; 101 and 102 are the points inserted inside edges."
+drawn_length(G, a, b) = G.bounded[(a, b)] ? max(BOUNDED_MIN_CM, BOUNDED_CM * Float64(G.len[(a, b)])) :
+                        a in (101, 102) ? PENDANT_CM : LEAF_CM
 
 """
 Lay out the subtree at `v`, reached from `parent`, in the direction `θ` within a sector of width `width`, widened to
@@ -227,7 +247,7 @@ function tree_layout(L, xa, xb, k)
     # at most CORNER_FAN wide. At an inner vertex it points into the outer angle between the two pieces of the path,
     # leaning away from the nearer corner. `rotate_fans!` turns them afterwards.
     drawn = cumsum(vcat(0.0, lengths))
-    fans = Tuple{Int,Vector{Int}}[]                # vertex of the path => the vertices of its hanging subtrees
+    fans = []                                      # see fan_vertices and rotate_fans!
     for (i, v) in enumerate(path)
         children = [w for w in G.adj[v] if !(w in path)]
         isempty(children) && continue
@@ -248,8 +268,15 @@ function tree_layout(L, xa, xb, k)
             layout_subtree!(pos, G, w, v, start - sub / 2, sub, T.ntaxa)
             start -= sub
         end
-        # A fan at an apple inside an edge continues that edge, so it does not turn.
-        v in (101, 102) || push!(fans, (v, reduce(vcat, [subtree_vertices(G, w, v) for w in children])))
+        # A fan at an apple inside an edge continues that edge, so it does not turn; the subtrees beyond the far end of the
+        # edge bend about that end instead, by equal steps over their depth, so that no angle changes much.
+        if !(v in (101, 102))
+            push!(fans, (centre=v, order=fan_vertices(G, v, children), steps=1))
+        elseif only(children) > T.ntaxa
+            w = only(children)
+            order = fan_vertices(G, w, [u for u in G.adj[w] if u != v])
+            push!(fans, (centre=w, order=order, steps=maximum(d for (_, _, d) in order)))
+        end
     end
     edges = [(a, b, G.len[(a, b)], G.bounded[(a, b)], a in path && b in path) for a in keys(G.adj) for b in G.adj[a] if a < b]
     # The middle of the path, for the label of the line.
@@ -259,8 +286,17 @@ function tree_layout(L, xa, xb, k)
             fans=fans, start_angle=angles[1], end_angle=angles[end], middle=middle)
 end
 
-"The vertices of the subtree at `v`, reached from `parent`."
-subtree_vertices(G, v, parent) = vcat([v], [u for w in G.adj[v] if w != parent for u in subtree_vertices(G, w, v)])
+"The vertices of the subtrees at the `children` of `v`, each as `(u, parent, depth below v)`, parents first."
+function fan_vertices(G, v, children)
+    order = Tuple{Int,Int,Int}[]
+    stack = [(w, v, 1) for w in children]
+    while !isempty(stack)
+        u, p, d = pop!(stack)
+        push!(order, (u, p, d))
+        append!(stack, [(x, u, d + 1) for x in G.adj[u] if x != p])
+    end
+    return order
+end
 
 "The direction in which the apple at p_k hangs: into the inner angle between the paths of p^(k-1,k) and p^(k,k+1)."
 function apple_angle(layouts, k)
@@ -282,8 +318,8 @@ dist(p, q) = hypot(p[1] - q[1], p[2] - q[2])
 turn(p, c, δ) = (s = sind(δ); co = cosd(δ); (c[1] + co * (p[1] - c[1]) - s * (p[2] - c[2]), c[2] + s * (p[1] - c[1]) + co * (p[2] - c[2])))
 
 """
-How badly the drawing is cluttered: CROSSING_PENALTY for each two edges crossing, and the squares of the shortfalls of the
-taxa from the clearances TAXON_GAP to each other, APPLE_GAP to the apples and EDGE_GAP to the edges.
+How badly the drawing is cluttered: CROSSING_PENALTY for each two edges crossing, the squares of the shortfalls of the
+taxa from the clearances TAXON_GAP to each other, APPLE_GAP to the apples and EDGE_GAP to the edges, and the width term.
 """
 function clutter(layouts, apples)
     taxa = [(k, t) for k in 1:6 for t in 1:layouts[k].ntaxa]
@@ -291,6 +327,7 @@ function clutter(layouts, apples)
     P = [layouts[k].pos[t] for (k, t) in taxa]
     s = 0.0
     for i in eachindex(P)
+        s += WIDTH_WEIGHT * max(0, abs(P[i][1]) - WIDTH_LIMIT)^2
         for j in (i + 1):length(P)
             s += max(0, TAXON_GAP - dist(P[i], P[j]))^2
         end
@@ -311,34 +348,37 @@ end
 
 """
 Turn the fans of subtrees hanging at the vertices of the paths about these vertices, each in turn to its best angle
-within ±FAN_TURN, as long as this reduces the `clutter`. Fans at an apple inside an edge stay, so the edge stays straight.
+within ±FAN_TURN, as long as this reduces the `clutter`. A fan with `steps` = s bends instead: an edge at depth d turns
+by min(d, s)/s of the angle, so each angle of the fan changes by at most 1/s of it (s = 1 is a rigid turn). Of equally
+good bends it takes the least, so that it stays as straight as the clearances allow. Fans at an apple inside an edge
+stay, so the edge stays straight.
 """
 function rotate_fans!(layouts)
     apples = [apple_centre(layouts, k) for k in 1:6]
     current = clutter(layouts, apples)
-    turned = Dict((k, v) => 0 for k in 1:6 for (v, _) in layouts[k].fans)
+    turned = Dict((k, f.centre) => 0 for k in 1:6 for f in layouts[k].fans)
     for _ in 1:10
         improved = false
-        for k in 1:6, (v, vertices) in layouts[k].fans
-            pos, c = layouts[k].pos, layouts[k].pos[v]
-            original = Dict(u => pos[u] for u in vertices)
+        for k in 1:6, f in layouts[k].fans
+            pos = layouts[k].pos
+            original = Dict(u => pos[u] for u in vcat(f.centre, [u for (u, _, _) in f.order]))
+            bend!(δ) = for (u, p, d) in f.order
+                pos[u] = plus(pos[p], turn(original[u], original[p], δ * min(d, f.steps) / f.steps), 1.0) .- original[p]
+            end
             best, bestδ = current, 0
-            for δ in -FAN_TURN:FAN_STEP:FAN_TURN
-                abs(turned[(k, v)] + δ) <= FAN_TURN || continue
-                for u in vertices
-                    pos[u] = turn(original[u], c, δ)
-                end
+            angles = -FAN_TURN:FAN_STEP:FAN_TURN
+            for δ in (f.steps > 1 ? sort(angles; by=abs) : angles)
+                abs(turned[(k, f.centre)] + δ) <= FAN_TURN || continue
+                bend!(δ)
                 new = clutter(layouts, apples)
                 if new < best - 1e-9
                     best, bestδ = new, δ
                 end
             end
-            for u in vertices
-                pos[u] = turn(original[u], c, bestδ)
-            end
+            bend!(bestδ)
             if bestδ != 0
                 current, improved = best, true
-                turned[(k, v)] += bestδ
+                turned[(k, f.centre)] += bestδ
             end
         end
         improved || break
@@ -377,15 +417,13 @@ function relax_taxa!(layouts)
         end
         improved || break
     end
-    if current >= CROSSING_PENALTY
-        segments = [(k, a, b) for k in 1:6 for (a, b) in layouts[k].edges]
-        at(k, v) = round.(layouts[k].pos[v]; digits=2)
-        crossing = ["p^($(LINE_NAMES[k])) $(at(k, a))--$(at(k, b)) and p^($(LINE_NAMES[l])) $(at(l, c))--$(at(l, d))"
-                    for (i, (k, a, b)) in enumerate(segments) for (l, c, d) in segments[(i + 1):end]
-                    if segments_cross(layouts[k].pos[a], layouts[k].pos[b], layouts[l].pos[c], layouts[l].pos[d])]
-        @warn "edges still cross: " * join(crossing, "; ")
-    end
-    current > 0 && @warn "some taxa are still too close to each other, an apple or an edge (clutter $current)"
+    segments = [(k, a, b) for k in 1:6 for (a, b) in layouts[k].edges]
+    at(k, v) = round.(layouts[k].pos[v]; digits=2)
+    crossing = ["p^($(LINE_NAMES[k])) $(at(k, a))--$(at(k, b)) and p^($(LINE_NAMES[l])) $(at(l, c))--$(at(l, d))"
+                for (i, (k, a, b)) in enumerate(segments) for (l, c, d) in segments[(i + 1):end]
+                if segments_cross(layouts[k].pos[a], layouts[k].pos[b], layouts[l].pos[c], layouts[l].pos[d])]
+    isempty(crossing) || @warn "edges still cross: " * join(crossing, "; ")
+    current > 0 && @warn "some taxa are still too close to each other, an apple or an edge, or too far out (clutter $current)"
     return layouts
 end
 
@@ -399,7 +437,7 @@ function number_tex(q)
     return "\\tfrac{$(numerator(q))}{$(denominator(q))}"
 end
 
-xy(p) = @sprintf("(%.4f,%.4f)", p[1], p[2])
+xy(p) = @sprintf("(%.4f,%.4f)", FIGURE_SCALE[] * p[1], FIGURE_SCALE[] * p[2])
 const LINE_NAMES = ("12", "23", "34", "45", "56", "61")
 
 function tree_tikz(io, D, k, colors; lengths::Bool=false)
@@ -424,8 +462,48 @@ function tree_tikz(io, D, k, colors; lengths::Bool=false)
     end
     for t in 1:D.ntaxa
         println(io, "\\coordinate (v$t) at $(xy(D.pos[t]));")
-        g2_minimal_tree_taxon(io, t, colors; label=false, taxon_scale=TAXON_SCALE)
+        g2_minimal_tree_taxon(io, t, colors; label=false, taxon_scale=FIGURE_SCALE[] * TAXON_SCALE)
     end
+end
+
+const PT_CM = 2.54 / 72.27
+
+"The edges, with their half widths, and the bodies of the apples, as printed (cm): what the labels keep clear of."
+function label_obstacles(layouts)
+    F = FIGURE_SCALE[]
+    segments = [(F .* layouts[k].pos[a], F .* layouts[k].pos[b], (bounded ? 2.2 : 0.8) * F / 2 * PT_CM)
+                for k in 1:6 for (a, b, _, bounded, _) in layouts[k].edges]
+    apples = [(F .* plus(corner(k), direction(apple_angle(layouts, k)), APPLE_BODY[1] * APPLE_SCALE),
+               APPLE_BODY[2] * APPLE_SCALE * F) for k in 1:6]
+    return (segments=segments, apples=apples)
+end
+
+box_point_distance(b, p) = hypot(max(b[1] - p[1], 0, p[1] - b[2]), max(b[3] - p[2], 0, p[2] - b[4]))
+
+"Distance of the box `b` = (x0, x1, y0, y1) from the segment pq."
+function box_segment_distance(b, p, q)
+    inside(r) = b[1] <= r[1] <= b[2] && b[3] <= r[2] <= b[4]
+    corners = ((b[1], b[3]), (b[2], b[3]), (b[2], b[4]), (b[1], b[4]))
+    (inside(p) || inside(q) || any(segments_cross(p, q, corners[i], corners[mod1(i + 1, 4)]) for i in 1:4)) && return 0.0
+    return min(box_point_distance(b, p), box_point_distance(b, q), minimum(g2_segment_distance(c, p, q) for c in corners))
+end
+
+"""
+The centre of a label with ink `ink` (see POINT_LABEL_INK), in drawing coordinates: the first point from `start` in the
+direction `dir` at which its ink keeps LABEL_GAP from the `obstacles` of `label_obstacles`.
+"""
+function place_label(ink, start, dir, obstacles)
+    F = FIGURE_SCALE[]
+    w, h = ink.size
+    for s in 0:0.002:5                             # printed cm
+        c = F .* start .+ s .* dir
+        boxes = [(c[1] + (g[1] - w / 2) * PT_CM, c[1] + (g[2] - w / 2) * PT_CM,
+                  c[2] + (g[3] - h / 2) * PT_CM, c[2] + (g[4] - h / 2) * PT_CM) for g in ink.glyphs]
+        clear = min(minimum(box_segment_distance(b, p, q) - r for b in boxes for (p, q, r) in obstacles.segments),
+                    minimum(box_point_distance(b, a) - r for b in boxes for (a, r) in obstacles.apples))
+        clear >= LABEL_GAP && return c ./ F
+    end
+    error("no place for a label from $start in the direction $dir")
 end
 
 function document_body(H)
@@ -438,10 +516,11 @@ function document_body(H)
     end
     println(io, "\\tikzset{")
     println(io, g2_apple_pic())
-    println(io, raw"""  hex pendant/.style={line width=.8pt,line cap=round},
-  hex internal/.style={line width=2.2pt,line cap=round},
-  hex vertex/.style={circle,draw=white,line width=.4pt,inner sep=0pt,minimum size=4.2pt},
-  hex length/.style={font=\sffamily\fontsize{7}{8}\selectfont\bfseries,inner sep=.5pt},
+    F = FIGURE_SCALE[]
+    @printf(io, "  hex pendant/.style={line width=%.3fpt,line cap=round},\n", 0.8F)
+    @printf(io, "  hex internal/.style={line width=%.3fpt,line cap=round},\n", 2.2F)
+    @printf(io, "  hex vertex/.style={circle,draw=white,line width=%.3fpt,inner sep=0pt,minimum size=%.3fpt},\n", 0.4F, 4.2F)
+    println(io, raw"""  hex length/.style={font=\sffamily\fontsize{7}{8}\selectfont\bfseries,inner sep=.5pt},
   hex line label/.style={font=\bfseries},
   hex point label/.style={font=\small,text=g2AppleDark},
 }""")
@@ -451,14 +530,16 @@ function document_body(H)
         println(io, "% p^($(LINE_NAMES[k]))")
         tree_tikz(io, layouts[k], k, colors)
     end
+    obstacles = label_obstacles(layouts)
     for k in 1:6
         # The apple at x^(k), its label beyond it, and the label of p^(k,k+1) inside the hexagon next to its path.
         a = apple_angle(layouts, k)
-        @printf(io, "\\pic[rotate=%.1f,scale=%.3f] at %s {g2apple};\n", a + 90, APPLE_SCALE, xy(corner(k)))
-        @printf(io, "\\node[hex point label] at %s {\\(a^{(%d)}\\)};\n", xy(plus(corner(k), direction(a), 0.85)), k)
+        @printf(io, "\\pic[rotate=%.1f,scale=%.3f] at %s {g2apple};\n", a + 90, F * APPLE_SCALE, xy(corner(k)))
+        @printf(io, "\\node[hex point label] at %s {\\(a^{(%d)}\\)};\n",
+                xy(place_label(POINT_LABEL_INK, corner(k), direction(a), obstacles)), k)
         m = layouts[k].middle
         @printf(io, "\\node[hex line label,text=hexTree%d] at %s {\\(d^{(%s)}\\)};\n", k,
-                xy(plus(m, m, -0.65 / hypot(m...))), LINE_NAMES[k])
+                xy(place_label(LINE_LABEL_INK, m, (-m[1] / hypot(m...), -m[2] / hypot(m...)), obstacles)), LINE_NAMES[k])
     end
     println(io, raw"""% Center the hexagon of apples, whose center is the origin, on the page: extend the bounding box
 % symmetrically about x=0, so that \centering in main.tex centers the origin and not the pendant edges.
@@ -478,6 +559,8 @@ function hexagon_tree_ring_main(args=ARGS)
         C.points == HEXAGON.points && C.lines == HEXAGON.lines ||
             error("the completion differs from HEXAGON: points $(C.points), lines $(C.lines)")
     end
+    scales = [parse(Float64, split(arg, '='; limit=2)[2]) for arg in args if startswith(arg, "--scale=")]
+    FIGURE_SCALE[] = isempty(scales) ? 1.0 : only(scales)
     outputs = [String(split(arg, '='; limit=2)[2]) for arg in args if startswith(arg, "--output=")]
     standalone = "--standalone" in args
     standalone && isempty(outputs) && error("--standalone writes a document, which needs --output=FILE")

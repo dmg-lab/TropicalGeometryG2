@@ -16,7 +16,8 @@
 #   julia --project=. to_tex/triangle_cell_figure.jl \
 #     [--orbit=N | --rays=I,J,K] [--field=QQ|GF2] [--scale=FACTOR] \
 #     [--taxon-scale=FACTOR] [--bounded-length=LENGTH] [--ray-scale=FACTOR] \
-#     [--ray-bounded-length=LENGTH] [--name-below] [--standalone] [--output=FILE]
+#     [--ray-bounded-length=LENGTH] [--name-below] [--top-name-right] [--standalone] \
+#     [--output=FILE]
 #
 # The orbit numbers are those of the tables of maximal trees, from the atlas.
 ###############################################################################
@@ -367,7 +368,8 @@ end
 The figure of the triangular `cell` of the fan over `field`, given by its
 index or its three rays. Its rays go clockwise from the top corner, in
 increasing order; each is labeled outside its circle by its orbit in the ray
-catalog, and the cell by its orbit in the tables of maximal trees, inside
+catalog, the top one above its circle, or to its right when `top_name_right`,
+which makes the figure lower, and the cell by its orbit in the tables of maximal trees, inside
 the bottom side, or below it, between the circles, when `name_below`. The trees are G2-trees with the options `scale`,
 `taxon_scale`, and `bounded_length` of `g2_tree_tikz`, without edge lengths,
 all with their taxa where the tree of the cell has them. The trees of the
@@ -391,7 +393,8 @@ function g2_triangle_cell_tex(cell; field::Symbol=:qq,
                               scale::Real=1.0, taxon_scale::Real=0.75, bounded_length=nothing,
                               ray_scale::Real=0.8, ray_bounded_length=nothing,
                               name_below::Bool=false, cell_letters::Bool=true, cell_inside::Bool=true,
-                              height=nothing, standalone::Bool=false, source=nothing)
+                              top_name_right::Bool=false, height=nothing, standalone::Bool=false,
+                              source=nothing)
     (; rays, number, selected, order, middle, corners, record, bounded_length, ray_bounded_length) =
         g2_triangle_trees(cell; field, scale, taxon_scale, bounded_length, ray_scale,
                           ray_bounded_length, cell_letters, source)
@@ -458,10 +461,13 @@ function g2_triangle_cell_tex(cell; field::Symbol=:qq,
             println(io, "% Ray $ray")
             println(io, "\\draw[g2square circle] $(point(place)) " *
                         "circle[radius=$(g2_simple_number(radius))];")
-            # The label touches the circle on the line from the centre, away from the triangle.
-            anchor = direction[2] > 0.9 ? "south" : direction[1] > 0 ? "north west" : "north east"
+            # The label touches the circle on the line from the centre, away from the
+            # triangle; with `top_name_right` that of the top corner stands to its right.
+            right = top_name_right && direction[2] > 0.9
+            outward = right ? (1.0, 0.0) : direction
+            anchor = right ? "west" : direction[2] > 0.9 ? "south" : direction[1] > 0 ? "north west" : "north east"
             println(io, "\\node[g2square name,anchor=$anchor] at " *
-                        "$(point(place .+ (radius + G2_SQUARE_NAME_GAP_CM) .* direction)) {" *
+                        "$(point(place .+ (radius + G2_SQUARE_NAME_GAP_CM) .* outward)) {" *
                         g2_square_table_font("\\($(g2_square_ray_type(ray))\\)") * "};")
             println(io, "\\begin{scope}[shift={$(point(place))}]")
             corner.write(io)
@@ -491,14 +497,14 @@ function g2_triangle_cell_main(args=ARGS)
         println("Usage: $script [--orbit=N | --rays=I,J,K] [--field=QQ|GF2] [--scale=FACTOR] " *
                 "[--taxon-scale=FACTOR] [--bounded-length=LENGTH] [--ray-scale=FACTOR] " *
                 "[--ray-bounded-length=LENGTH] [--name-below] [--no-cell-letters] [--cell-overhang] " *
-                "[--height=CM] " *
+                "[--top-name-right] [--height=CM] " *
                 "[--standalone] [--output=FILE]")
         return nothing
     end
     valued = ("orbit", "rays", "field", "scale", "taxon-scale", "bounded-length", "ray-scale",
               "ray-bounded-length", "height", "output")
     for arg in args
-        arg in ("--standalone", "--name-below", "--no-cell-letters", "--cell-overhang") ||
+        arg in ("--standalone", "--name-below", "--no-cell-letters", "--cell-overhang", "--top-name-right") ||
             any(name -> startswith(arg, "--$name="), valued) ||
             throw(ArgumentError("unknown option $arg; use --help"))
     end
@@ -526,6 +532,7 @@ function g2_triangle_cell_main(args=ARGS)
         name_below="--name-below" in args,
         cell_letters=!("--no-cell-letters" in args),
         cell_inside=!("--cell-overhang" in args),
+        top_name_right="--top-name-right" in args,
         height=length_option("height"),
         standalone="--standalone" in args,
     )

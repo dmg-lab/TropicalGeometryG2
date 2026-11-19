@@ -61,8 +61,9 @@ function section_8()
     triples = [(i, j, k) for i in 1:7 for j in i+1:7 for k in j+1:7 if ε[i] + ε[j] + ε[k] == [0, 0]]
     check("the T-invariant basis vectors of ∧3 K^7", [(1, 2, 3), (1, 4, 7), (2, 5, 7), (3, 6, 7), (4, 5, 6)], triples)
     characters = [Int(k in t) for t in [(1, 2, 3), (4, 5, 6), (1, 4, 7), (2, 5, 7), (3, 6, 7)], k in 1:7]
-    check("rank of the five characters s ↦ s_i s_j s_k scaling the c_ijk, and dimension 7 - 5 of the stabilizer in D", [5, 2],
-          [rank(matrix(QQ, characters)), 7 - rank(matrix(QQ, characters))])
+    check("the characters s ↦ s_i s_j s_k scaling the c_ijk: the stabilizer in D of a T-invariant form with k nonzero c_ijk " *
+          "has dimension 7 - k, for every k = 1, ..., 5 and every choice of the k (2 only for k = 5)", [[6], [5], [4], [3], [2]],
+          [unique(7 - rank(matrix(QQ, characters[S, :])) for S in Combinatorics.combinations(1:5, k)) for k in 1:5])
     check("exponent vector of r(c) = c147 c257 c367 / (c123 c456): s multiplies r(c) by s_7^3", [0, 0, 0, 0, 0, 0, 3],
           characters[3, :] + characters[4, :] + characters[5, :] - characters[1, :] - characters[2, :])
     check("elementary divisors of the characters: the stabilizer of Φ in D is a 2-dimensional torus times μ_3",
@@ -94,6 +95,14 @@ function section_8()
     claim("the two p_ij of each short root are the support of one linear form, so they agree up to sign on L",
           all(w -> Set(p for p in PAIRS if weight(p...) == w) in form_support.(forms), short_roots))
 
+    subheading("Remark after the proof of thm:homogeneous(a): the highest weights of K^7 and ∧2 K^7 for the base α, β")
+    in_αβ(r) = [r[1] - 2r[2], -r[2]]                       # r = mα + nβ
+    highest(weights) = only(filter(λ -> all(μ -> all(>=(0), in_αβ(λ - μ)), weights), unique(weights)))
+    λ1, λ2 = highest(ε), highest([weight(p...) for p in PAIRS])
+    check("(m, n) of the highest weight mα + nβ of K^7, the e_i of that weight; the same for ∧2 K^7 and the e_i ∧ e_j " *
+          "(2α + β = ε5 and 3α + 2β = ε3 + ε5, with weight lines K e5 and K e3 ∧ e5)", ([2, 1], [5], [3, 2], [(3, 5)]),
+          (in_αβ(λ1), findall(==(λ1), ε), in_αβ(λ2), [p for p in PAIRS if weight(p...) == λ2]))
+
     subheading("Proof of Theorem thm:homogeneous(b): N/T = D12 and its lifts (homogeneous_spaces/tropicalizing_reductive_groups_tits.jl)")
     cited("the Weyl group of T in G2 is N/T ≅ D12 [Aschbacher, (2.11) and (3.4)]")
     m = run_in_module(study_path("g2", "homogeneous_spaces", "tropicalizing_reductive_groups_tits.jl"); name=:TitsLifts)
@@ -112,6 +121,8 @@ function section_8()
           [length(H), length(Set(perm_of.(collect(H)))), length(D12)])
     claim("these 12 permutations are the group D12 of Section 2 (the census symmetry group of trop(G))",
           D12 == Set(load_symmetry_artifacts(g2("grassmannian", "05_symmetry")).permutations))
+    claim("relabeling the x_i by w in D12 permutes the five e_ijk of weight zero (proof of thm:homogeneous(a))",
+          all(w -> Set(Set(w[i] for i in t) for t in triples) == Set(Set(t) for t in triples), D12))
     on_lattice(w) = hcat(ε[w[1]], ε[w[2]])                 # the linear map ε1 ↦ ε_w(1), ε2 ↦ ε_w(2)
     claim("each w in D12 acts on X^* by ε_i ↦ ε_w(i), linearly, and these 12 maps are the Weyl group W",
           all(w -> all(i -> on_lattice(w) * ε[i] == ε[w[i]], 1:7), D12) && Set(on_lattice.(collect(D12))) == W)
@@ -214,8 +225,9 @@ function section_8()
     claim("it maps E_0 onto the Cartan subalgebra h (the diagonal elements of Lie(G2))",
           all(X -> in_lie(X) && all(iszero(X[r, n]) for r in 1:7, n in 1:7 if r != n), to_matrix.(e0)) &&
           rank_of([vec(X) for X in to_matrix.(e0)]) == cartan_dimension == 2, "dim h = $cartan_dimension")
-    # main.tex: "In every characteristic, u ∧ v ↦ b(u,.) v - b(v,.) u ... maps E onto g2 and E_0 onto h". Over GF(p), E is the
-    # kernel of the contraction mod p and Lie(G2) = Der(Φ) ∩ sl_7: in char 3 the identity is a derivation (3Φ = 0).
+    # main.tex: "If char(K) ≠ 3, then E is the adjoint representation g and E_0 is the Cartan subalgebra h", and in
+    # characteristic 3 "we leave open whether E ≅ g". Over GF(p), E is the kernel of the contraction mod p and
+    # Lie(G2) = Der(Φ) ∩ sl_7 (the stabilizer is smooth, Section 1): in char 3 the identity is a derivation (3Φ = 0).
     for p in (2, 3)
         K = GF(p)
         lie_p, A_p = stabilizer_dimension(K; trace_zero=true)
@@ -224,14 +236,17 @@ function section_8()
         M_p = on_rows([to_matrix([E_p[k, c] for k in 1:21]) for c in 1:ncols(E_p)])
         e0_p = [to_matrix([K(numerator(x)) for x in v]) for v in e0]
         h_p = 7 - rank(matrix(K, Matrix(A_p)[:, diagonal_positions]))
-        claim("over GF($p), the same map sends E onto Lie(G2) = Der(Φ) ∩ sl_7 (rank 14) and E_0 onto its diagonal part h " *
-              "(main.tex: \"In every characteristic\")",
+        claim("over GF($p), the same map sends E onto Lie(G2) = Der(Φ) ∩ sl_7 (rank 14) and E_0 onto its diagonal part h" *
+              (p == 3 ? " (main.tex leaves characteristic 3 open: this map is a G2-equivariant isomorphism E → g there too)" :
+                        " (main.tex: \"If char(K) ≠ 3\")"),
               ncols(E_p) == 14 && iszero(A_p * transpose(M_p)) && rank(M_p) == lie_p == 14 &&
               iszero(A_p * transpose(on_rows(e0_p))) && all(X -> all(iszero(X[r, n]) for r in 1:7, n in 1:7 if r != n), e0_p) &&
               rank(on_rows(e0_p)) == h_p == 2,
               "dim Der(Φ) = $(first(stabilizer_dimension(K))), dim Der(Φ) ∩ sl_7 = $lie_p, dim h = $h_p")
     end
-    cited("that map is irreducible unless char K = 3 [Hogeweij]")
+    cited("a vector of weight θ generates a subrepresentation of E onto the simple module of highest weight θ [Jantzen, " *
+          "II.2.13], of dimension 14 [Hogeweij, I.2.7a]; in characteristic 3 the short roots generate a 7-dimensional ideal " *
+          "of g [Hogeweij, I, Table 1]")
 
     subheading("Forgetting p36: the basis L = {QQε1, QQε2} of E_0^∨ (homogeneous_spaces/tropicalizing_reductive_groups.jl)")
     F = fan("grassmannian")

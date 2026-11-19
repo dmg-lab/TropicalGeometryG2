@@ -31,7 +31,7 @@ function section_9()
     info("the ideal of H lives in 6 × $(length(X_VARS)) + 6 × $(length(P_VARS)) = $(6 * (length(X_VARS) + length(P_VARS))) " *
          "variables (main.tex: 168); its generators are not computed")
     cited("G2 acts transitively on Q, G, F and on the non-degenerate part of H [Van Maldeghem, Thm. 5.2.9]; every " *
-          "non-degenerate hexagon is g·(eq:hexagon), with pointwise stabilizer gTg^(-1) [Aschbacher, (5.8), (5.9)]")
+          "non-degenerate hexagon is g·(eq:hexagon), with pointwise stabilizer gTg^(-1) [Aschbacher, (5.8), (5.9) and §5]")
     B = A === nothing ? nothing : complete(A.flags[2], A.flags[5])
     claim("psi of the opposite flags 2 and 5 of this hexagon gives it again (psi inverts the projection H -> F^2)",
           B !== nothing && rotated(A, B))
@@ -46,11 +46,22 @@ function section_9()
     claim("random opposite flags over QQ: psi gives a non-degenerate hexagon, and psi of its flags 2 and 5 gives it again",
           generic > 0 && !failed, "$generic of 10 pairs")
 
-    subheading("Theorem thm:completing_hexagons: val(psi(z)) = trop(psi)(val z) at lifts (studies/hexagon/tests/test_tropical_hexagon.jl)")
+    subheading("The dominant region D of trop(F): maximal cones whose images in trop(Q) and trop(G) are full-dimensional")
+    flag_rays, flag_lineality = fan_rays(fan("flag"))
+    flag_maximal = fan_cells(fan("flag"))
+    image_rank(k, part) = rank(matrix(QQ, [v[j] for v in vcat(flag_rays[flag_maximal[k]], flag_lineality), j in part]))
+    onto_Q = [image_rank(k, 1:7) == 7 - 1 for k in eachindex(flag_maximal)]        # trop(Q): a hypersurface in R^7
+    onto_G = [image_rank(k, 8:28) == dim(fan("grassmannian")) for k in eachindex(flag_maximal)]
+    dominant_set = Set(findall(onto_Q .& onto_G))
+    check("maximal cones of trop(F), and the dominant ones", [2714, 1311], [length(flag_maximal), length(dominant_set)])
+    info("full-dimensional image in trop(G): $(count(onto_G)) cones (each maps onto a maximal cell, Section 3); " *
+         "in trop(Q): $(count(onto_Q))")
+
+    subheading("Theorem thm:completing_hexagons: -val(psi(z)) = trop(psi)(-val z) at lifts (studies/hexagon/tests/test_tropical_hexagon.jl)")
     # The tests module includes tropical_complete_hexagon.jl; the certificate it loads is used again in the example.
     h = QUICK ? nothing : run_in_module(study_path("hexagon", "tests", "test_tropical_hexagon.jl"); name=:TropicalHexagon)
     if QUICK
-        skipped("val(psi(z)) = trop(psi)(val z) for random lifts z over QQ(t) of pairs of flags", "--quick")
+        skipped("-val(psi(z)) = trop(psi)(-val z) for random lifts z over QQ(t) of pairs of flags")
     else
         Random.seed!(1)
         lifts_ok = try
@@ -62,7 +73,7 @@ function section_9()
             info(sprint(showerror, err))
             false
         end
-        claim("val(psi(z)) = trop(psi)(val z), with trop(psi) from the certificate, for 10 random lifts z over QQ(t) of pairs of flags",
+        claim("-val(psi(z)) = trop(psi)(-val z), with trop(psi) from the certificate, for 10 random lifts z over QQ(t) of pairs of flags",
               lifts_ok)
     end
 
@@ -91,11 +102,11 @@ function section_9()
     x2_on_p12 = all(in_I, incidence(H.x2, P_VARS))
     x2_orthogonal = in_I(call(m, :polar, H.x2, X_VARS))
     x4_on_p12 = all(in_I, incidence(X_VARS, P_VARS))
-    claim("x^(2) lies on p^(12) and is orthogonal to x^(4); x^(2), x^(3) on Q (modulo the ideal J of Q × G)",
+    claim("x^(2) lies on p^(12) and is orthogonal to x^(4); x^(2), x^(3) on Q (modulo the ideal I_{Q×G} of Q × G)",
           x2_on_p12 && x2_orthogonal && in_I(call(m, :quadric, H.x2)) && in_I(call(m, :quadric, H.x3)))
     # main.tex:1824: "The intersection $p^{(12)} \cap (x^{(4)})^{\perp}$ is the point $x^{(2)}$": x^(4) is not on p^(12),
     # and x^(2) is the point of p^(12) orthogonal to x^(4).
-    check("the point x^(2), as main.tex names it: x^(4) ∉ p^(12) (modulo J), and x^(2) ∈ p^(12) is orthogonal to x^(4)",
+    check("the point x^(2), as main.tex names it: x^(4) ∉ p^(12) (modulo I_{Q×G}), and x^(2) ∈ p^(12) is orthogonal to x^(4)",
           "p^(12) ∩ (x^(4))^⊥", !x4_on_p12 && x2_on_p12 && x2_orthogonal ? "p^(12) ∩ (x^(4))^⊥" : "not determined")
     check("bidegrees (in p, in x) of x^(2), x^(3)", [(1, 1), (1, 2)], [only(unique(bidegree.(v))) for v in (H.x2, H.x3)])
     check("x^(3)_1: number of terms", 24, length(H.x3[1]))
@@ -108,8 +119,8 @@ function section_9()
           x3_terms[[1, 2, 3, end - 1, end]])
     info("x^(3)_1 = $(H.x3[1])")
     times(a, b) = call(m, :cross, a, b)               # <a × b, z> = Φ(a, b, z)
-    claim("x^(2) × x^(3) = x^(3) × x^(4) = 0 modulo J", all(in_I, times(H.x2, H.x3)) && all(in_I, times(H.x3, X_VARS)))
-    claim("p^(23) = x^(2) ∧ x^(3) and p^(34) = x^(3) ∧ x^(4) in G (linear forms modulo J, Plücker relations); " *
+    claim("x^(2) × x^(3) = x^(3) × x^(4) = 0 modulo I_{Q×G}", all(in_I, times(H.x2, H.x3)) && all(in_I, times(H.x3, X_VARS)))
+    claim("p^(23) = x^(2) ∧ x^(3) and p^(34) = x^(3) ∧ x^(4) in G (linear forms modulo I_{Q×G}, Plücker relations); " *
           "x^(2), x^(3) on p^(23); x^(3), x^(4) on p^(34)",
           all(in_I, call(m, :linear_forms, H.p23)) && all(in_I, call(m, :linear_forms, H.p34)) &&
           all(iszero, call(m, :plucker_relations, H.p23)) && all(iszero, call(m, :plucker_relations, H.p34)) &&
@@ -121,11 +132,11 @@ function section_9()
 
     subheading("Theorem thm:completing_hexagons: the certificate (studies/hexagon/certificate/; verification/ stored by verify_certificate.jl)")
     E = base_ring(I)
-    check("variables of the ring of J: x1, ..., x7, p12, ..., p67", 28, ngens(E))
+    check("variables of the ring of I_{Q×G}: x1, ..., x7, p12, ..., p67", 28, ngens(E))
     G = load(g2("grassmannian", "00_ideal.mrdi"))
     E_names = string.(symbols(E))
     to_E = hom(base_ring(G), E, [E[findfirst(==(s), E_names)] for s in string.(symbols(base_ring(G)))])
-    claim("J (line_point_ideal of polynomial_expressions.jl) is the stored ideal of G (data/g2/grassmannian/00_ideal.mrdi) plus q(x)",
+    claim("I_{Q×G} (line_point_ideal of polynomial_expressions.jl) is the stored ideal of G (data/g2/grassmannian/00_ideal.mrdi) plus q(x)",
           ideal(E, vcat(to_E.(gens(G)), [call(m, :quadric, X_VARS)])) == I)
     R, x = polynomial_ring(QQ, ["x$i" for i in 1:7])
     T = tropical_hypersurface(tropical_polynomial(x[1] * x[4] + x[2] * x[5] + x[3] * x[6] - x[7]^2))
@@ -183,9 +194,9 @@ function section_9()
     group(n) = first(split(n, '_'))
     info("representatives by coordinate: " *
          join(["$g: $(count(r -> group(r[1]) == g, certificate))" for g in ("x2", "x3", "p23", "p34")], ", "))
-    # main.tex:1871: "a tropically faithful representative $f_{\sigma}\in f+J$ on its relative interior", with J the ideal
+    # main.tex: "a tropically faithful representative $f_{\tau}\in f+I_{\pointspace\times \linespace}$ on its relative interior", the ideal
     # of Q × G in the 28 variables x_k, p_ij (main.tex:1859).
-    claim("main.tex writes f_σ ∈ f+J, J the ideal of Q × G: every representative f_σ lies in f + J (so do the stored rows " *
+    claim("main.tex writes f_τ ∈ f + I_{Q×G}, the ideal of Q × G: every representative f_τ lies in f + I_{Q×G} (so do the stored rows " *
           "in_f_plus_I of verify_certificate.jl)",
           all(in_I, differences) && length(representatives) == length(certificate) &&
           all(r -> r["in_f_plus_I"] == "true", representatives), "$(length(certificate)) representatives")
@@ -200,7 +211,7 @@ function section_9()
           "thm:grassmannian, the lineality space included), cones of trop(Q), pairs", [1 + 51 + 244 + 251, 11, 6017],
           [length(unique(first.(cone_keys))), length(unique(last.(cone_keys))), length(unique(cone_keys))])
     info("cones by dimension: " * join(["$d: $(count(r -> r["dim"] == d, cones))" for d in sort(unique(r["dim"] for r in cones); by=s -> parse(Int, s))], ", "))
-    check("cones on which the saturation of in_v(J) is prime (stored flags J_prime of verify_certificate.jl)", 6017,
+    check("cones on which the saturation of in_v(I_{Q×G}) is prime (stored flags J_prime of verify_certificate.jl)", 6017,
           count(r -> r["J_prime"] == "true", cones))
     claim("every check of the certificate passes on every cone (relative interior, maximal cone, Gröbner cone, no failures; " *
           "stored flags of verify_certificate.jl)",
@@ -218,7 +229,7 @@ function section_9()
     check("a^(1), ..., a^(6) (max convention)", HEXAGON_POINTS, [maxconv(v) for v in hexagon.points])
     check("d^(12), ..., d^(61) (max convention)", HEXAGON_LINES, [maxconv(v) for v in hexagon.lines])
     if QUICK
-        skipped("the completion of the hexagon from the flags (a^(1), d^(12)) and (a^(4), d^(45))", "--quick")
+        skipped("the completion of the hexagon from the flags (a^(1), d^(12)) and (a^(4), d^(45))")
     else
         flag(k) = (Int.(hexagon.points[k]), Int.(hexagon.lines[k]))
         completion = call(h, :tropical_complete_hexagon, flag(1), flag(4))
@@ -266,6 +277,10 @@ function section_9()
     incidence_cells = Dict(i => flag_cells(i...) for i in incidences)
     claim("the twelve incidences (a^(k), d^(k-1,k)), (a^(k), d^(k,k+1)) lie in trop(F): in maximal cells of data/g2/flag " *
           "over the cell of the line", all(!isempty, values(incidence_cells)))
+    claim("the input flags (a^(1), d^(12)) and (a^(4), d^(45)) lie in the dominant region D (in a dominant maximal cone)",
+          all(i -> any(in(dominant_set), incidence_cells[i]), [(1, 1), (4, 4)]),
+          "maximal cones containing them: $(incidence_cells[(1, 1)]) and $(incidence_cells[(4, 4)]), dominant: " *
+          "$(filter(in(dominant_set), incidence_cells[(1, 1)])) and $(filter(in(dominant_set), incidence_cells[(4, 4)]))")
     flag_types = orbit_types("flag_orbits.csv", "qq")
     apple = Dict{Int,String}()
     for r in rows(g2("flag_orbits.csv")), member in split(r["qq_members"], ';'; keepempty=false)

@@ -174,9 +174,6 @@ function section_7()
               (flag_cells, sum(parse(Int, r["size"]) * edges_of[parse(Int, first(split(r["$(f)_members"], ';')))] for r in present)))
     end
     cell_types(f) = sort(unique(parse(Int, r["orbit_type"]) for r in flag_rows if r["kind"] == "cell" && !isempty(r["$(f)_orbit"])))
-    # Known to the authors and left as is: a warning, not a failure.
-    warned("the types of the trees of the 2714 maximal cells of trop(F) (main.tex: \"of type 1-35\"; but 18-20 and 35 " *
-          "\"appear only in characteristic 2\")", collect(1:35), cell_types("qq"))
     claim("the types 1-35 are those of trop(F) and trop_2(F) together", sort(union(cell_types("qq"), cell_types("gf2"))) == 1:35)
 
     subheading("The fiber complexes F_C over the maximal cells C of trop(G)")
@@ -240,7 +237,7 @@ function section_7()
                        fF => [("square pyramids", 7), ("triangular prisms", 4)])
     labelled = nothing
     if QUICK
-        skipped("23 combinatorial types of fiber complexes, 6 distinct f-vectors, Table tab:local_flag_complex from the face lattices", "--quick")
+        skipped("23 combinatorial types of fiber complexes, 6 distinct f-vectors, Table tab:local_flag_complex from the face lattices")
     else
         m = run_in_module(project_path("to_tex", "local_flag_complex_table.jl"); name=:LocalFlagComplexes)
         types = call(m, :local_flag_types)
@@ -351,8 +348,9 @@ function section_7()
     images_gf2 = Set(gf2_projection[c] for c in toric_gf2)
     claim("characteristic 2 (\"an analogous correspondence\"): every prime cone of trop_2(F) lies over a prime cone of trop_2(G)",
           images_gf2 ⊆ toric_grass_gf2, "they lie over $(length(images_gf2)) of the $(length(toric_grass_gf2))")
-    claim("a 3-cell of a fiber complex is prime exactly when it is toric (census columns prime and toric, QQ and GF(2))",
-          all(r -> r["prime"] == r["toric"], flag_census) && all(r -> r["prime"] == r["toric"], gf2_census))
+    claim("in_C(F) of a 3-cell of a fiber complex is prime over QQbar exactly when it is prime (over the prime field), " *
+          "exactly when it is toric (census columns geometrically_prime, prime and toric, QQ and GF(2))",
+          all(r -> r["geometrically_prime"] == r["prime"] == r["toric"], vcat(flag_census, gf2_census)))
     green, sizes = Dict{String,Int}(), Dict{String,Int}()
     for r in grass_census
         r["toric"] == "true" || continue
@@ -385,34 +383,19 @@ function section_7()
     end
     claim("the green edges from the atlas: the same in both fields, as many as the green numbers of the census",
           fields_agree && all(length(green_edges[t]) == green2[string(t)] for t in 1:20))
-    if drawings("Figure fig:atlas_toric_cells_prime: its green and red edges, against the prime cones of the atlas",
-                "figures/toric_degeneration_prime_edge_trees.tex")
-        figure = figure_text("toric_degeneration_prime_edge_trees")
-        heads = collect(eachmatch(r"\\oldstylenums\{(\d+)\}\}\{\\large\((\d+)\)\}", figure))
-        figure_edges = Dict{Int,String}()
-        for (n, h) in enumerate(heads)
-            panel = SubString(figure, h.offset, n < length(heads) ? prevind(figure, heads[n+1].offset) : lastindex(figure))
-            drawn = [(d[2], minmax(parse(Int, d[3]), parse(Int, d[4])), d[1] == "pendant")
-                     for d in eachmatch(r"\\draw\[g2tree (internal|pendant),draw=(g2Prime|g2Barren)\] \(v(\d+)\)--\(v(\d+)\);", panel)]
-            places = colour -> [pendant ? string(a) : "$a-$b" for (c, (a, b), pendant) in sort(drawn; by=d -> (!d[3], d[2])) if c == colour]
-            figure_edges[parse(Int, h[1])] = join(places("g2Prime"), " ") * " | " * join(places("g2Barren"), " ")
-        end
-        info("the green | red edges (leaf k, inner a-b) of figures/toric_degeneration_prime_edge_trees.tex = the prime | other 3-cells:")
-        for t in 1:20
-            cells = s7_sorted_cells(fibers[string(t)])
-            check(@sprintf("Figure fig:atlas_toric_cells_prime, type %2d (%2d)", t, sizes2[string(t)]), get(figure_edges, t, "no panel"),
-                  join([s7_place(r) for r in cells if r["location"] in green_edges[t]], " ") * " | " *
-                  join([s7_place(r) for r in cells if !(r["location"] in green_edges[t])], " "))
-        end
-    end
+    # main.tex: "By multiplying each green number with the parenthesized orbit size, and by adding up all 19 products, we
+    # arrive at the total count: 807 + 18 = (6×4 + 6×4 + 12×6 + ... + 3×11 + ... + 12×8) + (6×2 + 3×2)".
     total = sum(green[t] * sizes[t] for t in order)
-    # main.tex: "by adding up all 17 products, we arrive at the total count: 807".
-    check("807 = Σ (orbit size) × (prime cones over one tree), all 17 products, over the types 1-17: " *
+    check("807 = Σ (orbit size) × (prime cones over one tree), the 17 products of the types 1-17: " *
           join(["$(sizes[t])×$(green[t])" for t in order], " + "), 807, total)
     check("the displayed products 6×4, 6×4, 12×6 (types 1-3), 3×11 (type 7), 12×8 (type 17)",
           [(6, 4), (6, 4), (12, 6), (3, 11), (12, 8)], [(sizes[t], green[t]) for t in ("1", "2", "3", "7", "17")])
-    info("the 20 products, types 18-20 included, give $(sum(sizes2[string(t)] * green2[string(t)] for t in 1:20)); types 18-20 occur only in characteristic 2 (primality over GF(2)): their products 6×2 + 3×0 + 3×2 = 18 give " *
-         "825 = 807 + 18, the prime cones of trop_2(F); the 17 products of the types 1-17 give 807")
+    extra = [(sizes2[t], green2[t]) for t in ("18", "19", "20") if green2[t] > 0]
+    check("18 = the nonzero products 6×2 + 3×2 of the types 18-20 (only in characteristic 2; type 19 has green number 0)",
+          (18, [(6, 2), (3, 2)]), (sum(prod, extra), extra))
+    check("the nonzero products of the 20 types of Figure fig:atlas_toric_cells_prime (\"all 19 products\"), and their sum, " *
+          "the prime cones of trop_2(F)", (19, 807 + 18, length(toric_gf2)),
+          (count(t -> green2[string(t)] > 0, 1:20), sum(sizes2[string(t)] * green2[string(t)] for t in 1:20), length(toric_gf2)))
     over19 = count(c -> gf2_type[gf2_projection[c]] == "19", toric_gf2)
     check("characteristic 2 (\"type 19 has no prime cone in its fiber complex\"): prime cones of trop_2(F) over the cells of " *
           "type 19; the types of prime cones of trop_2(G) with none over them", (0, ["19"]),

@@ -53,38 +53,6 @@ function s5_compatibility(target)
     return (cells=length(cells), edges=cell_edges, pairs=compatible_pairs, cells_compatible=all(compatible_rays, cells))
 end
 
-"""
-The trees drawn in figures/square_cell.tex, by block ("Ray 13", ..., "The cell"): the pendant lengths of the taxa 1-7 and
-the internal splits (side without 7) => length, zero lengths included. Each weight is read on its edge (near its middle,
-not at its ends).
-"""
-function s5_drawn_trees(tex)
-    trees = Dict{String,Tuple{Vector{Int},Dict{Vector{Int},Int}}}()
-    for (name, block) in tree_blocks(tex, r"\n% ([^\n]*)")
-        name === nothing && continue
-        tree = drawn_tree(block; nearest=false)
-        tree === nothing && continue
-        tree.pendant === nothing && error("$name: a tree drawn without weights")
-        trees[name] = (tree.pendant, tree.lengths)
-    end
-    return trees
-end
-
-"""
-The trees drawn in an atlas figure, by the panel label (the first capture of `label`): those of its tikzpictures, as in
-`s5_drawn_trees`, but each weight on its nearest edge, since the atlas figures draw some weights beside it.
-"""
-function s5_panel_trees(tex, label)
-    trees = Dict{String,Vector{Tuple{Vector{Int},Dict{Vector{Int},Int}}}}()
-    for (name, block) in tree_blocks(tex, label)
-        name === nothing && continue
-        tree = drawn_tree(block)
-        tree === nothing && continue
-        tree.pendant === nothing && error("$name: a tree drawn without weights")
-        push!(get!(trees, name, Tuple{Vector{Int},Dict{Vector{Int},Int}}[]), (tree.pendant, tree.lengths))
-    end
-    return trees
-end
 
 function section_5()
     orbit_rows = rows(g2("grassmannian_orbits.csv"))
@@ -101,8 +69,11 @@ function section_5()
     tqq = orbit_types("grassmannian_orbits.csv", "qq")
     tgf2 = orbit_types("grassmannian_orbits.csv", "gf2")
     trees = Dict("qq" => s5_tree_rows("grassmannian"), "gf2" => s5_tree_rows("grassmannian_gf2"))
-    tex = figure_text
-    atlas_files = ["figures/$f.tex" for f in ("ray_orbits_styled_catalog", "toric_degeneration_prime_edge_trees", "non_toric_cell_trees")]
+    # The leaves 1-7 of Figure fig:shape_hexagon: the colours {1,2,3} and {4,5,6}, the shapes {1,4}, {2,5}, {3,6}, the
+    # heart 7, and the hexagon 1-5-3-4-2-6 (Section 1).
+    taxon_colour(i) = i <= 3 ? 1 : 2
+    taxon_shape(i) = mod1(i, 3)
+    hexagon = Set([Set([1, 5]), Set([5, 3]), Set([3, 4]), Set([4, 2]), Set([2, 6]), Set([6, 1])])
 
     subheading("The D12-orbits of the G2-trees (Figures fig:atlas_rays, fig:atlas_toric_cells_prime, fig:atlas_toric_cells_nontoric)")
     for (field, rays, lineality) in (("qq", raysqq, linqq), ("gf2", raysgf2, lingf2))
@@ -114,49 +85,13 @@ function section_5()
         claim("$(field_name(field)): the trees of 04_trees.csv are the rays of the fan (the same line modulo lineality, the same splits)",
               same, "$(length(rays)) rays")
     end
-    figure_sizes = nothing
-    if drawings("the types drawn in Figures fig:atlas_rays, fig:atlas_toric_cells_prime, fig:atlas_toric_cells_nontoric, " *
-                "their orbit sizes and their trees", atlas_files...)
-        ray_label = Dict(String(chop(m[1]; head=1, tail=0)) => parse(Int, m[2]) for m in
-                         eachmatch(r"\\boldmath \\\((\\[a-z]+(?:_\d)?)\\\)\}\{\\large\((\d+)\)\}", tex("ray_orbits_styled_catalog")))
-        cell_label = name -> Dict(String(m[1]) => parse(Int, m[2]) for m in
-                                  eachmatch(r"\\oldstylenums\{(\d+)\}\}\{\\large\((\d+)\)\}", tex(name)))
-        toric_label, nontoric_label = cell_label("toric_degeneration_prime_edge_trees"), cell_label("non_toric_cell_trees")
-        check("types drawn in fig:atlas_rays (12 rays), fig:atlas_toric_cells_prime (1-20) and fig:atlas_toric_cells_nontoric (21-35)",
-              [12, collect(1:20), collect(21:35)],
-              [length(ray_label), sort(parse.(Int, collect(keys(toric_label)))), sort(parse.(Int, collect(keys(nontoric_label))))])
-        figure_sizes = merge(ray_label, toric_label, nontoric_label)
-        check("types whose label (orbit size) in the figures differs from the size in grassmannian_orbits.csv", String[],
-              sort([r["orbit_type"] for r in orbit_rows if get(figure_sizes, r["orbit_type"], 0) != parse(Int, r["size"])]))
-        # The trees themselves, against trop(G) and trop_2(G) (Section 2 checks them against the Dressian, and that the
-        # vertices v1-v7 of these panels carry the shapes of the taxa 1-7).
-        drawn_atlas = merge(s5_panel_trees(tex("ray_orbits_styled_catalog"), r"\\boldmath \\\(\\([a-z]+(?:_\d)?)\\\)\}\{\\large"),
-                            s5_panel_trees(tex("toric_degeneration_prime_edge_trees"), r"\\oldstylenums\{(\d+)\}\}\{\\large"),
-                            s5_panel_trees(tex("non_toric_cell_trees"), r"\\oldstylenums\{(\d+)\}\}\{\\large"))
-        member_metrics = r -> Set(tree_metric(trees[field][(r["kind"], k)]) for (_, field) in targets for k in members(r, field))
-        check("types whose panel in these figures does not draw one tree, the tree of a member of its orbit in trop(G) or trop_2(G) " *
-              "(grassmannian(_gf2)/04_trees.csv)", String[],
-              sort([r["orbit_type"] for r in orbit_rows if length(get(drawn_atlas, r["orbit_type"], [])) != 1 ||
-                    !(tree_metric(only(drawn_atlas[r["orbit_type"]])...) in member_metrics(r))]))
-    end
-    # The hexagon of Figure fig:shape_hexagon: its six sides are the solid lines, the dotted ones are the diagonals.
-    hexagon_edges = isfile(repository("figures", "taxon_hexagon.tex")) ?
-                    Set(Set(parse.(Int, (m[1], m[2]))) for m in
-                        eachmatch(r"\\draw\[draw=black,line width=\.6pt\] \(v(\d)\)--\(v(\d)\);", tex("taxon_hexagon"))) : nothing
     size_from_trees = Dict{String,Set{Int}}()
     images_are_orbits = true
     for (target, field) in targets
         perms = load_symmetry_artifacts(joinpath(TARGET_DIRECTORIES[target], "05_symmetry")).permutations
-        if drawings("$(field_name(field)): the 12 permutations of the census are the symmetries of the hexagon of Figure " *
-                    "fig:shape_hexagon", "figures/taxon_hexagon.tex")
-            claim("$(field_name(field)): the census acts by 12 permutations of the taxa, the symmetries of the hexagon of Figure fig:shape_hexagon fixing the heart 7",
-                  length(unique(perms)) == 12 &&
-                  all(g -> g[7] == 7 && Set(Set(g[a] for a in e) for e in hexagon_edges) == hexagon_edges, perms),
-                  "$(length(hexagon_edges)) sides of the hexagon")
-        else
-            claim("$(field_name(field)): the census acts by 12 permutations of the taxa fixing the heart 7",
-                  length(unique(perms)) == 12 && all(g -> g[7] == 7, perms))
-        end
+        claim("$(field_name(field)): the census acts by 12 permutations of the taxa, the symmetries of the hexagon 1-5-3-4-2-6 of " *
+              "Figure fig:shape_hexagon fixing the heart 7",
+              length(unique(perms)) == 12 && all(g -> g[7] == 7 && Set(Set(g[a] for a in e) for e in hexagon) == hexagon, perms))
         metric = Dict(key => tree_metric(r) for (key, r) in trees[field])
         key_of = Dict(d => key for (key, d) in metric)
         for r in orbit_rows
@@ -168,10 +103,8 @@ function section_5()
         end
     end
     claim("the 12 permutations map the tree of one member of each orbit onto the trees of its members (QQ and GF(2))", images_are_orbits)
-    if drawings("types whose orbit size, from the D12-action on the trees, differs from the label in the figures", atlas_files...)
-        check("types whose orbit size, from the D12-action on the trees, differs from the label in the figures", String[],
-              sort([t for t in keys(figure_sizes) if get(size_from_trees, t, Set{Int}()) != Set([figure_sizes[t]])]))
-    end
+    check("types whose orbit size, from the D12-action on the trees, differs from the size in grassmannian_orbits.csv", String[],
+          sort([r["orbit_type"] for r in orbit_rows if size_from_trees[r["orbit_type"]] != Set([parse(Int, r["size"])])]))
     info("orbit sizes from the trees: " * join(["$(r["orbit_type"]) $(join(sort(collect(size_from_trees[r["orbit_type"]])), "/"))"
                                                 for r in orbit_rows], ", "))
 
@@ -257,62 +190,27 @@ function section_5()
 
     subheading("The split type α2 (Figure fig:shape_hexagon)")
     check("α2 has an orbit of size 3 (D12-action on its trees)", [3], sort(collect(size_from_trees["alpha_2"])))
-    # The colors and forms of the six shapes, read from the figure.
-    taxon = Dict{Int,String}()
-    if isfile(repository("figures", "taxon_hexagon.tex"))
-        hexagon_tex = tex("taxon_hexagon")
-        for m in eachmatch(r"g2tree (dark|light),(rectangle|circle),[^\n]*at \(v(\d)\)", hexagon_tex)
-            taxon[parse(Int, m[3])] = (m[1] == "dark" ? "blue" : "yellow") * " " * (m[2] == "rectangle" ? "square" : "circle")
-        end
-        for m in eachmatch(r"shift=\{\(v(\d)\)\}[^\n]*\n\\path\[fill=g2Taxon(Blue|Yellow)", hexagon_tex)
-            taxon[parse(Int, m[1])] = lowercase(m[2]) * " triangle"
-        end
-        info("the shapes of Figure fig:shape_hexagon: " * join(["$i $(get(taxon, i, "?"))" for i in 1:6], ", ") * ", 7 the heart")
-    end
     alpha2 = sort(members(orbit_row("alpha_2"), "qq"))
     alpha2_splits = [s5_ray_splits(raysqq[k]) for k in alpha2]
     claim("α2: each of its 3 trees has one split, grouping the heart with two shapes against the other four leaves",
           all(s -> length(s) == 1 && length(only(s)) == 4, alpha2_splits), "QQ rays $(join(alpha2, ", "))")
     groups = sort([setdiff(1:6, only(s)) for s in alpha2_splits if length(s) == 1])
-    if drawings("α2: \"grouping the heart with two same shapes\", of the two colors (the shapes of Figure fig:shape_hexagon)",
-                "figures/taxon_hexagon.tex")
-        form = i -> last(split(get(taxon, i, "?")))
-        claim("α2: \"grouping the heart with two same shapes\" (main.tex), of the two colors",
-              !isempty(groups) && all(g -> length(unique(form.(g))) == 1 && length(unique(first.(split.(get.(Ref(taxon), g, "?"))))) == 2, groups),
-              "the heart is grouped with " * join(["$(g[1]) and $(g[2]) ($(get(taxon, g[1], "?")), $(get(taxon, g[2], "?")))" for g in groups], "; "))
-    end
+    claim("α2: \"grouping the heart with two same shapes\": the two leaves with the heart are {1,4}, {2,5} or {3,6}, of the two colours",
+          length(groups) == 3 && all(g -> taxon_shape(g[1]) == taxon_shape(g[2]) && taxon_colour(g[1]) != taxon_colour(g[2]), groups),
+          "the heart is grouped with " * join(["$(g[1]) and $(g[2])" for g in groups], "; "))
 
     subheading("Table tab:cell_ray_orbits: the ray types of the maximal cells")
-    has_table = drawings("Table tab:cell_ray_orbits: its cell types, their ray types, the order of type 30",
-                         "tables/cell_ray_orbits.tex")
-    table = Dict{Int,Vector{String}}()
-    if has_table
-        table_tex = read(repository("tables", "cell_ray_orbits.tex"), String)
-        table_body = table_tex[last(findfirst("\\toprule", table_tex)):first(findfirst("\\bottomrule", table_tex))]
-        for chunk in split(table_body, r"&|\\tabularnewline")
-            m = match(r"oldstylenums\{(\d+)\}", chunk)
-            m === nothing && continue
-            table[parse(Int, m[1])] = [String(x[1]) for x in eachmatch(r"\$\\([a-z]+(?:_\d)?)\$", chunk)]
-        end
-        check("cell types listed in tables/cell_ray_orbits.tex", collect(1:35), sort(collect(keys(table))))
-    end
-    differ = Int[]
+    fields_differ = Int[]
     for r in sort(cell_rows; by=r -> parse(Int, r["orbit_type"]))
         t = parse(Int, r["orbit_type"])
-        types_by_field = String[]
-        for (field, cells, types) in (("qq", cellsqq, tqq), ("gf2", cellsgf2, tgf2))
-            isempty(r["$(field)_orbit"]) && continue
-            ray_types = sort([types[("ray", ray)] for ray in cells[first(members(r, field))]])
-            isempty(types_by_field) && append!(types_by_field, ray_types)
-            ray_types == sort(get(table, t, String[])) || push!(differ, t)
-        end
-        entry = get(table, t, String[])
-        @printf("           type %-3s size %-3s rays %s%s\n", r["orbit_type"], r["size"], join(types_by_field, ", "),
-                !has_table ? "" :
-                sort(entry) != types_by_field ? "   (table: " * join(entry, ", ") * ")" :
-                entry != types_by_field ? "   (table, in cyclic order: " * join(entry, ", ") * ")" : "")
+        by_field = [sort([types[("ray", ray)] for ray in cells[first(members(r, field))]])
+                    for (field, cells, types) in (("qq", cellsqq, tqq), ("gf2", cellsgf2, tgf2)) if !isempty(r["$(field)_orbit"])]
+        length(unique(by_field)) == 1 || push!(fields_differ, t)
+        types_by_field = first(by_field)
+        line = @sprintf("           type %-3s size %-3s rays %s", r["orbit_type"], r["size"], join(types_by_field, ", "))
+        println(line)
     end
-    has_table && check("cell types whose ray types (over QQ or GF(2)) differ from the table", Int[], sort(unique(differ)))
+    check("cell types whose rays have other types over QQ than over GF(2)", Int[], fields_differ)
     # The order of the entry of type 30: along the boundary of the quadrilateral 29.
     square = cellsqq[first(type30)]
     square_faces, _ = cell_faces(square, raysqq, matrix(QQ, reduce(vcat, permutedims.(linqq))))
@@ -322,10 +220,8 @@ function section_5()
         push!(boundary, first(setdiff(neighbours(boundary[end]), boundary)))
     end
     cycle_types = [tqq[("ray", k)] for k in boundary]
-    turns = [circshift(c, s) for c in (cycle_types, reverse(cycle_types)) for s in 0:length(c)-1]
-    has_table && claim("type 30 in the table lists the ray types in the cyclic order of the quadrilateral (up to rotation and reflection)",
-                       get(table, 30, String[]) in turns,
-                       "boundary of cell $(first(type30)): " * join(["$k $t" for (k, t) in zip(boundary, cycle_types)], ", "))
+    info("type 30: the ray types along the boundary of the quadrilateral, cell $(first(type30)): " *
+         join(["$k $t" for (k, t) in zip(boundary, cycle_types)], ", "))
 
     compatibility = Dict(field => s5_compatibility(target) for (target, field) in targets)
     for ((target, field), f_vector) in zip(targets, ((51, 241, 248), (54, 253, 254)))
@@ -362,43 +258,7 @@ function section_5()
     d = [paper_d[p] for p in PAIRS]
     support = sort(s5_ray_splits(-QQ.(d)))
     side_names = join(join.(support), ", ")
-    if drawings("Figure fig:square_cell: its cell, the order and the labels of its rays, its five trees",
-                "figures/square_cell.tex")
-        square_tex = tex("square_cell")
-        figure_cell = parse(Int, match(r"cell (\d+): rays", square_tex)[1])
-        check("the cell drawn in figures/square_cell.tex: its type and its rays (main.tex: rays 13, 14, 17, 18)",
-              ["30", [13, 14, 17, 18]], [get(tqq, ("cell", figure_cell), "?"), cellsqq[figure_cell]])
-        # The rays of the figure, clockwise from the top left: by the angle of the centers of their circles.
-        centers = Dict(parse(Int, m[1]) => atand(parse(Float64, m[3]), parse(Float64, m[2]))
-                       for m in eachmatch(r"% Ray (\d+)\n\\draw\[g2square circle\] \(([-0-9.]+),([-0-9.]+)\)", square_tex))
-        clockwise = sort(collect(keys(centers)); by=k -> mod(135 - centers[k], 360))
-        check("the rays of the figure, clockwise from the top left (main.tex: 13, 14, 17, 18)", [13, 14, 17, 18], clockwise)
-        check("the edges of the quadrilateral join consecutive rays of this cyclic order",
-              sort([sort([clockwise[i], clockwise[mod1(i + 1, end)]]) for i in eachindex(clockwise)]),
-              figure_cell == first(type30) ? square_faces[2] : Vector{Int}[])
-    end
     check("G2-trees on the quadrilateral: vertices + edges + interior", [4, 4, 1], length.(square_faces))
-    if drawings("Figure fig:square_cell: the labels and the trees", "figures/square_cell.tex")
-        label_of = Dict(parse(Int, m[1]) => String(m[2]) for m in
-                        eachmatch(r"% Ray (\d+)\n[^\n]*\n[^\n]*\\boldmath \\\(\\([a-z]+_\d'?)\\\)", square_tex))
-        labels = [get(label_of, k, "?") for k in clockwise]
-        check("the labels of the rays in the figure are their types: two vertices in the orbit γ1", replace.(labels, "'" => ""),
-              [tqq[("ray", k)] for k in clockwise])
-        drawn = s5_drawn_trees(square_tex)
-        drawn_names = vcat(["Ray $k" for k in clockwise], ["The cell"])
-        check("the inner edges of the 5 trees drawn: all those of d, $side_names (sides without 7), some of length zero",
-              [support], unique([sort(collect(keys(get(drawn, n, (Int[], Dict{Vector{Int},Int}()))[2]))) for n in drawn_names]))
-        check("the union of the splits of the trees of the four rays: the splits of d", support,
-              sort(unique(vcat([s5_ray_splits(raysqq[k]) for k in clockwise]...))))
-        stored_rows = vcat([trees["qq"][("ray", k)] for k in clockwise], [trees["qq"][("cell", figure_cell)]])
-        stored_trees = [(tree_row(r).pendant, merge(Dict(S => 0 for S in support), tree_splits(r))) for r in stored_rows]
-        check("trees drawn whose weights differ from 04_trees.csv (rays 13, 14, 17, 18 and the cell)", String[],
-              [n for (n, tree) in zip(drawn_names, stored_trees) if get(drawn, n, nothing) != tree])
-        info("tree               pendant lengths of 1-7   lengths of the inner edges $side_names")
-        for (n, label, (pendant, lengths)) in zip(drawn_names, vcat(labels, ["d"]), stored_trees)
-            info(@sprintf("%-18s %-24s %s", "$label ($(lowercase(n)))", join(pendant, ";"), join([lengths[S] for S in support], ", ")))
-        end
-    end
     tree_of(k) = QQ.(tree_metric(trees["qq"][("ray", k)]))
     s = fill(QQ(2), length(PAIRS))     # the star tree with all pendant edges of length 1
     of_type(t) = [k for k in cellsqq[paper_cell] if tqq[("ray", k)] == t]

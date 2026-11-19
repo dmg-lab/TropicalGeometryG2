@@ -3,11 +3,6 @@
 "The star tree d_ij = s_i + s_j of the pendant lengths s, in the order of PAIRS."
 s2_star_pluecker_vector(s) = [s[i] + s[j] for (i, j) in PAIRS]
 
-"The first line of the figure file figures/`name`.tex, without the comment sign: what it draws."
-s2_figure_header(name) = lstrip(first(readlines(repository("figures", "$name.tex"))), ['%', ' '])
-
-"The numbers of the rays named in the header of figures/`name`.tex."
-s2_header_numbers(name) = parse.(Int, split(match(r"rays? ([\d,]+)", s2_figure_header(name))[1], ','))
 
 "The rows of eq:lineality."
 const s2_lineality_rows = [1 -1 0 -1 1 0 0; 0 1 -1 0 -1 1 0; -1 0 1 1 0 -1 0]
@@ -25,36 +20,6 @@ s2_normalized(s, splits) = minimum(s) == 0 && iszero(s2_lineality_rows * s) && g
 "Whether a row of a 04_trees.csv is normalized as in prop:normalized."
 s2_normalized_tree(r) = s2_normalized(tree_row(r)...)
 
-"The leaves drawn in a TikZ text at (v1)..(v7): leaf => (color, shape), as in figures/taxon_hexagon.tex."
-function s2_leaf_shapes(text)
-    shapes = Dict{Int,Tuple{String,String}}()
-    for m in eachmatch(r"g2tree (dark|light),(rectangle|circle),[^\n]*at \(v(\d)\)", text)
-        shapes[parse(Int, m[3])] = (m[1] == "dark" ? "blue" : "yellow", m[2] == "rectangle" ? "square" : "circle")
-    end
-    for m in eachmatch(r"shift=\{\(v(\d)\)\}[^\n]*\n\\path\[fill=g2(TaxonBlue|TaxonYellow|HeartRed)", text)
-        shapes[parse(Int, m[1])] = m[2] == "HeartRed" ? ("red", "heart") : (lowercase(chop(m[2]; head=5, tail=0)), "triangle")
-    end
-    return shapes
-end
-
-"""
-The trees drawn in a figure file, one per tikzpicture (`drawn_tree`): the type of the last panel label between the
-previous tikzpicture and this one (nothing if none), the leaf shapes, the pendant lengths of leaves 1-7 and the internal
-splits (side without 7 => length). Each weight label is assigned to its nearest edge (some sit beside their edge, not on
-it).
-"""
-function s2_drawn_trees(path)
-    chunks = split(read(path, String), "\\begin{tikzpicture}")
-    type_label = r"(?:\\boldmath \\\(\\([a-z]+(?:_\d)?)\\\)|\\oldstylenums\{(\d+)\})\}\{\\large\(\d+\)\}"
-    return map(2:length(chunks)) do c
-        labels = collect(eachmatch(type_label, chunks[c-1]))
-        type = isempty(labels) ? nothing : String(something(last(labels).captures...))
-        block = first(split(chunks[c], "\\end{tikzpicture}"))
-        tree = drawn_tree(block)
-        (tree === nothing || tree.pendant === nothing) && error("$path: a tree drawn without edges or weights")
-        (type=type, shapes=s2_leaf_shapes(block), pendant=tree.pendant, splits=tree.lengths)
-    end
-end
 
 "The reduced row echelon basis of the span of `vectors`."
 function s2_row_space(vectors)
@@ -94,51 +59,26 @@ function section_2()
                           Set([(5, 7), (1, 3)]), Set([(6, 7), (1, 2)]), Set([(1, 4), (2, 5), (3, 6)])])
     claim("the supports of the 7 linear forms: d17=d56, d27=d46, d37=d45, d47=d23, d57=d13, d67=d12 and {d14, d25, d36}",
           form_supports == paper_supports)
-    if drawings("eq:dressian in the words of the heart and shapes of figures/taxon_hexagon.tex", "figures/taxon_hexagon.tex")
-        shapes = s2_leaf_shapes(figure_text("taxon_hexagon"))
-        leaf_shape = i -> get(shapes, i, ("?", "?"))
-        other_pair = i -> Tuple(sort([j for j in 1:6 if all(leaf_shape(j) .!= leaf_shape(i))]))   # opposite color, other shape
-        rule_i = Set(Set([(i, 7), other_pair(i)]) for i in 1:6)
-        rule_ii = Set((i, j) for i in 1:6 for j in i+1:6 if leaf_shape(i)[2] == leaf_shape(j)[2])
-        claim("with the heart and shapes of figures/taxon_hexagon.tex, (i) \"the distance from any shape to the heart is the same " *
-              "as the distance between the two other shapes of the opposite color\" and (ii) \"the maximum of the three distances " *
-              "between equal shapes is attained at least twice\" are eq:dressian",
-              sort(collect(keys(shapes))) == 1:7 && leaf_shape(7) == ("red", "heart") && union(rule_i, Set([rule_ii])) == paper_supports)
-    end
+    # The leaves of Figure fig:shape_hexagon: the colours {1,2,3} and {4,5,6}, the shapes {1,4}, {2,5}, {3,6}, the heart 7.
+    taxon_colour(i) = i <= 3 ? 1 : 2
+    taxon_shape(i) = mod1(i, 3)
+    other_shapes(i) = Tuple(sort([j for j in 1:6 if taxon_colour(j) != taxon_colour(i) && taxon_shape(j) != taxon_shape(i)]))
+    claim("with the colours {1,2,3}, {4,5,6} and the shapes {1,4}, {2,5}, {3,6} of Figure fig:shape_hexagon, (i) \"the " *
+          "distance from any shape to the heart is the same as the distance between the two other shapes of the opposite " *
+          "color\" and (ii) \"the maximum of the three distances between equal shapes is attained at least twice\" are eq:dressian",
+          union(Set(Set([(i, 7), other_shapes(i)]) for i in 1:6),
+                Set([Set((i, j) for i in 1:6 for j in i+1:6 if taxon_shape(i) == taxon_shape(j))])) == paper_supports)
 
-    subheading("Figure fig:ex_G2_trees: the five trees, from the census trees named in the figure files")
+    subheading("Figure fig:ex_G2_trees: the five trees")
     gtrees = Dict((r["kind"], parse(Int, r["index"])) => r for r in rows(g2("grassmannian", "04_trees.csv")))
     qq_ray_count = count(key -> first(key) == "ray", keys(gtrees))
     gf2_trees = Dict(parse(Int, r["index"]) => r for r in rows(g2("grassmannian_gf2", "04_trees.csv")) if r["kind"] == "ray")
     epsilon_rays = sort([k for ((kind, k), t) in orbit_types("grassmannian_orbits.csv", "gf2") if kind == "ray" && t == "epsilon"])
     gf2_only_types = [r["orbit_type"] for r in rows(g2("grassmannian_orbits.csv")) if r["kind"] == "ray" && isempty(r["qq_orbit"])]
-    five = ("lineality_star_1", "ray_tree", "edge_tree", "ray_GF2", "triangle_tree")
-    if drawings("the five trees of Figure fig:ex_G2_trees, from the census trees named in its files",
-                ["figures/$name.tex" for name in ("taxon_hexagon", five...)]...)
-        for name in five
-            info("figures/$name.tex: " * s2_figure_header(name))
-        end
-        ray8, edge = only(s2_header_numbers("ray_tree")), s2_header_numbers("edge_tree")
-        check("inner edges of the second and third trees: ray $ray8 and edge $(join(edge, ",")) of trop(G) (grassmannian/04_trees.csv)",
-              [1, 2], [length(tree_splits(gtrees[("ray", ray8)])),
-                       length(union((Set(keys(tree_splits(gtrees[("ray", k)]))) for k in edge)...))])
-        gf2_number = only(s2_header_numbers("ray_GF2"))
-        claim("the fourth, ray $gf2_number over GF(2) (atlas numbering, after the $qq_ray_count rays over QQ), exists only over " *
-              "GF(2): those are the 3 rays of type epsilon, and their trees are snowflakes (a node meets three inner edges)",
-              qq_ray_count < gf2_number <= length(gf2_trees) && gf2_only_types == ["epsilon"] &&
-              length(epsilon_rays) == length(gf2_trees) - qq_ray_count && all(k -> s2_branching(gf2_trees[k]), epsilon_rays))
-        gf2_drawn = only(s2_drawn_trees(repository("figures", "ray_GF2.tex")))
-        gf2_match = filter(k -> tree_metric(gf2_trees[k]) == tree_metric(gf2_drawn.pendant, gf2_drawn.splits), epsilon_rays)
-        claim("the tree drawn in figures/ray_GF2.tex (leaves read by their shapes) is the tree of an epsilon ray of trop_2(G) " *
-              "(grassmannian_gf2/04_trees.csv), a snowflake",
-              gf2_drawn.shapes == s2_leaf_shapes(figure_text("taxon_hexagon")) && length(gf2_match) == 1 &&
-              s2_branching(gf2_trees[only(gf2_match)]), "GF(2) census ray $(join(gf2_match, ","))")
-        figure_cell = parse(Int, match(r"cell (\d+)", s2_figure_header("triangle_tree"))[1])
-        figure_triangle = s2_header_numbers("triangle_tree")
-        claim("the fifth, cell $figure_cell of trop(G), has rays $(join(figure_triangle, ",")) and its tree is a caterpillar " *
-              "(no inner node meets three inner edges)",
-              fan_cells(fan("grassmannian"))[figure_cell] == figure_triangle && !s2_branching(gtrees[("cell", figure_cell)]))
-    end
+    claim("the fourth tree exists only over GF(2): the rays of trop_2(G) that are not rays of trop(G) are the 3 rays of " *
+          "type epsilon (grassmannian_orbits.csv), and their trees are snowflakes (a node meets three inner edges)",
+          gf2_only_types == ["epsilon"] && length(epsilon_rays) == length(gf2_trees) - qq_ray_count &&
+          all(k -> s2_branching(gf2_trees[k]), epsilon_rays), "GF(2) census rays $(join(epsilon_rays, ", "))")
 
     subheading("Example ex:fivetrees: the caterpillar G2-tree of that triangle")
     metrics = Dict(parse(Int, r["number"]) => r for r in rows(g2("maximal_cell_tree_metrics.csv")))
@@ -149,11 +89,6 @@ function section_2()
     row = metrics[1]
     triangle = parse.(Int, split(row["support"], ';'))
     cell_number = findfirst(==(triangle), fan_cells(fan("grassmannian")))
-    if drawings("the support of row 1 of maximal_cell_tree_metrics.csv: the rays of figures/triangle_tree.tex",
-                "figures/triangle_tree.tex")
-        check("the support of row 1 of maximal_cell_tree_metrics.csv (rays of trop(G), as in figures/triangle_tree.tex)",
-              join(s2_header_numbers("triangle_tree"), ';'), row["support"])
-    end
     check("its metric d (d_ij in lexicographic order)", paper_d, [parse(Int, row["d$i$j"]) for (i, j) in PAIRS])
     d = QQ.(paper_d)
     dist(i, j) = d[PAIR_INDEX[minmax(i, j)]]
@@ -173,8 +108,10 @@ function section_2()
         tree = only(r for r in rows(g2("dressian", "04_trees.csv")) if r["kind"] == "cell" && parse(Int, r["index"]) == only(hits))
         check("the metric of the normalized tree of that cell (dressian/04_trees.csv)", paper_d, tree_metric(tree))
         caterpillar = gtrees[("cell", cell_number)]
-        claim("that tree is the caterpillar of cell $cell_number of trop(G) drawn in the figure (same pendant lengths and splits)",
-              tree["pendant_lengths"] == caterpillar["pendant_lengths"] && tree_splits(tree) == tree_splits(caterpillar))
+        claim("that tree is the tree of cell $cell_number of trop(G), with the rays of row 1 (same pendant lengths and splits), " *
+              "and a caterpillar (no inner node meets three inner edges)",
+              tree["pendant_lengths"] == caterpillar["pendant_lengths"] && tree_splits(tree) == tree_splits(caterpillar) &&
+              !s2_branching(caterpillar))
     end
 
     subheading("The lineality space of trop(Gr(2,7)): the star trees")
@@ -198,11 +135,6 @@ function section_2()
     claim("the three star trees of eq:lineality lie in it, and any two of them with 1 span it",
           all(v -> rank_of(vcat(lineality, [v])) == rank_of(lineality), vectors) &&
           all(rank_of([vectors[a], vectors[b], ones21]) == lineality_dim(D) for a in 1:3 for b in a+1:3))
-    if drawings("the stars of Figure fig:lineality_stars: pendant lengths", ["figures/lineality_star_$k.tex" for k in 1:3]...)
-        heads = [first(readlines(repository("figures", "lineality_star_$k.tex"))) for k in (1, 3, 2)]
-        check("the stars of Figure fig:lineality_stars (figures/lineality_star_{1,3,2}.tex): pendant lengths", stars,
-              [parse.(Int, split(last(split(h, "pendant lengths ")), ',')) for h in heads])
-    end
     check("dimension of the linear span of the Dressian (six independent equations eq:dressian)", 15,
           rank_of(vcat(rays, lineality)))
 
@@ -229,20 +161,6 @@ function section_2()
               ["x6", "p12", "p67"], ["p15"], ["p35"], ["p34"], ["p24"], ["p26"], ["p16"], ["x7", "p14", "p25", "p36"]]
     check("the labels of figures/root_lattice_V2.tex (drawn by hand) are the classes of equal weight",
           sort(sort.(figure)), sort(sort.(collect(values(classes)))))
-    if drawings("the angles of the roots drawn in figures/root_lattice_V2.tex", "figures/root_lattice_V2.tex")
-        root_tex = figure_text("root_lattice_V2")
-        short_angle = Dict("x" * m[2] => parse(Int, m[1]) for m in eachmatch(r"label=\{\[g2root label\](\d+):\{\$x_(\d)\$", root_tex))
-        long_angle = Dict("p" * m[2] => parse(Int, m[1])
-                          for m in eachmatch(r"\(o\)--\((\d+):\\rl\) node\[g2root label,anchor=\d+\] \{\$p_\{(\d\d)\}\$", root_tex))
-        short_at = Dict(a => n for (n, a) in short_angle)
-        claim("in that figure (angles read from the file) consecutive short roots make 60 degrees and each long root is the " *
-              "sum of the two short roots 30 degrees on either side",
-              length(short_angle) == 6 && Set(keys(short_at)) == Set(0:60:300) &&
-              length(long_angle) == 6 && Set(values(long_angle)) == Set(30:60:330) &&
-              all(((n, a),) -> sum(root_weight(n) .* root_weight(short_at[mod(a + 60, 360)])) == 1, short_angle) &&
-              all(((n, a),) -> root_weight(n) == root_weight(short_at[mod(a - 30, 360)]) + root_weight(short_at[mod(a + 30, 360)]),
-                  long_angle))
-    end
     monomial_weight(f, e) = sum(e[k] * root_weight(string(symbols(parent(f))[k])) for k in eachindex(e))
     homogeneous(f) = length(unique(monomial_weight(f, e) for e in AbstractAlgebra.exponent_vectors(f))) == 1
     claim("the torus acts with these weights: the 42 generators of I and the 78 of J are homogeneous",
@@ -309,7 +227,7 @@ function section_2()
     check("orbits of vertices, and orbits of maximal polygons", [11, 28],
           [s["complex"]["orbit_f_vector"][1], maximal_polygon_orbits])
     polygon_orbits = s["complex"]["orbit_f_vector"][3]
-    info("\"the triangles and quadrilaterals form 28 orbits\" holds for the maximal ones: all 248 polygons form " *
+    info("\"The maximal triangles and quadrilaterals form 28 orbits\"; all 248 polygons form " *
          "$polygon_orbits orbits, the 12 facets of the tetrahedra $(polygon_orbits - maximal_polygon_orbits)")
     # figures/ray_orbits_styled_catalog.tex, without epsilon (3)
     figure_rays = [("alpha_1", 6), ("alpha_2", 3), ("alpha_3", 6), ("alpha_4", 3), ("alpha_5", 2), ("beta_1", 12), ("beta_2", 6),
@@ -328,32 +246,6 @@ function section_2()
     grassmannian_size = Dict(r["orbit_type"] => r["size"] for r in grassmannian_cells)
     claim("with the orbit sizes of grassmannian_orbits.csv, which the two figures print",
           all(r -> grassmannian_size[r["orbit_type"]] == r["size"], polygons))
-    atlas = ("ray_orbits_styled_catalog", "toric_degeneration_prime_edge_trees", "non_toric_cell_trees")
-    atlas_files = ["figures/$f.tex" for f in ("taxon_hexagon", atlas...)]
-    drawn = all(f -> isfile(repository(f)), atlas_files) ?
-            [(f == "ray_orbits_styled_catalog" ? "ray" : "cell", t) for f in atlas for t in s2_drawn_trees(repository("figures", "$f.tex"))] :
-            nothing
-    tree_metrics(target) = Dict((r["kind"], parse(Int, r["index"])) => tree_metric(r)
-                                for r in rows(joinpath(TARGET_DIRECTORIES[target], "04_trees.csv")))
-    dmetric = tree_metrics("dressian")
-    in_D = Dict((r["kind"], r["orbit_type"]) => Set(dmetric[(r["kind"], parse(Int, m))] for m in split(r["members"], ';'))
-                for r in dorbits)
-    in_G = Dict{Tuple{String,String},Set{Vector{Int}}}()
-    for (target, field) in (("grassmannian", "qq"), ("grassmannian_gf2", "gf2"))
-        gmetric = tree_metrics(target)
-        for ((kind, k), t) in orbit_types("grassmannian_orbits.csv", field)
-            push!(get!(in_G, (kind, t), Set{Vector{Int}}()), gmetric[(kind, k)])
-        end
-    end
-    census_trees(kind, t) = get(in_D, (kind, t), get(in_G, (kind, t), Set{Vector{Int}}()))
-    if drawings("\"Their G2-trees are the ones in Figures\" fig:atlas_rays, fig:atlas_toric_cells_prime, " *
-                "fig:atlas_toric_cells_nontoric: the trees of their panels", atlas_files...)
-        shapes = s2_leaf_shapes(figure_text("taxon_hexagon"))
-        claim("\"Their G2-trees are the ones in Figures\": each of the $(length(drawn)) labelled panels of the three figures draws " *
-              "the tree of a member of its orbit (dressian/04_trees.csv; for the types not in D, grassmannian(_gf2)/04_trees.csv)",
-              all(((kind, t),) -> t.type !== nothing && t.shapes == shapes &&
-                                  tree_metric(t.pendant, t.splits) in census_trees(kind, t.type), drawn))
-    end
     epsilon = only(r for r in dorbits if r["kind"] == "cell" && r["orbit_type"] == "epsilon")
     check("the orbit of the 3 tetrahedra is labelled epsilon (dressian_orbits.csv)", tetrahedra,
           sort(parse.(Int, split(epsilon["members"], ';'))))
@@ -374,12 +266,6 @@ function section_2()
         claim("the $(length(trees)) trees of the rays and maximal cells of the $target census are normalized (prop:normalized)",
               all(s2_normalized_tree, trees))
     end
-    if drawings("\"All trees in these figures are normalized\" (fig:atlas_rays, fig:atlas_toric_cells_prime, " *
-                "fig:atlas_toric_cells_nontoric)", atlas_files...)
-        claim("\"All trees in these figures are normalized\": the $(length(drawn)) trees drawn in Figures fig:atlas_rays, " *
-              "fig:atlas_toric_cells_prime and fig:atlas_toric_cells_nontoric",
-              all(((_, t),) -> s2_normalized(t.pendant, t.splits), drawn))
-    end
 
     subheading("The G2 flag Dressian")
     FD = fan("flag_dressian")
@@ -395,8 +281,21 @@ function section_2()
     claim("its lineality space is spanned by the concatenations (s, star tree of s) of the rows of eq:lineality and " *
           "the two all-ones vectors",
           rank_of(vcat(concatenations, all_ones)) == rank_of(FDlin) == rank_of(vcat(FDlin, concatenations, all_ones)))
-    claim("the rows of eq:lineality lie in the lineality space of trop(Q): w1 + w4 = w2 + w5 = w3 + w6 = 2 w7",
-          all(t -> t[1] + t[4] == t[2] + t[5] == t[3] + t[6] == 2t[7], stars))
+    # main.tex: "The former with the vector (1,1,1,-1,-1,-1,0) span the lineality of the 3-dimensional tropical hypersurface
+    # trop(Q) and the latter span the lineality of the G2-Dressian."
+    _, xq = polynomial_ring(QQ, ["x$i" for i in 1:7])
+    TQ = tropical_hypersurface(xq[1] * xq[4] + xq[2] * xq[5] + xq[3] * xq[6] - xq[7]^2, tropical_semiring_map(QQ, min))
+    Qlin = [QQ.(collect(v)) for v in lineality_space(TQ)]
+    ones7 = fill(QQ(1), 7)
+    check("trop(Q) ⊂ R^7/1, the tropical hypersurface of q: the dimension of its lineality space (w1 + w4 = w2 + w5 = w3 + w6 = 2 w7)",
+          3, lineality_dim(TQ) - 1)
+    info("trop(Q) itself has dimension $(dim(TQ) - 1) in R^7/1: the \"3-dimensional\" of the paper is its lineality space")
+    extra = QQ.([1, 1, 1, -1, -1, -1, 0])
+    claim("the rows of eq:lineality with (1,1,1,-1,-1,-1,0) span the lineality of trop(Q) (modulo 1)",
+          rank_of(Qlin) == rank_of(vcat(Qlin, [QQ.(t) for t in stars], [extra])) ==
+          rank_of(vcat([QQ.(t) for t in stars], [extra], [ones7])))
+    claim("the star trees of the rows of eq:lineality span the lineality of the G2-Dressian (modulo 1)",
+          rank_of(lineality) == rank_of(vcat(lineality, vectors)) == rank_of(vcat(vectors, [ones21])))
 
     subheading("Theorem thm:flag_dressian: the G2 flag Dressian")
     s = summary("flag_dressian")

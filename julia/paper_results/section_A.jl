@@ -238,21 +238,27 @@ function sA_files()
                                      " (a computed data/ has new identifiers in its .mrdi files and new times and " *
                                      "hashes in its provenance)"))
     else
-        skipped("files in TropicalGeometryG2_data.tar.gz", "not at the repository root (..) nor in julia/: " *
-                "download it from Zenodo, DOI 10.5281/zenodo.24104003, to the repository root")
+        # Computed data (make_paper_data.jl), without the tarball: the files of the table are those of data/ that
+        # ../production/make_zenodo_tarball.sh would copy.
+        names = vcat(first.(sources), ["README.md"])
+        expected = sA_table_names()
+        claim("the files of Table tab:data, with orbit_NNN for the toric orbits NNN of the censuses, have their sources in data/ " *
+              "(no TropicalGeometryG2_data.tar.gz at the repository root: the sources that ../production/make_zenodo_tarball.sh copies)",
+              sort(expected) == sort(names) && all(path -> isfile(path), last.(sources)),
+              "missing: " * join(vcat(setdiff(expected, names), [name for (name, path) in sources if !isfile(path)]), ", "))
     end
-    # main.tex: "All files except the four tables *_orbits.csv are written by OSCAR 1.8.2 in its format .mrdi".
+    # main.tex: "The files in the folders 00_ideals to 05_curves are written by OSCAR 1.8.2 in its format .mrdi".
+    in_folders(name) = occursin(r"^0[0-5]_[a-z_]+/", name)
     if heads === nothing   # the sources of the tarball in data/
-        paths = [path for (name, path) in sources if !endswith(name, "_orbits.csv")]
-        versions = [relpath(p, project_path()) => sA_oscar_version(String(read(p, 300))) for p in paths]
+        versions = [relpath(path, project_path()) => sA_oscar_version(String(read(path, 300))) for (name, path) in sources
+                    if in_folders(name)]
         scope = "of the data (no tarball)"
     else
-        versions = [name => sA_oscar_version(h.head) for (name, h) in heads if !endswith(name, "_orbits.csv")]
+        versions = [name => sA_oscar_version(h.head) for (name, h) in heads if in_folders(name)]
         scope = "of the tarball"
     end
-    # Left as it is by the authors: a warning, not a failure.
-    warned("files $scope other than the four *_orbits.csv tables that are not .mrdi files of Oscar 1.8.2 (the paper: none, " *
-          "of $(length(versions)))", String[],["$name ($version)" for (name, version) in versions if version != "Oscar 1.8.2"])
+    check("files $scope in the folders 00_ideals to 05_curves that are not .mrdi files of Oscar 1.8.2 (of $(length(versions)))",
+          String[], ["$name ($version)" for (name, version) in versions if version != "Oscar 1.8.2"])
 end
 
 function sA_conventions()
@@ -571,8 +577,8 @@ function sA_hexagon_and_curves()
              "$(count(p -> isempty(p.directions), pieces)) bounded, $(count(p -> !isempty(p.directions), pieces)) unbounded; " *
              "cells of two pieces: " * join(findall(k -> length(k) == 2, inside), ", "))
     else
-        skipped("the pieces of Method 1", "data/mukai_curves/genus_10_method_1_pieces.mrdi is missing: run " *
-                "make_paper_data.jl or unpack the Zenodo tarball")
+        claim("the pieces of Method 1 are stored", false, "data/mukai_curves/genus_10_method_1_pieces.mrdi is missing: run " *
+              "make_paper_data.jl or unpack the Zenodo tarball")
     end
 end
 
