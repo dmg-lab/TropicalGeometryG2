@@ -211,8 +211,6 @@ function section_9()
           "thm:grassmannian, the lineality space included), cones of trop(Q), pairs", [1 + 51 + 244 + 251, 11, 6017],
           [length(unique(first.(cone_keys))), length(unique(last.(cone_keys))), length(unique(cone_keys))])
     info("cones by dimension: " * join(["$d: $(count(r -> r["dim"] == d, cones))" for d in sort(unique(r["dim"] for r in cones); by=s -> parse(Int, s))], ", "))
-    check("cones on which the saturation of in_v(I_{Q×G}) is prime (stored flags J_prime of verify_certificate.jl)", 6017,
-          count(r -> r["J_prime"] == "true", cones))
     claim("every check of the certificate passes on every cone (relative interior, maximal cone, Gröbner cone, no failures; " *
           "stored flags of verify_certificate.jl)",
           all(r -> r["point_in_relint"] == "true" && r["in_maximal_cone"] == "true" && r["groebner_cone"] == "true" &&

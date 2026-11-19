@@ -309,26 +309,26 @@ function section_10()
         check("Method $method: the core without vertices of valence 2 is trivalent with (vertices, edges)", (18, 27, true),
               (length(core.vertices), length(core.edges), all(==(3), values(core.valence))))
     end
-    q_paper = [-204958, -1849487, -1813412, 1389486, -611356, -155086, -128988, -1698926, 1863394, -602010, -2239681,
-               -1904628, 124320, -1025736, -87111, -1360439, 705715, -619752, 2004970, 1344973, 232336]
+    q_paper = [204958, 1849487, 1813412, -1389486, 611356, 155086, 128988, 1698926, -1863394, 602010, 2239681,
+               1904628, -124320, 1025736, 87111, 1360439, -705715, 619752, -2004970, -1344973, -232336]
     q = Int.(load(project_path("curves_g10", "overnight_20261028", "wpart_2722", "translation_1.mrdi")))
-    # main.tex: "Here, the $\min$-convention was used": the printed q and q_1, ..., q_4 are those of the files.
-    check("Method 1: the shift vector q, as stored (translation_1.mrdi, in the min convention of the files)", q_paper, q)
+    # main.tex prints q and q_1, ..., q_4 in its max convention: minus the shifts stored in the min convention of the files.
+    check("Method 1: the shift vector q, minus the stored one (translation_1.mrdi)", q_paper, -q)
     experiment = project_path("curves_g10", "overnight_20261028", "experiment_100128")
     planes = load(joinpath(experiment, "hyperplanes.mrdi"))
     support = [findall(!iszero, planes.normals[h]) for h in 1:5]
     check("Method 2: supports of the normal vectors of the five hyperplanes (q_5 of full support)", [3, 8, 9, 15, 21],
           length.(support))
-    check("Method 2: the shift vectors q_1, ..., q_4 on the supports of their normals, as stored (hyperplanes.mrdi)",
-          [["p13" => -217936, "p37" => -84861, "p46" => 34008],
-           ["p14" => 1013667, "p15" => 132815, "p25" => 744071, "p26" => -794071, "p37" => 721948, "p46" => -60165,
-            "p47" => 360635, "p67" => 705771],
-           ["p15" => -806183, "p26" => -732664, "p27" => -107361, "p34" => -721205, "p35" => -846796, "p36" => -183135,
-            "p46" => 542064, "p47" => 278271, "p67" => 78144],
-           ["p12" => 722953, "p14" => 1004831, "p15" => -757760, "p16" => -217944, "p17" => 733597, "p23" => 589026,
-            "p24" => 213921, "p26" => 650364, "p34" => -890415, "p35" => -891447, "p36" => -636797, "p37" => 914965,
-            "p46" => 315068, "p56" => -862815, "p57" => 692897]],
-          [[pair_name(k) => Int(planes.shifts[h][k]) for k in support[h]] for h in 1:4])
+    check("Method 2: the shift vectors q_1, ..., q_4 on the supports of their normals, minus the stored ones (hyperplanes.mrdi)",
+          [["p13" => 217936, "p37" => 84861, "p46" => -34008],
+           ["p14" => -1013667, "p15" => -132815, "p25" => -744071, "p26" => 794071, "p37" => -721948, "p46" => 60165,
+            "p47" => -360635, "p67" => -705771],
+           ["p15" => 806183, "p26" => 732664, "p27" => 107361, "p34" => 721205, "p35" => 846796, "p36" => 183135,
+            "p46" => -542064, "p47" => -278271, "p67" => -78144],
+           ["p12" => -722953, "p14" => -1004831, "p15" => 757760, "p16" => 217944, "p17" => -733597, "p23" => -589026,
+            "p24" => -213921, "p26" => -650364, "p34" => 890415, "p35" => 891447, "p36" => 636797, "p37" => -914965,
+            "p46" => -315068, "p56" => 862815, "p57" => -692897]],
+          [[pair_name(k) => -Int(planes.shifts[h][k]) for k in support[h]] for h in 1:4])
     stage = only(rows(joinpath(experiment, "summary.csv")))
     stored("Method 2: pieces of trop(G) ∩ L_c for c = 1, ..., 5, the last the 18 points of (d) (sample_genus_10.jl, summary.csv)",
            replace(stage["pieces"], ';' => ", "))
@@ -385,18 +385,14 @@ function section_10()
     claim("Method 1: the 18 points of (d) = trop(G) ∩ L_5 are the 18 vertices of the skeleton, those of valence 6",
           Set(findall(>=(6), m1_ties)) == Set(M1.core.vertices) == Set(findall(==(6), M1.valence)))
     divisor = load(joinpath(experiment, "points.mrdi")).points
-    # x lies on q_h + H_h (min convention of the files) when min(x_i - q_h,i) over the support of the normal is attained
-    # twice; with sign = -1, on the hyperplane of the paper's printed q_h read in its max convention (a file point w is -w).
-    on_plane(x, h, sign=1) = (gap = x[support[h]] .- sign .* planes.shifts[h][support[h]];
-                              count(==(minimum(gap)), gap) >= 2)
+    # In the min convention of the files, x lies on the hyperplane h when min(x_i - s_i) over the support of its normal is
+    # attained twice, s the stored shift; the paper's q_h is -s and its points -x (max convention).
+    on_plane(x, h) = (gap = x[support[h]] .- planes.shifts[h][support[h]]; count(==(minimum(gap)), gap) >= 2)
     curve_points = vcat(M2.graph.points, [(M2.graph.points[u] + M2.graph.points[v]) / 2 for (u, v) in M2.graph.edges],
                         [M2.graph.points[u] + r for (u, r) in M2.graph.rays])
-    claim("Method 2: the curve (vertices, midpoints of the edges, points u + r of the rays) lies on q_h + H_h for " *
-          "h = 1, ..., 4 and the 18 points of (d) on all five, with the stored q_h in the min convention of the files",
-          all(x -> all(h -> on_plane(x, h), 1:4), curve_points) && all(x -> all(h -> on_plane(x, h), 1:5), divisor),
-          "with the shifts -q_h, the paper's q_h in its max convention: " *
-          "$(count(x -> all(h -> on_plane(x, h, -1), 1:4), curve_points)) of the $(length(curve_points)) points of the " *
-          "curve and $(count(x -> all(h -> on_plane(x, h, -1), 1:5), divisor)) of the 18 points")
+    claim("Method 2: the curve (vertices, midpoints of the edges, points u + r of the rays) lies on the hyperplanes " *
+          "q_h + B_{S_h} for h = 1, ..., 4 and the 18 points of (d) on all five",
+          all(x -> all(h -> on_plane(x, h), 1:4), curve_points) && all(x -> all(h -> on_plane(x, h), 1:5), divisor))
     inside = [count(((u, v),) -> s10_inside(x, M2.graph.points[u], M2.graph.points[v]), M2.graph.edges) for x in divisor]
     check("Method 2: the points of (d) (points.mrdi): their number, the bounded edges containing each in their interior, " *
           "and whether one is a vertex", (18, fill(1, 18), false), (length(divisor), inside, any(in(M2.graph.points), divisor)))

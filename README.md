@@ -209,3 +209,124 @@ Oscar's `tropical_variety`; G2/B uses an exact, resumable parallel engine with G
 - **Appendix A.** `../production/make_zenodo_tarball.sh` and the stage `zenodo` of the census.
 
 </details>
+
+<details>
+<summary>The computations in detail: an extended Appendix B</summary>
+
+**Software and hardware.** Oscar 1.8.2 in Julia 1.13, with polymake inside Oscar for polyhedral geometry, Gfan 0.8
+for tropical prevarieties, and, for the curves of Section 10, the LP solver HiGHS as a floating-point filter whose
+answers are checked over QQ, with SoPlex (via Oscar) as an exact alternative. The fans of Sections 2-4 were computed
+on a laptop with an Intel Core i7-12700H processor (14 cores) and 16 GB of memory, the hexagon certificate of Section 9
+on a computer with an Intel Core i5-4590 (4 cores at 3.3 GHz) and 16 GB, and the curves of Section 10 on a cluster
+whose nodes have two Intel Xeon Platinum 8268 processors (48 cores at 2.9 GHz) and 384 GB of memory.
+
+**Timings of the tropical (pre)varieties.** Wall-clock times to compute each fan from its ideal, before coarsening; loading Oscar takes
+14 s more. The Dressians are the prevarieties of the generators and do not depend on the field.
+
+| fan | method | time |
+|---|---|---|
+| G2-Dressian | Gfan, 1 / 8 threads | 1.6 s / 0.7 s |
+| | Oscar, `tropical_prevariety` | 13 min |
+| G2 flag Dressian | Gfan, 1 / 8 threads | 34 s / 9.8 s |
+| | Oscar, `tropical_prevariety` | stopped after 89 min; 4.9 h on the cluster |
+| trop(G2/P2) over QQ and GF(2) | Oscar, `tropical_variety` | 2.5 min each |
+| trop(G2/P2) over GF(2) | tropical basis, Gfan with 8 threads | 2.6 min |
+| trop(G2/B) over QQ / GF(2) | Algorithm 1, Gfan with 8 threads | 2.5 min / 16.5 min |
+
+Oscar 1.8.2 tropicalizes prime ideals with the trivial valuation only over QQ; over GF(2), the same method, which calls
+the same function of Singular, returns the fan of Theorem 4.1. The census computes it differently: it certifies each
+orbit of cells of the prevariety of the generators by a Gröbner basis, and adds 6 polynomials of these Gröbner bases
+to the generators whenever some cells fail; after two such rounds, the 54 polynomials form a tropical basis. For the
+flag Dressian, Oscar's `tropical_prevariety` ran on a cluster node with two Intel Xeon Gold 6226R processors (32 cores
+at 2.9 GHz) and 754 GB of memory, after eliminating the six coordinates that the binomial linear forms identify with
+others.
+
+**The dominant region (Section 9).** A maximal cone of trop(G2/B) is dominant when the projections of its linear span
+(rays and lineality space) to R^7 and R^21 have dimension 6, the dimensions of trop(Q) and trop(G2/P2). The second
+holds for all 2714 maximal cones, the first for 1311 of them. `paper_results.jl --sections=9` counts them, in seconds.
+
+**The certificate of Theorem 9.1.** Write I for the ideal of Q × G2/P2 in the 28 variables x1, ..., x7, p12, ..., p67
+(min convention throughout, as in all our files). The half-hexagon (x^(2), x^(3), p^(23), p^(34)) of a mixed pair
+(p^(12), x^(4)) has 56 coordinates f, polynomials in these variables (Lemma 9.2;
+`studies/hexagon/polynomial_expressions.jl`). The certificate `studies/hexagon/certificate/hexagon_certificate.mrdi`
+(18 MB) gives, for each coordinate f and each of the 1506 maximal cones C of trop(Q) × trop(G2/P2), a subdivision of C
+into closed cells σ and a representative f_σ = g/x^u on each, with x^u f − g ∈ I and f_σ tropically faithful on the
+relative interior of σ. Here C is the product of one of the 251 maximal cones of the raw fan of trop(G2/P2),
+`data/g2/grassmannian/01_raw_fan.mrdi` (they subdivide the 248 maximal cones of the coarsest structure), and one of the 6 maximal cones of the tropical quadric, given by two of the terms x1x4, x2x5, x3x6,
+x7^2. With all faces, trop(Q) × trop(G2/P2) has 547 × 11 = 6017 cones. The format of the file, and a guide to reading
+it, are in `studies/hexagon/certificate/README.md` and `GUIDE.md`.
+
+The subdivision of C for f is stored as a tree. The normal fan of the Newton polytope of a first representative h_1
+cuts C into the cells C ∩ N_v, one for each vertex v whose normal cone N_v meets C in a full-dimensional cone. The cells
+on which h_1 is tropically faithful are leaves; the others are cut by the normal fan of a second representative h_2,
+and so on. On a cell, in_w(g) is the same for all w in the relative interior, so faithfulness is tested at one point,
+the sum of the rays of the cell.
+
+*Faithfulness at a point w* (`studies/hexagon/tropically_faithful_representatives.jl`): the reduced Gröbner basis of I
+for a monomial order refining w (the weight, ties broken by degrevlex), the initial ideal, its saturation
+J = in_w(I) : (x1 ⋯ p67)^∞ and the minimal primes of J over QQ; these depend only on the Gröbner cone of w. A
+representative g/x^u is tropically faithful at w if in_w(g) lies in none of the minimal primes. Primality over QQ
+suffices: the components of V(J) over the algebraic closure are Galois conjugate, and in_w(g) has rational
+coefficients. Here J is prime, see (d) below, so the test is in_w(g) ∉ J. Otherwise g is multiplied by a monomial m with
+m J ⊂ in_w(I), a power of a single variable when one works, and reduced modulo the Gröbner basis, until in_w(g) ∉ J.
+
+*Computation* (`studies/hexagon/certificate/compute_certificate.jl`, stages `cones`, `setups`, `greedy`, `merge`,
+`cover`, `assemble`): the Gröbner data above on all 6017 cones; starting lists of representatives for each coordinate,
+from three sample points per cone and a greedy set cover of the samples; then the lazy subdivision of each maximal
+cone, where a cell on which no representative of the list is faithful gets a new one, computed at a point of the cell
+and appended to the list.
+
+*Size.* 1506 × 56 = 84,336 trees with 1,632,641 cells in all (19.4 on average, at most 5955 on one tree). They use 403
+representatives: 7 for the coordinates of x^(2), 23 for x^(3), 265 for p^(23) and 108 for p^(34); 186 of them have a
+monomial denominator x^u, of degree 1 or 2. On 67,919 trees a single representative suffices.
+
+*Verification* (`studies/hexagon/certificate/verify_certificate.jl`), from the definitions only:
+
+- (a) the cells cover trop(Q) × trop(G2/P2): there is a tree for every maximal cone and coordinate, and the children
+  of each node are exactly the vertices of the normal fan on it;
+- (b) x^u f − g ∈ I for every representative, and the f of the certificate are those of `polynomial_expressions.jl`;
+- (c) each cell lies in one Gröbner cone of I (in_w of the reduced Gröbner basis is constant on the relative interior
+  of C) and in one normal cone of the Newton polytope of g, and in_w(g) ∉ J at a point w of its relative interior;
+- (d) J is prime over QQ on all 6017 cones, also the non-maximal ones.
+
+Its results are stored in `studies/hexagon/certificate/verification/`; their summary is
+`6017 cones (1506 maximal), 1632641 cells, 403 representatives`, `VERIFIED`. `paper_results.jl --sections=9` reads it.
+
+*Timings.* Computing the certificate from scratch on the Intel Core i5-4590 took about 12 h (setups and cover in 3 processes, starting lists in
+4), and gives the stored file; the verification took about 15 h in 3 processes; each process was capped at 4.5 GB.
+Loading the certificate takes about a minute, then completing a pair of tropical flags a fraction of a second;
+`to_tex/hexagon_tree_ring.jl --complete` recomputes the hexagon of Example 9.3 in about 80 s.
+
+```sh
+bash studies/hexagon/certificate/run_compute_overnight.sh        # about 12 h, writes studies/hexagon/certificate/work/
+bash studies/hexagon/certificate/run_verification_overnight.sh   # about 15 h
+julia --project=. studies/hexagon/certificate/verify_certificate.jl --summary
+```
+
+**Curves of genus 10 (Section 10).** The paper is in the max convention; the code and the files store the shifts in
+the min convention, as their negatives.
+
+- *Method 1* intersects trop(G2/P2) with the tropical linear space q + B_4 exactly, cell by cell. trop(G2/P2) spans a
+  linear space of dimension 15 in R^21 (it lies in x_i = x_j for 6 pairs). The part of q orthogonal to this span is
+  fixed, taken from an earlier sample, and the part in the span is random: an integer vector projected onto the span.
+  With uniformly random shifts q instead, 19,200 samples gave 791 curves of genus 10, only one of them with a trivalent
+  core. The shift q of Proposition 10.1 is twice that of sample 2722, so that it is integral.
+- *Method 2* cuts trop(G2/P2) with four tropical hyperplanes in turn, shifted by q_1, ..., q_4 with supports of random
+  sizes. It decides which cells meet in floating point (HiGHS), and recomputes the curves of genus 10 exactly, in 7 to
+  33 minutes each.
+- In both methods, the random vectors have integer entries in [−2^20, 2^20], and sample k draws them with the random
+  number generator `Xoshiro(k)` of Julia. A curve has 18 distinct points when its intersection with the tropical linear
+  space L_5 of Section 10 consists of 18 points of multiplicity 1.
+
+| | Method 1 | Method 2 |
+|---|---|---|
+| time per sample | 40 s on one core | 20 min on two cores |
+| total time | 260 core-hours | 2000 core-hours |
+| curves of genus 10 | 892 of 22,380 samples | 6 of 3023 samples |
+| with trivalent core | 7 | 6 |
+| and 18 distinct points | 7 | 1 |
+| curve of the figure | sample 2722, Figure 16 | sample 100128, Figure 17 |
+
+The scripts are listed under Section 10 above; `curves_g10/overnight_20261028/` holds the runs of the two curves.
+
+</details>
