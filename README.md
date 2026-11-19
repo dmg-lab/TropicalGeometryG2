@@ -330,3 +330,8 @@ the min convention, as their negatives.
 The scripts are listed under Section 10 above; `curves_g10/overnight_20261028/` holds the runs of the two curves.
 
 </details>
+
+## License
+
+The code is under the MIT License ([LICENSE](LICENSE)). The data on Zenodo
+([10.5281/zenodo.24104003](https://doi.org/10.5281/zenodo.24104003)) are under CC BY 4.0.

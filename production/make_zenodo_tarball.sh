@@ -307,9 +307,11 @@ from its folder `julia/`, run
     tar -xzf ../TropicalGeometryG2_data.tar.gz --strip-components=1 TropicalGeometryG2_data/data
     julia --project=. paper_results.jl
 
-## Citation
+## Citation and license
 
-Please cite the article (arXiv:2611.24456) and, for the data, this dataset (doi:10.5281/zenodo.24104003).
+Please cite the article (arXiv:2611.24456) and, for the data, this dataset (doi:10.5281/zenodo.24104003). The data
+are licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/); the code is under the MIT License.
 EOF
 
 tar --sort=name --owner=0 --group=0 --numeric-owner --mtime="$(date -u +%F)" \
